@@ -20,10 +20,17 @@ forma simple de cobrar y guardar valor en una moneda estable.
 1. El comercio instala un terminal Toki y entrega tarjetas a sus clientes.
 2. El dueño de la cuenta (el cliente, o sus papás si es un niño) carga saldo en USDC y autoriza a
    Toki a gastar hasta un tope, por ejemplo 100 USDC durante una semana.
-3. El comercio escribe el monto en el terminal y el cliente acerca su tarjeta. Nada más.
+3. El cliente acerca su tarjeta al terminal. Nada más: no hay PIN ni app que abrir.
 4. Toki cobra en USDC sobre Stellar y el comercio lo recibe al instante.
-5. Si el terminal controla una máquina, un torniquete o una puerta, la activa al confirmarse el
-   pago.
+
+### Dos modos de terminal
+
+| Modo | Cómo se cobra | Ejemplos |
+|---|---|---|
+| **Caja** | El comercio escribe el monto en el teclado y el cliente acerca la tarjeta | Cafetería, tienda, puesto de mercado |
+| **Autoservicio** | Precio fijo configurado en el terminal; al pagar, el relé activa la máquina | Expendedora, lavandería, dispensador de agua, torniquete |
+
+El modo autoservicio no necesita teclado ni a nadie atendiendo.
 
 ## Por qué Toki
 
@@ -80,8 +87,8 @@ políticas de límite de gasto de una cuenta inteligente, está en la hoja de ru
  App del usuario: registro, recarga, permiso de gasto y bloqueo de la tarjeta (con Pollar)
 ```
 
-- **Terminal:** ESP32-S3, lector NFC PN532, pantalla OLED, teclado matricial para que el comercio
-  escriba el monto, relé y buzzer. Se
+- **Terminal:** ESP32-S3, lector NFC PN532, pantalla OLED y buzzer. En modo caja suma un teclado
+  matricial para el monto; en modo autoservicio, un relé que activa la máquina. Se
   conecta por Wi-Fi; donde no hay Wi-Fi, con un módulo 4G o el punto de acceso del celular del
   comercio. El cliente no necesita datos, el terminal sí.
 - **Red:** Stellar, con USDC.
@@ -91,7 +98,7 @@ políticas de límite de gasto de una cuenta inteligente, está en la hoja de ru
 
 ## Hoja de ruta
 
-- [ ] Firmware del terminal: lectura de tarjeta, pantalla, teclado y relé
+- [ ] Firmware del terminal: modo caja (monto con teclado) y modo autoservicio (precio fijo y relé)
 - [ ] Servidor: cobro en USDC sobre Stellar testnet con permiso de gasto
 - [ ] Verificación de tarjetas NTAG 424 DNA
 - [ ] Límite diario por tarjeta y bloqueo
