@@ -60,10 +60,12 @@ const desconocida = uidAzar();
   comprobar('consultar un cobro hecho devuelve su resultado sin cobrar', consulta.status === 200 && hecho.hash === c1.hash && despuesConsulta === despues);
   comprobar('consultar un cobro que nunca llegó responde 404', inexistente.status === 404);
 
-  // 3c. El recibo corto redirige a la transacción en el explorador.
+  // 3c. El enlace corto del QR lleva al recibo: con la web instalada, al recibo de Toki; sin
+  //     ella, a la transacción en el explorador.
   const recibo = await fetch(`${URL_SERVIDOR}/r/${c1.recibo}`, { redirect: 'manual' });
-  comprobar('el recibo redirige a la transacción en el explorador',
-    recibo.status === 302 && recibo.headers.get('location')?.endsWith(`/tx/${c1.hash}`), recibo.headers.get('location'));
+  const destino = recibo.headers.get('location') ?? '';
+  comprobar('el enlace corto del QR lleva al recibo',
+    recibo.status === 302 && (destino.endsWith(`/tx/${c1.hash}`) || destino.endsWith(`/recibo/${c1.recibo}`)), destino);
 }
 
 // 4. El límite diario frena el cobro antes de llegar a la red.

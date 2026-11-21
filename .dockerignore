@@ -1,0 +1,8 @@
+# Para la imagen del servidor (servidor/Dockerfile), que se construye desde la raíz del repo.
+.git
+**/node_modules
+app/dist
+app/android
+hardware
+interno
+servidor/datos

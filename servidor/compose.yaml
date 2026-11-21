@@ -1,9 +1,12 @@
-# Servidor de Toki + túnel público (para que el terminal simulado en Wokwi lo alcance).
+# Servidor de Toki (con la web adentro) + túnel público, para que el terminal, la web y la app del
+# celular lo alcancen desde cualquier red.
 # Los secretos vienen de Doppler:
 #   doppler run --project toki --config dev -- docker compose up -d --build
 services:
   servidor:
-    build: .
+    build:
+      context: ..  # la imagen lleva el servidor y la compilación de app/
+      dockerfile: servidor/Dockerfile
     environment:
       - TOKI_SECRET
       - COMERCIO_PUBLIC
@@ -12,10 +15,11 @@ services:
       - ADMIN_TOKEN
       - LIMITE_DIARIO
       - TOKEN_CONTRACT
+      - ZONA_HORARIA
     ports:
-      - "8090:8080"  # la placa real se conecta a http://<IP de este PC>:8090
+      - "${PUERTO_HOST:-8090}:8080"  # la placa real se conecta a http://<IP de este PC>:8090
     volumes:
-      - datos:/app/datos  # tarjetas registradas
+      - datos:/app/datos  # tarjetas, cobros y recibos
     restart: unless-stopped
 
   # Túnel público (bore.pub, TCP sin TLS): deja el servidor en http://bore.pub:<TUNEL_PUERTO> para

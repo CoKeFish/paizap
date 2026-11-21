@@ -6,18 +6,22 @@ tope que autorizó el dueño de la cuenta.
 
 ```
 Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(toki, cliente, comercio, monto)──► Stellar
+                                           ▲
+Web y app del celular ──/api/…─────────────┘   billetera del dueño y panel del comercio
 ```
 
+La misma dirección atiende al terminal, a la web y a la app de Android. La web es la compilación
+de [`app/`](../app/README.md), que va dentro de la imagen del servidor.
+
+## Lo que usa el terminal
+
 - `POST /cobros` con la cabecera `X-Terminal-Token`: busca la cuenta de la tarjeta, revisa el
-  límite diario y cobra. Responde `{ok, hash, recibo, permisoRestante, saldoCliente, hoyRestante}`
-  o `{ok:false, motivo}`.
+  bloqueo y el límite diario y cobra. Responde `{ok, hash, recibo, permisoRestante, saldoCliente,
+  hoyRestante}` o `{ok:false, motivo}`.
 - `GET /cobros/<id>` con la misma cabecera: consulta un cobro sin cobrar. Lo usa el terminal
   cuando se cayó la conexión y no le llegó la respuesta.
-- `GET /r/<recibo>`: redirige a la transacción en el explorador de Stellar. Es el enlace corto
-  que el terminal muestra en el QR del recibo.
-- `POST /tarjetas {uid, cuenta?}` con la cabecera `X-Admin-Token`: registra una tarjeta. Sin
-  cuenta, crea un cliente de testnet con su permiso de gasto (en producción lo firma el dueño
-  desde la app). Las tarjetas se guardan en el volumen `datos`.
+- `GET /r/<recibo>`: el enlace corto que el terminal muestra en el QR. Lleva al recibo de Toki
+  (monto, producto, fecha y enlace a la transacción en el explorador de Stellar).
 - `GET /salud`: red, token y comercio.
 
 Cada cobro lleva un `id`: si el terminal reintenta porque no le llegó la respuesta, recibe la
@@ -25,24 +29,73 @@ misma y no se cobra dos veces. Los cobros hechos y los recibos se guardan en el 
 así que eso vale aunque el servidor se reinicie. Una tarjeta no registrada se rechaza con su UID,
 que el terminal muestra en pantalla.
 
+## Lo que usa la app (web y celular)
+
+No hay usuario ni contraseña: la app abre sesión con la cuenta Stellar (SEP-10). El servidor
+entrega un reto, la app lo firma con la llave de la cuenta y recibe una sesión. La llave nunca
+llega al servidor.
+
+| Ruta | Para |
+|---|---|
+| `GET /api/info` | Red, moneda y cuentas de Toki y del comercio |
+| `GET /api/sesion/reto?cuenta=G…` · `POST /api/sesion {reto}` | Abrir sesión firmando el reto |
+| `GET /api/cuenta` | Saldo, permiso de gasto con su vencimiento, tarjetas y movimientos |
+| `POST /api/cuenta/recarga` | Recarga de prueba (solo testnet); la primera crea la cuenta |
+| `POST /api/permiso/preparar {monto, dias}` | Arma el permiso de gasto para firmarlo en la app |
+| `POST /api/permiso {xdr}` | Manda a la red el permiso ya firmado |
+| `GET /api/tarjetas/nuevas` | Tarjetas sin dueño que el terminal vio en los últimos minutos |
+| `POST /api/tarjetas {uid, nombre}` | Vincular una tarjeta a mi cuenta |
+| `PATCH /api/tarjetas/<uid> {nombre, bloqueada, limiteDiario}` · `DELETE` | Nombre, bloqueo y límite diario; desvincular |
+| `GET /api/movimientos` | Cobros de mis tarjetas, recargas y permisos |
+| `GET /api/panel` | Ventas de hoy en vivo. Solo para la cuenta del comercio |
+| `GET /api/recibos/<código>` | Datos de un recibo (sin sesión) |
+
+**El permiso de gasto lo firma el dueño.** El servidor arma el `approve`, la app comprueba que
+diga lo que el dueño pidió, lo firma en el dispositivo y lo devuelve. El servidor solo manda a la
+red lo que es exactamente un `approve` de este token, de la cuenta de la sesión para Toki, y paga
+su comisión (*fee bump*): el dueño no necesita XLM para firmar.
+
+**Bloqueo y límite diario.** El dueño bloquea una tarjeta o le fija un límite diario desde la app.
+El límite se calcula con el historial de cobros (`datos/historial.json`), así que sobrevive a un
+reinicio. El día es el de `ZONA_HORARIA` (por defecto `America/La_Paz`).
+
+## Administración
+
+Con la cabecera `X-Admin-Token`:
+
+- `POST /tarjetas {uid, cuenta?}`: registra una tarjeta. Sin cuenta, crea un cliente de testnet
+  con su permiso de gasto firmado por el servidor (sirve para probar sin la app).
+- `GET /tarjetas` y `DELETE /tarjetas/<uid>`.
+
 Hoy cobra en **XLM de testnet** (su contrato SAC). Para cobrar en USDC basta con poner su
-contrato en `TOKEN_CONTRACT`. La tarjeta se identifica por su UID; la verificación de la
-NTAG 424 DNA (SUN) viene después.
+contrato en `TOKEN_CONTRACT`; la app muestra el código que responde el contrato. La tarjeta se
+identifica por su UID; la verificación de la NTAG 424 DNA (SUN) viene después.
 
 ## Correr
 
-Todo en Docker y con los secretos en Doppler (proyecto `toki`, config `dev`):
+Todo en Docker y con los secretos en Doppler (proyecto `toki`, config `dev`). La imagen se
+construye desde la raíz del repo, porque lleva el servidor y la web:
 
 ```bash
 # Una vez: crea las cuentas de testnet (toki, comercio, cliente) y el permiso de gasto del cliente
-docker build -t toki-servidor .
+docker build -t toki-servidor -f servidor/Dockerfile .
 docker run --rm toki-servidor node src/preparar-testnet.mjs > testnet.json
 doppler secrets upload testnet.json --project toki --config dev && rm testnet.json
 
-# Servidor (puerto 8090) y túnel público, para que el terminal lo alcance desde cualquier red
+# Servidor (puerto 8090) y túnel público, para que el terminal, la web y el celular lo alcancen
+# desde cualquier red
+cd servidor
 doppler run --project toki --config dev -- docker compose --profile tunel up -d --build
 docker compose logs tunel | grep bore.pub          # dirección pública: http://bore.pub:<puerto>
+```
 
+La web queda en `http://localhost:8090` y en la dirección del túnel. El dueño de una tarjeta crea
+su cuenta ahí mismo; el comercio entra con la llave de su cuenta (`COMERCIO_SECRET`).
+
+Para levantar una segunda copia sin tocar la primera (otro puerto, otros datos):
+`PUERTO_HOST=8091 docker compose -p toki-prueba up -d --build`.
+
+```bash
 # Prueba sin terminal: cobra 1.25 y comprueba que el saldo del comercio subió
 doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC \
   -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/prueba-cobro.mjs 1.25
@@ -50,19 +103,30 @@ doppler run --project toki --config dev -- docker run --rm --network host -e COM
 
 ## Registrar una tarjeta
 
-Acerca la tarjeta: el terminal muestra «No registrada» y su UID. Luego:
+**Desde la app (lo normal).** Pide un cobro en el terminal y acerca la tarjeta nueva: el terminal
+muestra «No registrada» y su UID. En la app, «Vincular tarjeta» ofrece esa tarjeta; también se
+puede escribir el UID.
+
+**Sin la app**, con un cliente de prueba creado por el servidor:
 
 ```bash
 doppler run --project toki --config dev -- docker run --rm --network host -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/registrar-tarjeta.mjs 04:11:22:33:44:55:66
 ```
 
+Para pasar a la app una tarjeta que ya estaba registrada así, primero se quita
+(`node src/quitar-tarjeta.mjs <UID>`, con las mismas variables) y después se vincula desde la app.
+
 ## Pruebas contra testnet
 
-Tarjeta desconocida, registro, cobro, reintento sin doble cobro y límite diario, comprobados en la
-red:
+Cada prueba mira la red, no solo la respuesta del servidor.
 
 ```bash
+# El terminal: tarjeta desconocida, registro, cobro, reintento sin doble cobro y límite diario
 doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC -e TERMINAL_TOKEN -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas.mjs
+
+# La app: sesión con la cuenta, recarga, permiso firmado por el dueño, vincular, pagar, bloquear,
+# límite diario y panel del comercio
+doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_SECRET -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas-app.mjs
 ```
 
 ## Probar con el terminal simulado
@@ -84,8 +148,9 @@ Si el terminal y este PC están en la misma red, también sirve `http://<IP de e
 
 ## Pendiente
 
-- Verificar la NTAG 424 DNA (SUN) en vez de confiar en el UID.
-- HTTPS entre el terminal y el servidor (hoy el túnel de pruebas es HTTP sin cifrar).
-- Guardar los límites diarios en una base de datos (hoy viven en memoria).
+- Verificar la NTAG 424 DNA (SUN) en vez de confiar en el UID. Hasta entonces, cualquiera que
+  conozca el UID de una tarjeta sin dueño puede vincularla.
+- HTTPS entre el terminal, la app y el servidor (hoy el túnel de pruebas es HTTP sin cifrar).
 - Devolver el dinero cuando un cobro se hizo pero el terminal nunca llegó a entregar.
 - USDC en vez de XLM.
+- Recarga real desde la app (hoy solo la recarga de prueba de testnet).
