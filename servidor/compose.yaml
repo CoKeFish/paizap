@@ -1,0 +1,31 @@
+# Servidor de Toki + túnel público (para que el terminal simulado en Wokwi lo alcance).
+# Los secretos vienen de Doppler:
+#   doppler run --project toki --config dev -- docker compose up -d --build
+services:
+  servidor:
+    build: .
+    environment:
+      - TOKI_SECRET
+      - COMERCIO_PUBLIC
+      - TARJETAS
+      - TERMINAL_TOKEN
+      - ADMIN_TOKEN
+      - LIMITE_DIARIO
+      - TOKEN_CONTRACT
+    ports:
+      - "8090:8080"  # la placa real se conecta a http://<IP de este PC>:8090
+    volumes:
+      - datos:/app/datos  # tarjetas registradas
+    restart: unless-stopped
+
+  # Túnel TCP sin TLS (bore.pub): el ESP32 simulado en Wokwi no logra el TLS de otros túneles.
+  # Solo para pruebas en testnet. La URL sale en: docker compose logs tunel | grep bore.pub
+  tunel:
+    image: ekzhang/bore:0.5.2
+    command: local --local-host servidor 8080 --to bore.pub
+    depends_on:
+      - servidor
+    profiles: ["tunel"]
+
+volumes:
+  datos:
