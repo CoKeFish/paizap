@@ -18,13 +18,15 @@ services:
       - datos:/app/datos  # tarjetas registradas
     restart: unless-stopped
 
-  # Túnel TCP sin TLS (bore.pub): el ESP32 simulado en Wokwi no logra el TLS de otros túneles.
-  # Solo para pruebas en testnet. La URL sale en: docker compose logs tunel | grep bore.pub
+  # Túnel público (bore.pub, TCP sin TLS): deja el servidor en http://bore.pub:<TUNEL_PUERTO> para
+  # que el terminal lo alcance desde cualquier red, incluido el simulador Wokwi. El puerto es fijo
+  # para que la dirección grabada en el terminal no cambie. Solo para pruebas en testnet.
   tunel:
     image: ekzhang/bore:0.5.2
-    command: local --local-host servidor 8080 --to bore.pub
+    command: local --local-host servidor 8080 --to bore.pub --port ${TUNEL_PUERTO:-48123}
     depends_on:
       - servidor
+    restart: unless-stopped
     profiles: ["tunel"]
 
 volumes:

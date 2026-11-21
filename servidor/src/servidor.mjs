@@ -2,9 +2,12 @@
 // la cuenta de la tarjeta, revisa el límite diario y cobra en Stellar con el permiso de gasto.
 //
 //   POST /cobros    { id, uid, monto, sun }  cabecera X-Terminal-Token
+//   GET  /cobros/<id>                        consulta un cobro sin cobrar (cabecera X-Terminal-Token)
+//   GET  /r/<código>                         recibo: redirige a la transacción en el explorador
 //   POST /tarjetas  { uid, cuenta? }         cabecera X-Admin-Token  (sin cuenta: crea un cliente de testnet)
 //   GET  /tarjetas                           cabecera X-Admin-Token
 //   GET  /salud
+import fs from 'node:fs';
 import http from 'node:http';
 import { Keypair, RED, TOKEN, cobrar, deUnidades, permiso, saldo } from './stellar.mjs';
 import * as tarjetas from './tarjetas.mjs';
@@ -48,6 +51,22 @@ function enCola(tarea) {
 // respuesta, recibe la misma respuesta y no se cobra dos veces.
 const cobrosPorId = new Map();
 
+// Recibos: un código corto por cobro. El terminal lo muestra en un QR (en su pantalla solo cabe
+// un enlace corto) y GET /r/<código> redirige a la transacción en el explorador de Stellar.
+const ARCHIVO_RECIBOS = 'datos/recibos.json';
+const recibos = fs.existsSync(ARCHIVO_RECIBOS) ? JSON.parse(fs.readFileSync(ARCHIVO_RECIBOS, 'utf8')) : {};
+function guardarRecibo(hash) {
+  const codigo = hash.slice(0, 8);
+  recibos[codigo] = hash;
+  const codigos = Object.keys(recibos);
+  if (codigos.length > 2000) delete recibos[codigos[0]];
+  fs.mkdirSync('datos', { recursive: true });
+  fs.writeFileSync(ARCHIVO_RECIBOS, JSON.stringify(recibos));
+  return codigo;
+}
+const enlaceExplorador = (hash) =>
+  `https://stellar.expert/explorer/${RED === 'mainnet' ? 'public' : 'testnet'}/tx/${hash}`;
+
 async function procesarCobro({ uid, monto }) {
   uid = tarjetas.normalizar(uid);
   monto = String(monto ?? '');
@@ -79,6 +98,7 @@ async function procesarCobro({ uid, monto }) {
   return [200, {
     ok: true,
     hash,
+    recibo: guardarRecibo(hash),
     monto,
     permisoRestante: deUnidades(restante),
     saldoCliente: deUnidades(saldoCliente),
@@ -86,14 +106,33 @@ async function procesarCobro({ uid, monto }) {
   }];
 }
 
+// Los cobros hechos se guardan también en disco: si el servidor se reinicia y el terminal vuelve a
+// preguntar por un cobro que no pudo confirmar, recibe el resultado guardado y no se cobra otra vez.
+const ARCHIVO_COBROS = 'datos/cobros.json';
+const cobrosHechos = fs.existsSync(ARCHIVO_COBROS) ? JSON.parse(fs.readFileSync(ARCHIVO_COBROS, 'utf8')) : {};
+function guardarCobro(id, cuerpo) {
+  cobrosHechos[id] = cuerpo;
+  const ids = Object.keys(cobrosHechos);
+  if (ids.length > 5000) delete cobrosHechos[ids[0]];
+  fs.mkdirSync('datos', { recursive: true });
+  fs.writeFileSync(ARCHIVO_COBROS, JSON.stringify(cobrosHechos));
+}
+
 function cobroUnaVez(pedido) {
   const id = String(pedido.id ?? '');
   if (!id) return procesarCobro(pedido);
+  if (cobrosHechos[id]) {
+    console.log(`cobro ${id} ya estaba hecho: devuelvo la respuesta guardada`);
+    return [200, cobrosHechos[id]];
+  }
   if (!cobrosPorId.has(id)) {
     const promesa = procesarCobro(pedido);
     cobrosPorId.set(id, promesa);
     // Si falló por datos o por la red, se puede reintentar con el mismo id; si se cobró, no.
-    promesa.then(([estado]) => estado !== 200 && cobrosPorId.delete(id));
+    promesa.then(([estado, cuerpo]) => {
+      if (estado === 200) guardarCobro(id, cuerpo);
+      else cobrosPorId.delete(id);
+    });
   } else {
     console.log(`cobro ${id} repetido: devuelvo la respuesta anterior`);
   }
@@ -119,6 +158,29 @@ http.createServer(async (req, res) => {
       return responder(res, 200, { ok: true, red: RED, token: TOKEN, comercio: COMERCIO, tarjetas: tarjetas.cantidad() });
     }
 
+    const recibo = req.method === 'GET' && req.url.match(/^\/r\/([0-9a-f]{8})$/i);
+    if (recibo) {
+      const hash = recibos[recibo[1].toLowerCase()];
+      if (!hash) return responder(res, 404, { ok: false, motivo: 'recibo no encontrado' });
+      res.writeHead(302, { location: enlaceExplorador(hash) });
+      return res.end();
+    }
+
+    // Consulta de un cobro por su id, sin cobrar: la usa el terminal cuando no le llegó la respuesta.
+    const consulta = req.method === 'GET' && req.url.match(/^\/cobros\/([\w-]{3,64})$/);
+    if (consulta) {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const id = consulta[1];
+      if (cobrosHechos[id]) return responder(res, 200, cobrosHechos[id]);
+      if (cobrosPorId.has(id)) {
+        const [estado, cuerpo] = await cobrosPorId.get(id);  // todavía se está cobrando: espera el resultado
+        return responder(res, estado, cuerpo);
+      }
+      return responder(res, 404, { ok: false, motivo: 'ese cobro no llego al servidor' });
+    }
+
     if (req.method === 'POST' && req.url === '/cobros') {
       if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
         return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
@@ -126,7 +188,8 @@ http.createServer(async (req, res) => {
       const pedido = await leerJson(req);
       const inicio = Date.now();
       const [estado, cuerpo] = await cobroUnaVez(pedido);
-      console.log(`${new Date().toISOString()} cobro ${pedido.id ?? '-'} ${pedido.uid} ${pedido.monto} -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
+      const concepto = pedido.concepto ? ` [${String(pedido.concepto).slice(0, 40)}]` : '';
+      console.log(`${new Date().toISOString()} cobro ${pedido.id ?? '-'} ${pedido.uid} ${pedido.monto}${concepto} -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
       return responder(res, estado, cuerpo);
     }
 

@@ -50,6 +50,20 @@ const desconocida = uidAzar();
   comprobar('cobro con la tarjeta nueva', e1 === 200 && c1.ok, c1.hash ?? c1.motivo);
   comprobar('reintento con el mismo id no cobra dos veces', e2 === 200 && c2.hash === c1.hash && despues - antes === aUnidades('0.75'),
     `comercio +${deUnidades(despues - antes)}`);
+
+  // 3b. El terminal puede consultar un cobro sin volver a cobrar (cuando no le llegó la respuesta).
+  const cabeceras = { 'x-terminal-token': process.env.TERMINAL_TOKEN ?? '' };
+  const consulta = await fetch(`${URL_SERVIDOR}/cobros/${id}`, { headers: cabeceras });
+  const hecho = await consulta.json();
+  const inexistente = await fetch(`${URL_SERVIDOR}/cobros/no-existe-${Date.now()}`, { headers: cabeceras });
+  const despuesConsulta = await saldo(COMERCIO);
+  comprobar('consultar un cobro hecho devuelve su resultado sin cobrar', consulta.status === 200 && hecho.hash === c1.hash && despuesConsulta === despues);
+  comprobar('consultar un cobro que nunca llegó responde 404', inexistente.status === 404);
+
+  // 3c. El recibo corto redirige a la transacción en el explorador.
+  const recibo = await fetch(`${URL_SERVIDOR}/r/${c1.recibo}`, { redirect: 'manual' });
+  comprobar('el recibo redirige a la transacción en el explorador',
+    recibo.status === 302 && recibo.headers.get('location')?.endsWith(`/tx/${c1.hash}`), recibo.headers.get('location'));
 }
 
 // 4. El límite diario frena el cobro antes de llegar a la red.
