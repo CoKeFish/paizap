@@ -20,8 +20,7 @@ forma simple de cobrar y guardar valor en una moneda estable.
 1. El comercio instala un terminal Toki y entrega tarjetas a sus clientes.
 2. El dueño de la cuenta (el cliente, o sus papás si es un niño) carga saldo en USDC y autoriza a
    Toki a gastar hasta un tope, por ejemplo 100 USDC durante una semana.
-3. Para pagar, el cliente acerca la tarjeta al terminal. Los pagos chicos no piden nada más; los
-   que pasan de un monto también piden un PIN.
+3. El comercio escribe el monto en el terminal y el cliente acerca su tarjeta. Nada más.
 4. Toki cobra en USDC sobre Stellar y el comercio lo recibe al instante.
 5. Si el terminal controla una máquina, un torniquete o una puerta, la activa al confirmarse el
    pago.
@@ -31,7 +30,7 @@ forma simple de cobrar y guardar valor en una moneda estable.
 | Frente a | Toki |
 |---|---|
 | Efectivo | Sin billetes, sin cambio, sin caja que cuidar |
-| Pago con QR | El cliente no necesita celular: basta acercar la tarjeta |
+| Pago con QR | El cliente no necesita celular: basta acercar la tarjeta, como una tarjeta de bus |
 | Datáfono | Un terminal de bajo costo, sin comisión bancaria por pago |
 | Tarjeta NFC común | La tarjeta no se puede clonar y Toki nunca puede gastar más del tope autorizado |
 
@@ -60,7 +59,6 @@ políticas de límite de gasto de una cuenta inteligente, está en la hoja de ru
   firmado distinto, y el servidor lo verifica. Copiar la tarjeta no sirve para pagar.
 - **Tope garantizado por la red.** Lo máximo que se puede gastar con una tarjeta es lo que su dueño
   autorizó, y Stellar lo hace cumplir.
-- **PIN para montos altos**, como en las tarjetas sin contacto de los bancos.
 - **Bloqueo inmediato** desde el celular si la tarjeta se pierde.
 
 ## Dónde sirve
@@ -82,7 +80,8 @@ políticas de límite de gasto de una cuenta inteligente, está en la hoja de ru
  App del usuario: registro, recarga, permiso de gasto y bloqueo de la tarjeta (con Pollar)
 ```
 
-- **Terminal:** ESP32-S3, lector NFC PN532, pantalla OLED, teclado matricial, relé y buzzer. Se
+- **Terminal:** ESP32-S3, lector NFC PN532, pantalla OLED, teclado matricial para que el comercio
+  escriba el monto, relé y buzzer. Se
   conecta por Wi-Fi; donde no hay Wi-Fi, con un módulo 4G o el punto de acceso del celular del
   comercio. El cliente no necesita datos, el terminal sí.
 - **Red:** Stellar, con USDC.
@@ -98,6 +97,7 @@ políticas de límite de gasto de una cuenta inteligente, está en la hoja de ru
 - [ ] Límite diario por tarjeta y bloqueo
 - [ ] Registro y recarga con Pollar
 - [ ] Límite diario en la red con una cuenta inteligente
+- [ ] PIN opcional por tarjeta, para quien quiera una capa extra
 - [ ] Piloto con un primer comercio
 
 ---
