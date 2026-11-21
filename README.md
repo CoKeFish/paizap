@@ -11,22 +11,24 @@ ponen el límite y ven cada compra.
 ## El problema
 
 En Bolivia el QR ya es la forma normal de pagar: en 2025 se hicieron 891 millones de pagos con QR y
-la mitad fueron por menos de Bs 50 ([Asoban vía Red Uno](https://www.reduno.com.bo/economia/bolivia-consolida-el-uso-del-qr-891-millones-de-transacciones-movieron-us-51-293-millones-en-2025-202621211959)).
+casi la mitad (49,7 %) fueron por menos de Bs 50 ([Asoban vía Red Uno](https://www.reduno.com.bo/economia/bolivia-consolida-el-uso-del-qr-891-millones-de-transacciones-movieron-us-51-293-millones-en-2025-202621211959)).
 Pero el QR necesita un celular y una cuenta, y en el colegio un alumno no tiene ninguna de las dos:
 
-- **Sin celular.** Desde la gestión 2026 está prohibido usar el celular en las aulas
+- **Sin celular.** Un niño de primaria normalmente no tiene celular propio, y desde la gestión
+  2026 el celular está prohibido en las aulas
   ([Resolución Ministerial 001/2026, Los Tiempos](https://www.lostiempos.com/actualidad/pais/20260201/escolares-vuelvan-clases-celulares-inclusion-curriculo-regionalizado)).
-- **Sin cuenta.** Las cuentas para menores son recientes, para 13 a 17 años y abiertas junto con
-  los padres ([BancoSol, FinDev Gateway](https://www.findevgateway.org/es/noticias/bolivia-bancosol-lanza-cuenta-de-ahorros-100-digital-para-menores-de-13-17-anos-dentro-de)).
-  Un niño de primaria no puede pagar con QR.
+- **Sin cuenta.** Un menor necesita que sus padres le abran una cuenta, y las opciones digitales
+  son nuevas: por ejemplo, BancoSol lanzó una cuenta para chicos de 13 a 17 años dentro de su
+  billetera QR ([FinDev Gateway](https://www.findevgateway.org/es/noticias/bolivia-bancosol-lanza-cuenta-de-ahorros-100-digital-para-menores-de-13-17-anos-dentro-de)).
 
 Así que el recreo sigue en efectivo: los papás dan monedas sin saber en qué se gastan, el kiosco
 tiene que dar cambio con una fila de niños esperando, y la plata se pierde o se gasta en lo que no
 debía.
 
-A la vez, las familias bolivianas buscan ahorrar en dólares: las transacciones con activos
-virtuales crecieron más de 630% entre el primer semestre de 2024 y el de 2025, impulsadas sobre
-todo por los hogares, según el Banco Central de Bolivia
+A la vez, los dólares digitales ya son parte de la vida de muchas familias: desde que el Banco
+Central de Bolivia los permitió en junio de 2024, las transacciones con activos virtuales pasaron
+de USD 46,5 millones en el primer semestre de 2024 a USD 294 millones en el de 2025, impulsadas
+sobre todo por los hogares
 ([Los Tiempos](https://www.lostiempos.com/actualidad/economia/20260726/falta-dolares-banca-migra-criptomonedas-norma-del-bcb)).
 
 ## Cómo funciona
@@ -60,8 +62,11 @@ El modo autoservicio no necesita teclado ni a nadie atendiendo.
 Una tarjeta NFC no puede firmar transacciones de Stellar, así que Toki usa un **permiso de gasto**
 (*allowance*) del contrato del token USDC:
 
-- Los papás firman una sola vez un permiso: «Toki puede sacar de esta cuenta hasta este monto, hasta
-  este vencimiento». El permiso queda registrado en Stellar.
+- La cuenta del alumno es de la familia y la controla la billetera de los papás. Toki nunca tiene
+  esa llave.
+- Al recargar, los papás firman un permiso: «Toki puede sacar de esta cuenta hasta este monto,
+  hasta este vencimiento». El permiso queda registrado en Stellar, se va consumiendo con cada pago
+  y se renueva en la siguiente recarga (por ejemplo, cada semana).
 - En cada pago, el servidor de Toki verifica la tarjeta y mueve el monto de la cuenta del alumno a
   la del kiosco usando ese permiso. Toki firma, pero **la red no le deja pasar del tope** ni cobrar
   después del vencimiento.
@@ -79,8 +84,11 @@ Por eso el diseño tiene dos etapas:
 ## Seguridad
 
 - **Tarjetas que no se clonan.** Usamos NTAG 424 DNA: en cada toque la tarjeta genera un código
-  firmado con un contador. El servidor verifica la firma y rechaza cualquier contador que no sea
-  mayor que el último, así que copiar o repetir un código no sirve para pagar.
+  autenticado con una llave secreta (AES) y un contador. El servidor lo verifica y rechaza cualquier
+  contador que no sea mayor que el último, así que copiar la tarjeta o repetir un código no sirve.
+- **Solo terminales registrados cobran.** Si alguien leyera la tarjeta a escondidas con un celular,
+  obtendría a lo sumo un código para un pago, y no podría usarlo: el servidor solo acepta cobros de
+  terminales autenticados de kioscos registrados, y siempre dentro del límite diario.
 - **Tope garantizado por la red.** Lo máximo que se puede gastar es lo que los papás autorizaron, y
   Stellar lo hace cumplir.
 - **Bloqueo de una tarjeta** desde el celular, al instante en el servidor de Toki. Para cortar todo
@@ -101,11 +109,17 @@ Por eso el diseño tiene dos etapas:
 - **Terminal:** ESP32-S3, lector NFC PN532, pantalla OLED y buzzer. En modo caja suma un teclado
   para el monto; en modo autoservicio, un relé que activa la máquina. Componentes por menos de
   USD 40. Se conecta por Wi-Fi, o con un módulo 4G donde no hay Wi-Fi.
-- **Cobro:** cada pago se confirma en la red en unos 5 segundos. La transacción la paga Toki; el
-  alumno y el kiosco no necesitan XLM.
-- **Red:** Stellar, con USDC. El kiosco necesita una cuenta habilitada para recibir USDC.
-- **Cuentas y recarga:** [Pollar](https://pollar.xyz), con login social y comisiones pagadas por la
-  app. Los papás no manejan frases semilla ni compran XLM.
+- **Cobro:** cada pago tarda entre 5 y 10 segundos de punta a punta, incluida la confirmación en la
+  red. Toki paga las comisiones y patrocina las reservas de las cuentas, así que ni la familia ni
+  el kiosco necesitan XLM. El servidor usa varias cuentas de envío en paralelo para que muchos
+  terminales cobren a la vez en la hora pico del recreo.
+- **Red:** Stellar, con USDC de Circle. En testnet, el emisor es
+  `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`. El kiosco necesita una cuenta
+  habilitada para recibir USDC.
+- **Errores que el terminal muestra:** saldo insuficiente, permiso vencido o agotado, límite
+  diario alcanzado, tarjeta bloqueada y sin conexión.
+- **Cuentas y recarga:** planeamos usar [Pollar](https://pollar.xyz), un SDK de billeteras
+  embebidas con login social, para que los papás no manejen frases semilla.
 
 ## Hoja de ruta
 
@@ -113,7 +127,7 @@ Por eso el diseño tiene dos etapas:
 - [ ] Firmware del terminal: modo caja (monto con teclado) y modo autoservicio (precio fijo y relé)
 - [ ] Verificación de tarjetas NTAG 424 DNA con contador
 - [ ] Límite diario por tarjeta y bloqueo
-- [ ] App de los papás con Pollar: cuenta, recarga y permiso de gasto
+- [ ] App de los papás: cuenta, recarga y permiso de gasto (con Pollar)
 - [ ] Contrato de Toki en Soroban: kioscos permitidos y límite diario en la red
 - [ ] Piloto en un colegio de Santa Cruz
 
