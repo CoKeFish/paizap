@@ -2,7 +2,7 @@
 // tarjetas y movimientos.
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowDownLeft, Check, CreditCard, Lock, Settings, ShieldCheck, X } from 'lucide-react'
+import { ArrowDownLeft, Check, CreditCard, Lock, QrCode, Settings, ShieldCheck, X } from 'lucide-react'
 import { mensajeDe, pedir, type Cuenta, type Movimiento, type Tarjeta, type TarjetaNueva } from '../lib/api'
 import { firmarPermiso } from '../lib/billetera'
 import { cuando, cuentaCorta, diasHasta, fechaLarga, hace, monto, motivoClaro } from '../lib/formato'
@@ -113,11 +113,17 @@ export function Billetera() {
         {cuenta.tarjetas.length === 0 ? (
           <p className="text-sm text-suave">Todavía no tienes tarjetas. Vincula una para pagar con un toque.</p>
         ) : (
-          <ul className="divide-y divide-borde">
-            {cuenta.tarjetas.map((tarjeta) => (
-              <FilaDeTarjeta key={tarjeta.uid} tarjeta={tarjeta} limitePorDefecto={cuenta.limiteDiario} moneda={moneda} alCambiar={cargar} editar={() => setAbierta({ tarjeta })} />
-            ))}
-          </ul>
+          <>
+            <ul className="divide-y divide-borde">
+              {cuenta.tarjetas.map((tarjeta) => (
+                <FilaDeTarjeta key={tarjeta.uid} tarjeta={tarjeta} limitePorDefecto={cuenta.limiteDiario} moneda={moneda} alCambiar={cargar} editar={() => setAbierta({ tarjeta })} />
+              ))}
+            </ul>
+            <p className="mt-3 flex items-start gap-2 border-t border-borde pt-3 text-sm text-suave">
+              <QrCode className="mt-0.5 size-4 shrink-0" aria-hidden />
+              También pagas sin la tarjeta: escanea con la cámara el QR que muestra el terminal.
+            </p>
+          </>
         )}
       </Cuadro>
 
@@ -199,7 +205,7 @@ function FilaDeTarjeta({ tarjeta, limitePorDefecto, moneda, alCambiar, editar }:
           <Interruptor activo={tarjeta.bloqueada} alCambiar={bloquear} etiqueta={`Bloquear ${tarjeta.nombre || tarjeta.uid}`} deshabilitado={ocupado} />
           <Lock className="size-4 text-suave" aria-hidden /> Bloquear
         </label>
-        <Boton variante="texto" onClick={editar}>Nombre y límite</Boton>
+        <Boton variante="texto" onClick={editar}>Nombre, límite y PIN</Boton>
       </div>
     </li>
   )
@@ -231,11 +237,17 @@ function FilaDeMovimiento({ m, moneda, tarjeta }: { m: Movimiento; moneda: strin
   }
   return (
     <li className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-      {m.ok ? <CreditCard className="size-5 shrink-0 text-suave" aria-hidden /> : <X className="size-5 shrink-0 text-error" aria-hidden />}
+      {!m.ok ? (
+        <X className="size-5 shrink-0 text-error" aria-hidden />
+      ) : m.medio === 'qr' ? (
+        <QrCode className="size-5 shrink-0 text-suave" aria-hidden />
+      ) : (
+        <CreditCard className="size-5 shrink-0 text-suave" aria-hidden />
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{m.ok ? m.concepto || 'Pago' : motivoClaro(m.motivo)}</p>
         <p className="truncate text-xs text-suave">
-          {tarjeta} · {cuando(m.fecha)}
+          {tarjeta}{m.medio === 'qr' && ', con QR'} · {cuando(m.fecha)}
           {m.recibo && <> · <Link className="text-acento hover:underline" to={`/recibo/${m.recibo}`}>Recibo</Link></>}
         </p>
       </div>
@@ -416,6 +428,20 @@ function EditarTarjeta({ tarjeta, limitePorDefecto, moneda, alCerrar, alTerminar
   const [ocupado, setOcupado] = useState(false)
   const [confirmar, setConfirmar] = useState(false)
   const [error, setError] = useState('')
+  // El PIN recién creado: el servidor lo entrega una sola vez y guarda solo su hash.
+  const [acceso, setAcceso] = useState<{ codigo: string; pin: string } | null>(null)
+
+  const crearPin = async () => {
+    setOcupado(true)
+    setError('')
+    try {
+      setAcceso(await pedir<{ codigo: string; pin: string }>('POST', `/api/tarjetas/${tarjeta.uid}/pin`))
+    } catch (fallo) {
+      setError(mensajeDe(fallo))
+    } finally {
+      setOcupado(false)
+    }
+  }
 
   const hacer = async (tarea: () => Promise<unknown>) => {
     setOcupado(true)
@@ -448,6 +474,37 @@ function EditarTarjeta({ tarjeta, limitePorDefecto, moneda, alCerrar, alTerminar
       />
       {error && <Aviso tono="error">{error}</Aviso>}
       <Boton ancho ocupado={ocupado} onClick={guardar}>Guardar cambios</Boton>
+
+      <div className="space-y-2 border-t border-borde pt-4">
+        <p className="text-sm font-medium">Pagar con el QR del terminal</p>
+        <p className="text-sm text-suave">
+          Con tu billetera pagas el QR sin PIN. Para pagar desde un celular que no la tiene, la página del QR pide
+          el código de cuenta y un PIN.
+        </p>
+        {acceso ? (
+          <div className="rounded-lg bg-fondo p-3">
+            <dl className="cifras grid grid-cols-2 gap-2 text-center">
+              <div>
+                <dt className="text-xs text-suave">Código de cuenta</dt>
+                <dd className="text-2xl font-bold">{acceso.codigo}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-suave">PIN</dt>
+                <dd className="text-2xl font-bold">{acceso.pin}</dd>
+              </div>
+            </dl>
+            <p className="mt-2 text-center text-xs text-suave">Anota el PIN: no se vuelve a mostrar. Si lo olvidas, crea otro.</p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm">
+              {tarjeta.codigo ? <>Código de cuenta <span className="cifras font-semibold">{tarjeta.codigo}</span></> : 'Todavía sin PIN'}
+            </p>
+            <Boton variante="secundario" disabled={ocupado} onClick={crearPin}>{tarjeta.tienePin ? 'Cambiar el PIN' : 'Crear un PIN'}</Boton>
+          </div>
+        )}
+      </div>
+
       <div className="border-t border-borde pt-4">
         {confirmar ? (
           <div className="space-y-2">

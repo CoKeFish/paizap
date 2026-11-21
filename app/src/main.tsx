@@ -1,14 +1,36 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter, Route, Routes } from 'react-router'
+import { HashRouter, Route, Routes, useNavigate } from 'react-router'
+import { App } from '@capacitor/app'
 import './index.css'
+import { esNativa } from './lib/api'
 import { ProveedorDeSesion, useSesion } from './lib/sesion'
 import { Aviso, Boton, Cargando } from './components/ui'
 import { DireccionDelServidor } from './pages/Ajustes'
 import { Billetera } from './pages/Billetera'
 import { Entrada } from './pages/Entrada'
+import { Pagar } from './pages/Pagar'
 import { Panel } from './pages/Panel'
 import { Recibo } from './pages/Recibo'
+
+/**
+ * En Android, la página que abre el QR de pago ofrece «Abrir en la app»: ese enlace
+ * (toki://pagar/<id>) llega aquí y lleva a la pantalla de pago.
+ */
+function EnlacesDeLaApp() {
+  const navegar = useNavigate()
+  useEffect(() => {
+    if (!esNativa) return
+    const escucha = App.addListener('appUrlOpen', ({ url }) => {
+      const pago = url.match(/^toki:\/\/pagar\/([\w-]{3,64})$/)
+      if (pago) navegar(`/pagar/${pago[1]}`)
+    })
+    return () => {
+      escucha.then((e) => e.remove())
+    }
+  }, [navegar])
+  return null
+}
 
 /** La pantalla principal depende de la sesión: quien entra con la cuenta del comercio ve el panel. */
 function Inicio() {
@@ -35,8 +57,10 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ProveedorDeSesion>
       <HashRouter>
+        <EnlacesDeLaApp />
         <Routes>
           <Route path="/recibo/:codigo" element={<Recibo />} />
+          <Route path="/pagar/:id" element={<Pagar />} />
           <Route path="*" element={<Inicio />} />
         </Routes>
       </HashRouter>

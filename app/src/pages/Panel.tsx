@@ -61,6 +61,13 @@ export function Panel() {
 
       {error && <Aviso tono="error">{error}</Aviso>}
 
+      {panel.esperando.length > 0 && (
+        <Aviso tono="aviso">
+          En el terminal: esperando el pago de {monto(panel.esperando[0].monto)} {moneda}
+          {panel.esperando[0].concepto && ` (${panel.esperando[0].concepto})`}, con tarjeta o con QR.
+        </Aviso>
+      )}
+
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Dato titulo="Vendido hoy" valor={`${monto(hoy.total)} ${moneda}`} destacado />
         <Dato titulo="Cobros aprobados" valor={String(hoy.aprobados)} detalle={hoy.aprobados ? `Promedio ${monto(promedio)}` : undefined} />
@@ -155,7 +162,9 @@ function FilaDeCobro({ c, nuevo }: { c: Movimiento; nuevo: boolean }) {
       <p className="cifras w-12 shrink-0 text-sm text-suave sm:w-24">{cuando(c.fecha)}</p>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{c.concepto || 'Monto escrito en caja'}</p>
-        <p className="truncate font-mono text-xs text-suave">{c.uid}</p>
+        <p className="truncate text-xs text-suave">
+          <span className="font-mono">{c.uid}</span>{c.medio === 'qr' && ' · con QR'}
+        </p>
       </div>
       {c.ok ? (
         <>

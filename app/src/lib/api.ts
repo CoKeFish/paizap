@@ -26,9 +26,12 @@ export const faltaServidor = () => esNativa && !servidor()
 
 export class ErrorDeServidor extends Error {
   estado: number
-  constructor(estado: number, mensaje: string) {
+  /** El motivo tal como lo mandó el servidor (sin tildes, para la pantalla del terminal). */
+  motivo: string
+  constructor(estado: number, mensaje: string, motivo = '') {
     super(mensaje)
     this.estado = estado
+    this.motivo = motivo
   }
 }
 
@@ -40,6 +43,7 @@ export interface Info {
   token: string
   toki: string
   comercio: string
+  comercioNombre: string
   limiteDiario: number
   recargaPrueba: string | null
   explorador: string
@@ -54,6 +58,8 @@ export interface Movimiento {
   uid?: string
   monto: string
   concepto: string
+  /** Cómo se pagó: acercando la tarjeta o escaneando el QR del terminal. */
+  medio?: 'tarjeta' | 'qr'
   ok: boolean
   motivo?: string
   recibo?: string
@@ -66,6 +72,9 @@ export interface Tarjeta {
   bloqueada: boolean
   limiteDiario: number | null
   gastadoHoy: string
+  /** Código de cuenta para pagar con el QR desde un celular sin la billetera (con el PIN). */
+  codigo: string | null
+  tienePin: boolean
 }
 
 export interface Cuenta {
@@ -101,9 +110,30 @@ export interface Panel {
     horaActual: number
   }
   cobros: Movimiento[]
+  /** Cobros que el terminal tiene en pantalla esperando el pago (tarjeta o QR). */
+  esperando: { id: string; monto: string; concepto: string; fecha: string }[]
   terminal: { ultimoContacto: string | null }
   tarjetasNuevas: TarjetaNueva[]
   tarjetasRegistradas: number
+}
+
+/** Un cobro que el terminal dejó listo para pagar con el QR de su pantalla. */
+export interface Pedido {
+  id: string
+  estado: 'pendiente' | 'pagado' | 'vencido'
+  monto: string | null
+  concepto: string
+  moneda: string
+  comercio: string
+  comercioNombre: string
+}
+
+export interface ResultadoDePago {
+  hash: string
+  recibo: string
+  saldoCliente: string | null
+  permisoRestante: string | null
+  hoyRestante: string
 }
 
 export interface Recibo {
@@ -143,13 +173,14 @@ async function pedirSinSesion<T>(metodo: string, ruta: string, cuerpo?: unknown,
   }
   if (!respuesta.ok || datos.ok === false) {
     const motivo = datos.motivo ?? `el servidor respondió ${respuesta.status}`
-    throw new ErrorDeServidor(respuesta.status, motivo.charAt(0).toUpperCase() + motivo.slice(1) + '.')
+    throw new ErrorDeServidor(respuesta.status, motivo.charAt(0).toUpperCase() + motivo.slice(1) + '.', datos.motivo)
   }
   return datos as T
 }
 
 export const leerInfo = () => pedirSinSesion<Info>('GET', '/api/info')
 export const leerRecibo = (codigo: string) => pedirSinSesion<Recibo>('GET', `/api/recibos/${codigo}`)
+export const leerPedido = (id: string) => pedirSinSesion<Pedido>('GET', `/api/pedidos/${id}`)
 
 /** Abre sesión: pide el reto, lo firma con la llave de la cuenta y recibe la sesión. */
 export async function abrirSesion(llave: Keypair, red: string): Promise<{ cuenta: string; rol: Rol }> {

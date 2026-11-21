@@ -47,3 +47,15 @@ export function motivoClaro(motivo: string | undefined): string {
   if (motivo === 'tarjeta no registrada') return 'Tarjeta sin dueño'
   return motivo.charAt(0).toUpperCase() + motivo.slice(1)
 }
+
+/** Por qué no salió un pago con el QR, dicho a quien está pagando. */
+export function motivoDePago(motivo: string): string {
+  if (motivo.startsWith('supera el limite diario')) return 'Con este pago pasas el límite diario de la tarjeta.'
+  if (motivo.startsWith('la red rechazo')) return 'No alcanza tu saldo o tu tope de gasto.'
+  if (motivo.startsWith('monto mayor')) return 'El monto supera el máximo por pago.'
+  if (motivo === 'tarjeta bloqueada') return 'Esa tarjeta está bloqueada.'
+  if (motivo === 'este cobro ya esta pagado') return 'Este cobro ya está pagado.'
+  if (motivo === 'este cobro ya no esta disponible') return 'Este cobro ya no está disponible. Pide en la caja que lo generen de nuevo.'
+  if (motivo === 'este cobro ya se esta pagando') return 'Alguien más ya está pagando este cobro.'
+  return motivo.charAt(0).toUpperCase() + motivo.slice(1) + '.'
+}
