@@ -16,6 +16,7 @@ services:
       - LIMITE_DIARIO
       - TOKEN_CONTRACT
       - ZONA_HORARIA
+      - COMERCIO_NOMBRE  # el nombre que ve quien paga con el QR
     ports:
       - "${PUERTO_HOST:-8090}:8080"  # la placa real se conecta a http://<IP de este PC>:8090
     volumes:

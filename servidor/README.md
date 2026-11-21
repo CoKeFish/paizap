@@ -7,7 +7,8 @@ tope que autorizó el dueño de la cuenta.
 ```
 Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(toki, cliente, comercio, monto)──► Stellar
                                            ▲
-Web y app del celular ──/api/…─────────────┘   billetera del dueño y panel del comercio
+Web y app del celular ──/api/…─────────────┤   billetera del dueño y panel del comercio
+Celular que escanea el QR ──/p/<id>────────┘   paga el mismo cobro sin la tarjeta
 ```
 
 La misma dirección atiende al terminal, a la web y a la app de Android. La web es la compilación
@@ -19,7 +20,9 @@ de [`app/`](../app/README.md), que va dentro de la imagen del servidor.
   bloqueo y el límite diario y cobra. Responde `{ok, hash, recibo, permisoRestante, saldoCliente,
   hoyRestante}` o `{ok:false, motivo}`.
 - `GET /cobros/<id>` con la misma cabecera: consulta un cobro sin cobrar. Lo usa el terminal
-  cuando se cayó la conexión y no le llegó la respuesta.
+  cuando se cayó la conexión y no le llegó la respuesta, y para enterarse de un pago con QR.
+- `POST /pedidos {id, monto, concepto}` y `POST /pedidos/<id>/cancelar`: deja un cobro listo para
+  pagar con el QR de la pantalla, o lo retira. Ver «Pago con QR».
 - `GET /r/<recibo>`: el enlace corto que el terminal muestra en el QR. Lleva al recibo de Toki
   (monto, producto, fecha y enlace a la transacción en el explorador de Stellar).
 - `GET /salud`: red, token y comercio.
@@ -28,6 +31,27 @@ Cada cobro lleva un `id`: si el terminal reintenta porque no le llegó la respue
 misma y no se cobra dos veces. Los cobros hechos y los recibos se guardan en el volumen `datos`,
 así que eso vale aunque el servidor se reinicie. Una tarjeta no registrada se rechaza con su UID,
 que el terminal muestra en pantalla.
+
+## Pago con QR
+
+Mientras espera el pago, el terminal deja el cobro en el servidor (`POST /pedidos`) y muestra un
+QR con `http://<servidor>/p/<id>`. El id del pedido es el mismo id del cobro: se pague acercando
+la tarjeta o escaneando el QR, se cobra una sola vez, y el terminal se entera preguntando por
+`GET /cobros/<id>`. Un pedido vale 5 minutos o hasta que el terminal lo cancela.
+
+Quien escanea el QR paga con la cuenta de una tarjeta suya, con su mismo permiso de gasto, su
+bloqueo y su límite diario:
+
+- **Con la billetera de Toki** (`POST /api/pedidos/<id>/pagar {uid}`, con sesión): la firma de la
+  cuenta ya prueba quién paga, así que no hace falta PIN. La página `/p/<id>` pasa sola a la
+  billetera si está en ese navegador, y en Android ofrece abrir la app (`toki://pagar/<id>`).
+- **Sin la billetera** (`POST /p/<id>/pagar {codigo, pin}`): la página `/p/<id>` es liviana, no
+  depende de la web y pide el código de cuenta (6 dígitos) y el PIN (4 dígitos) de la tarjeta.
+  Del PIN se guarda solo su hash; tras 5 intentos fallidos, el código queda bloqueado 10 minutos.
+
+El PIN lo crea el dueño desde la app (`POST /api/tarjetas/<uid>/pin`) y se muestra una sola vez.
+Las tarjetas registradas sin la app lo reciben al registrarlas, y `POST /tarjetas/pin {uid}`
+(administración) entrega uno nuevo.
 
 ## Lo que usa la app (web y celular)
 
@@ -46,8 +70,11 @@ llega al servidor.
 | `GET /api/tarjetas/nuevas` | Tarjetas sin dueño que el terminal vio en los últimos minutos |
 | `POST /api/tarjetas {uid, nombre}` | Vincular una tarjeta a mi cuenta |
 | `PATCH /api/tarjetas/<uid> {nombre, bloqueada, limiteDiario}` · `DELETE` | Nombre, bloqueo y límite diario; desvincular |
-| `GET /api/movimientos` | Cobros de mis tarjetas, recargas y permisos |
-| `GET /api/panel` | Ventas de hoy en vivo. Solo para la cuenta del comercio |
+| `POST /api/tarjetas/<uid>/pin` | PIN nuevo para pagar con el QR desde un celular sin la billetera |
+| `GET /api/pedidos/<id>` | Datos de un cobro que espera pago (sin sesión) |
+| `POST /api/pedidos/<id>/pagar {uid}` | Pagar ese cobro con una tarjeta mía, sin acercarla |
+| `GET /api/movimientos` | Cobros de mis tarjetas (con tarjeta o con QR), recargas y permisos |
+| `GET /api/panel` | Ventas de hoy en vivo y el cobro en espera. Solo para la cuenta del comercio |
 | `GET /api/recibos/<código>` | Datos de un recibo (sin sesión) |
 
 **El permiso de gasto lo firma el dueño.** El servidor arma el `approve`, la app comprueba que
@@ -64,7 +91,9 @@ reinicio. El día es el de `ZONA_HORARIA` (por defecto `America/La_Paz`).
 Con la cabecera `X-Admin-Token`:
 
 - `POST /tarjetas {uid, cuenta?}`: registra una tarjeta. Sin cuenta, crea un cliente de testnet
-  con su permiso de gasto firmado por el servidor (sirve para probar sin la app).
+  con su permiso de gasto firmado por el servidor (sirve para probar sin la app). Responde con el
+  código de cuenta y el PIN para pagar con el QR.
+- `POST /tarjetas/pin {uid}`: PIN nuevo para esa tarjeta.
 - `GET /tarjetas` y `DELETE /tarjetas/<uid>`.
 
 Hoy cobra en **XLM de testnet** (su contrato SAC). Para cobrar en USDC basta con poner su
@@ -90,7 +119,8 @@ docker compose logs tunel | grep bore.pub          # dirección pública: http:/
 ```
 
 La web queda en `http://localhost:8090` y en la dirección del túnel. El dueño de una tarjeta crea
-su cuenta ahí mismo; el comercio entra con la llave de su cuenta (`COMERCIO_SECRET`).
+su cuenta ahí mismo; el comercio entra con la llave de su cuenta (`COMERCIO_SECRET`). El nombre
+del comercio que ve quien paga con el QR sale de `COMERCIO_NOMBRE`.
 
 Para levantar una segunda copia sin tocar la primera (otro puerto, otros datos):
 `PUERTO_HOST=8091 docker compose -p toki-prueba up -d --build`.
@@ -121,11 +151,12 @@ Para pasar a la app una tarjeta que ya estaba registrada así, primero se quita
 Cada prueba mira la red, no solo la respuesta del servidor.
 
 ```bash
-# El terminal: tarjeta desconocida, registro, cobro, reintento sin doble cobro y límite diario
+# El terminal: tarjeta desconocida, registro, cobro, reintento sin doble cobro, pago con QR
+# (código y PIN) y límite diario
 doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC -e TERMINAL_TOKEN -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas.mjs
 
-# La app: sesión con la cuenta, recarga, permiso firmado por el dueño, vincular, pagar, bloquear,
-# límite diario y panel del comercio
+# La app: sesión con la cuenta, recarga, permiso firmado por el dueño, vincular, pagar con la
+# tarjeta y con el QR, PIN, bloquear, límite diario y panel del comercio
 doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_SECRET -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas-app.mjs
 ```
 

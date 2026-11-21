@@ -5,13 +5,22 @@
 // permiso de gasto.
 //   POST /cobros    { id, uid, monto, sun, concepto }
 //   GET  /cobros/<id>                        consulta un cobro sin cobrar
+//   POST /pedidos   { id, monto, concepto }  deja un cobro listo para pagar con el QR
+//   POST /pedidos/<id>/cancelar              lo cancela
 //   GET  /r/<código>                         recibo: el enlace corto del QR del terminal
+//
+// El celular del cliente, al escanear el QR de pago del terminal (sin sesión):
+//   GET  /p/<id>                             página de pago
+//   POST /p/<id>/pagar { codigo, pin }       paga con el código de cuenta y el PIN
 //
 // La app, web y celular (sesión abierta con la cuenta Stellar, ver sesiones.mjs):
 //   GET  /api/info                           red, moneda y cuentas de Toki y del comercio
 //   GET  /api/sesion/reto?cuenta=G...        reto para firmar
 //   POST /api/sesion { reto }                reto firmado -> sesión
 //   GET  /api/recibos/<código>               datos de un recibo
+//   GET  /api/pedidos/<id>                   datos de un cobro que espera pago
+//   POST /api/pedidos/<id>/pagar { uid }     lo paga con una tarjeta mía, sin acercarla
+//   POST /api/tarjetas/<uid>/pin             PIN nuevo para pagar con el QR sin la app
 //   GET  /api/cuenta                         saldo, permiso de gasto, tarjetas y movimientos
 //   POST /api/cuenta/recarga                 recarga de prueba (solo testnet)
 //   POST /api/permiso/preparar { monto, dias }   arma el permiso de gasto para firmarlo en la app
@@ -24,6 +33,7 @@
 //
 // Administración (cabecera X-Admin-Token):
 //   POST /tarjetas  { uid, cuenta? }         sin cuenta: crea un cliente de testnet
+//   POST /tarjetas/pin { uid }               PIN nuevo para pagar con el QR
 //   GET  /tarjetas  ·  DELETE /tarjetas/<uid>
 //
 //   GET  /salud
@@ -32,6 +42,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import * as estaticos from './estaticos.mjs';
 import * as historial from './historial.mjs';
+import { paginaPago } from './pagina-pago.mjs';
 import * as sesiones from './sesiones.mjs';
 import {
   Keypair, RED, TOKEN, aUnidades, cobrar, cuentaExiste, deUnidades, enviarFirmada, fondearTestnet,
@@ -56,6 +67,7 @@ const MONTO_MAXIMO = Number(process.env.MONTO_MAXIMO || 100);
 const RECARGA_PRUEBA = process.env.RECARGA_PRUEBA || '20';
 const PERMISO_MAXIMO = Number(process.env.PERMISO_MAXIMO || 1000);
 const PERMISO_DIAS_MAXIMO = 90;
+const NOMBRE_COMERCIO = process.env.COMERCIO_NOMBRE || 'Comercio de prueba';
 const PUERTO = Number(process.env.PUERTO || 8080);
 
 tarjetas.cargar(JSON.parse(process.env.TARJETAS || '{}'));
@@ -126,10 +138,12 @@ function leerSaldoComercio(forzar = false) {
   return saldoComercio.valor;
 }
 
-async function procesarCobro({ id, uid, monto, concepto }) {
+// `medio` dice cómo se pagó: acercando la tarjeta ("tarjeta") o escaneando el QR ("qr").
+async function procesarCobro({ id, uid, monto, concepto, medio }) {
   uid = tarjetas.normalizar(uid);
   monto = String(monto ?? '');
   concepto = String(concepto ?? '').slice(0, 40);
+  medio = medio === 'qr' ? 'qr' : 'tarjeta';
   const valor = Number(monto);
   if (!uid || !/^\d+(\.\d{1,7})?$/.test(monto) || !(valor > 0)) {
     return [400, { ok: false, motivo: 'datos incompletos' }];
@@ -137,7 +151,7 @@ async function procesarCobro({ id, uid, monto, concepto }) {
   if (valor > MONTO_MAXIMO) return [400, { ok: false, motivo: `monto mayor a ${MONTO_MAXIMO}` }];
 
   const rechazar = (estado, motivo, cuenta, extra = {}) => {
-    historial.anotar({ id, uid, cuenta, monto, concepto, ok: false, motivo });
+    historial.anotar({ id, uid, cuenta, monto, concepto, medio, ok: false, motivo });
     return [estado, { ok: false, motivo, ...extra }];
   };
 
@@ -163,7 +177,7 @@ async function procesarCobro({ id, uid, monto, concepto }) {
       return rechazar(402, 'la red rechazo el cobro (saldo o permiso)', tarjeta.cuenta);
     }
     const recibo = guardarRecibo(hash);
-    historial.anotar({ id, uid, cuenta: tarjeta.cuenta, monto, concepto, ok: true, hash, recibo });
+    historial.anotar({ id, uid, cuenta: tarjeta.cuenta, monto, concepto, medio, ok: true, hash, recibo });
     return [200, { ok: true, hash, recibo, monto, cuenta: tarjeta.cuenta, limite }];
   });
   if (estado !== 200) return [estado, cuerpo];
@@ -223,12 +237,69 @@ function cobroUnaVez(pedido) {
   return cobrosPorId.get(id);
 }
 
+// ---- Pago con QR ----
+
+// Pedidos: cobros que el terminal deja listos para pagar también con el QR de su pantalla. El id
+// del pedido es el mismo id del cobro, así que se pague con la tarjeta o con el QR se cobra una
+// sola vez.
+const pedidos = new Map(); // id -> { monto, concepto, creado, cancelado, pagadoPor }
+const PEDIDO_VIGENCIA_MS = 5 * 60 * 1000;
+function pedidoVigente(id) {
+  const pedido = pedidos.get(id);
+  if (!pedido || pedido.cancelado || Date.now() - pedido.creado > PEDIDO_VIGENCIA_MS) return null;
+  return pedido;
+}
+
+/** Los cobros que el terminal tiene en espera de pago, para el panel del comercio. */
+function pedidosEnEspera() {
+  const lista = [];
+  for (const [id, pedido] of pedidos) {
+    if (pedidoVigente(id) && !cobrosHechos[id]) {
+      lista.push({ id, monto: pedido.monto, concepto: pedido.concepto, fecha: new Date(pedido.creado).toISOString() });
+    }
+  }
+  return lista.reverse();
+}
+
+// Paga un pedido con la cuenta de una tarjeta, sin acercar la tarjeta: desde la página del QR
+// (código de cuenta y PIN) o desde la app (sesión de la cuenta). Usa el mismo permiso de gasto,
+// el mismo bloqueo y el mismo límite diario que la tarjeta.
+async function pagarPedido(id, uid) {
+  const pedido = pedidoVigente(id);
+  if (!pedido) {
+    return [410, { ok: false, motivo: cobrosHechos[id] ? 'este cobro ya esta pagado' : 'este cobro ya no esta disponible' }];
+  }
+  // Si otra persona ya lo está pagando (con su tarjeta o desde otro celular), a esta no se le
+  // muestra el resultado de aquella.
+  if ((cobrosHechos[id] || cobrosPorId.has(id)) && pedido.pagadoPor !== uid) {
+    return [409, { ok: false, motivo: 'este cobro ya se esta pagando' }];
+  }
+  pedido.pagadoPor = uid;
+  const inicio = Date.now();
+  const [estado, cuerpo] = await cobroUnaVez({ id, uid, monto: pedido.monto, concepto: pedido.concepto, medio: 'qr' });
+  if (estado !== 200) pedido.pagadoPor = undefined;
+  console.log(`${new Date().toISOString()} cobro por QR ${id} ${uid} ${pedido.monto}${pedido.concepto ? ` [${pedido.concepto}]` : ''} -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
+  return [estado, cuerpo];
+}
+
+// Los motivos del cobro van sin tildes para la pantalla del terminal; en la página se dicen bien.
+function motivoParaPagina(motivo = '') {
+  if (motivo.startsWith('supera el limite diario')) return 'Con este pago superas tu límite diario.';
+  if (motivo.startsWith('la red rechazo')) return 'No hay saldo o permiso suficiente en tu cuenta.';
+  if (motivo.startsWith('monto mayor')) return 'El monto supera el máximo por pago.';
+  if (motivo === 'tarjeta bloqueada') return 'Tu tarjeta está bloqueada.';
+  if (motivo === 'este cobro ya esta pagado') return 'Este cobro ya está pagado.';
+  if (motivo === 'este cobro ya no esta disponible') return 'Este cobro ya no está disponible.';
+  if (motivo === 'este cobro ya se esta pagando') return 'Este cobro ya se está pagando.';
+  return motivo || 'No se pudo cobrar.';
+}
+
 // ---- Lo que ve la app ----
 
 // Un movimiento, como lo ve el dueño de la cuenta o el comercio.
 const movimiento = (c) => ({
   n: c.n, fecha: c.fecha, tipo: c.tipo ?? 'cobro', uid: c.uid, monto: c.monto, concepto: c.concepto ?? '',
-  ok: c.ok, motivo: c.motivo, recibo: c.recibo, hash: c.hash,
+  medio: c.medio ?? 'tarjeta', ok: c.ok, motivo: c.motivo, recibo: c.recibo, hash: c.hash,
 });
 
 async function datosDeCuenta(cuenta) {
@@ -271,6 +342,7 @@ function datosDelPanel() {
       horaActual: hoy.horaActual,
     },
     cobros: historial.ultimos(40, (c) => !c.tipo).map(movimiento),
+    esperando: pedidosEnEspera(),
     terminal: { ultimoContacto: contactoTerminal },
     tarjetasNuevas: tarjetasNuevas(),
     tarjetasRegistradas: tarjetas.cantidad(),
@@ -369,7 +441,7 @@ async function atenderApp(req, res, ruta, consulta) {
   if (metodo === 'GET' && ruta === '/api/info') {
     return responder(res, 200, {
       ok: true, red: RED, moneda: await leerMoneda(), token: TOKEN, toki: toki.publicKey(), comercio: COMERCIO,
-      limiteDiario: LIMITE_DIARIO, recargaPrueba: RED === 'mainnet' ? null : RECARGA_PRUEBA,
+      comercioNombre: NOMBRE_COMERCIO, limiteDiario: LIMITE_DIARIO, recargaPrueba: RED === 'mainnet' ? null : RECARGA_PRUEBA,
       explorador: enlaceExplorador('').replace(/\/tx\/$/, ''),
     });
   }
@@ -398,9 +470,31 @@ async function atenderApp(req, res, ruta, consulta) {
     });
   }
 
+  // Un cobro que espera pago: lo que muestra la app antes de pagar.
+  const dePedido = ruta.match(/^\/api\/pedidos\/([\w-]{3,64})(\/pagar)?$/);
+  if (dePedido && !dePedido[2] && metodo === 'GET') {
+    const id = dePedido[1];
+    const pedido = pedidos.get(id);
+    return responder(res, 200, {
+      ok: true, id, estado: cobrosHechos[id] ? 'pagado' : pedidoVigente(id) ? 'pendiente' : 'vencido',
+      monto: pedido?.monto ?? null, concepto: pedido?.concepto ?? '', moneda: await leerMoneda(),
+      comercio: COMERCIO, comercioNombre: NOMBRE_COMERCIO,
+    });
+  }
+
   // De aquí en adelante hace falta una sesión.
   const cuenta = sesiones.cuentaDe(req);
   if (!cuenta) return responder(res, 401, { ok: false, motivo: 'sesion vencida' });
+
+  // Pagar un pedido desde la app: la sesión prueba que la cuenta es de quien paga, así que no
+  // hace falta PIN. Se cobra con una de sus tarjetas (su bloqueo y su límite diario).
+  if (dePedido && dePedido[2] && metodo === 'POST') {
+    const uid = tarjetas.normalizar((await leerJson(req)).uid);
+    if (tarjetas.buscar(uid)?.cuenta !== cuenta) {
+      return responder(res, 404, { ok: false, motivo: 'esa tarjeta no es de esta cuenta' });
+    }
+    return responder(res, ...(await pagarPedido(dePedido[1], uid)));
+  }
 
   if (metodo === 'GET' && ruta === '/api/cuenta') return responder(res, 200, { ok: true, ...(await datosDeCuenta(cuenta)) });
 
@@ -428,6 +522,14 @@ async function atenderApp(req, res, ruta, consulta) {
     if (error === 'ocupada') return responder(res, 409, { ok: false, motivo: 'esa tarjeta ya es de otra cuenta' });
     console.log(`tarjeta ${tarjeta.uid} vinculada a ${cuenta}`);
     return responder(res, 200, { ok: true, tarjeta });
+  }
+
+  // PIN nuevo para pagar con el QR desde un celular sin la app. Se muestra una sola vez.
+  const pinDeTarjeta = metodo === 'POST' && ruta.match(/^\/api\/tarjetas\/([0-9A-Fa-f:%-]{8,40})\/pin$/);
+  if (pinDeTarjeta) {
+    const acceso = tarjetas.nuevoPin(decodeURIComponent(pinDeTarjeta[1]), cuenta);
+    if (!acceso) return responder(res, 404, { ok: false, motivo: 'esa tarjeta no es de esta cuenta' });
+    return responder(res, 200, { ok: true, ...acceso });
   }
 
   const deTarjeta = ruta.match(/^\/api\/tarjetas\/([0-9A-Fa-f:%-]{8,40})$/);
@@ -477,6 +579,68 @@ http.createServer(async (req, res) => {
       return res.end();
     }
 
+    // ---- Pago con QR ----
+    // El terminal registra el cobro pendiente para que se pueda pagar desde el celular.
+    if (req.method === 'POST' && ruta === '/pedidos') {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const { id, monto, concepto } = await leerJson(req);
+      if (!/^[\w-]{3,64}$/.test(String(id)) || !/^\d+(\.\d{1,7})?$/.test(String(monto)) || !(Number(monto) > 0)) {
+        return responder(res, 400, { ok: false, motivo: 'datos incompletos' });
+      }
+      for (const [otro, pedido] of pedidos) {
+        if (Date.now() - pedido.creado > PEDIDO_VIGENCIA_MS) pedidos.delete(otro);
+      }
+      pedidos.set(id, { monto: String(monto), concepto: String(concepto ?? '').slice(0, 40), creado: Date.now() });
+      return responder(res, 200, { ok: true, vigenciaSegundos: PEDIDO_VIGENCIA_MS / 1000 });
+    }
+
+    // El terminal cancela el pedido (el comercio canceló o se venció la espera).
+    const cancelacion = req.method === 'POST' && ruta.match(/^\/pedidos\/([\w-]{3,64})\/cancelar$/);
+    if (cancelacion) {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const id = cancelacion[1];
+      if (cobrosHechos[id] || cobrosPorId.has(id)) {
+        return responder(res, 409, { ok: false, motivo: 'ya se esta pagando' });
+      }
+      if (pedidos.has(id)) pedidos.get(id).cancelado = true;
+      return responder(res, 200, { ok: true });
+    }
+
+    // La página que abre el QR en el celular del cliente. Es liviana y no depende de la web: pide
+    // el código de cuenta y el PIN. Si en ese navegador está la billetera de Toki, la página pasa
+    // a ella (#/pagar/<id>) y se paga sin PIN.
+    const pagina = req.method === 'GET' && ruta.match(/^\/p\/([\w-]{3,64})$/);
+    if (pagina) {
+      const id = pagina[1];
+      const pedido = pedidoVigente(id);
+      const aviso = cobrosHechos[id]
+        ? 'Este cobro ya está pagado.'
+        : pedido ? '' : 'Este cobro ya no está disponible. Pide en la caja que lo generen de nuevo.';
+      res.writeHead(aviso ? 410 : 200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+      return res.end(paginaPago({
+        id, monto: pedido?.monto, concepto: pedido?.concepto, moneda: await leerMoneda(), comercio: NOMBRE_COMERCIO, aviso,
+        conBilletera: estaticos.hayWeb(),
+      }));
+    }
+
+    // El cliente paga desde la página: código de cuenta y PIN.
+    const pagoQr = req.method === 'POST' && ruta.match(/^\/p\/([\w-]{3,64})\/pagar$/);
+    if (pagoQr) {
+      const id = pagoQr[1];
+      if (!pedidoVigente(id)) {
+        return responder(res, 410, { ok: false, motivo: cobrosHechos[id] ? 'Este cobro ya está pagado.' : 'Este cobro ya no está disponible.' });
+      }
+      const { codigo, pin } = await leerJson(req);
+      const acceso = tarjetas.entrar(codigo, pin);
+      if (acceso.error) return responder(res, 401, { ok: false, motivo: acceso.error });
+      const [estado, cuerpo] = await pagarPedido(id, acceso.uid);
+      return responder(res, estado, estado === 200 ? cuerpo : { ok: false, motivo: motivoParaPagina(cuerpo.motivo) });
+    }
+
     // Consulta de un cobro por su id, sin cobrar: la usa el terminal cuando no le llegó la respuesta.
     const consulta = req.method === 'GET' && ruta.match(/^\/cobros\/([\w-]{3,64})$/);
     if (consulta) {
@@ -498,10 +662,20 @@ http.createServer(async (req, res) => {
       }
       const pedido = await leerJson(req);
       const inicio = Date.now();
-      const [estado, cuerpo] = await cobroUnaVez(pedido);
+      const [estado, cuerpo] = await cobroUnaVez({ ...pedido, medio: 'tarjeta' });
       const concepto = pedido.concepto ? ` [${String(pedido.concepto).slice(0, 40)}]` : '';
       console.log(`${new Date().toISOString()} cobro ${pedido.id ?? '-'} ${pedido.uid} ${pedido.monto}${concepto} -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
       return responder(res, estado, cuerpo);
+    }
+
+    // PIN nuevo para pagar desde el celular. El PIN se devuelve una sola vez.
+    if (req.method === 'POST' && ruta === '/tarjetas/pin') {
+      if (!ADMIN_TOKEN || !autorizado(req, 'x-admin-token', ADMIN_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'no autorizado' });
+      }
+      const acceso = tarjetas.nuevoPin((await leerJson(req)).uid);
+      if (!acceso) return responder(res, 404, { ok: false, motivo: 'tarjeta no registrada' });
+      return responder(res, 200, { ok: true, ...acceso });
     }
 
     const deAdmin = ruta.match(/^\/tarjetas(?:\/([0-9A-Fa-f:%-]{8,40}))?$/);

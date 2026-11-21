@@ -1,6 +1,7 @@
 // Pruebas de lo que usa la app (web y celular), contra Stellar testnet. Recorre lo que hace un
 // dueño nuevo: abre sesión con su cuenta, la activa, firma el permiso de gasto, vincula una
-// tarjeta y paga; después la bloquea y le pone límite. Al final mira el panel del comercio.
+// tarjeta y paga, con la tarjeta y con el QR del terminal; después la bloquea y le pone límite.
+// Al final mira el panel del comercio.
 //   SERVIDOR_URL=http://localhost:8090 node src/pruebas-app.mjs
 import { Keypair, TransactionBuilder } from '@stellar/stellar-sdk';
 import { PASSPHRASE, aUnidades, deUnidades, permiso, saldo } from './stellar.mjs';
@@ -110,15 +111,70 @@ const uid = uidAzar();
   comprobar('el recibo tiene monto, producto y transacción', recibo.monto === '1.50' && recibo.concepto === 'Gaseosa' && recibo.hash === pago.hash);
 }
 
+// 5b. Pago con el QR del terminal desde la app: la sesión de la cuenta paga, sin tarjeta ni PIN.
+const pedido = (monto, concepto) => {
+  const id = `q-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+  return pedir('POST', '/pedidos', { cuerpo: { id, monto, concepto }, cabeceras: TERMINAL }).then(([estado]) => ({ id, estado }));
+};
+{
+  const { id, estado: creado } = await pedido('0.25', 'Cafe');
+  const [, datos] = await pedir('GET', `/api/pedidos/${id}`);
+  comprobar('la app ve el cobro que espera pago', creado === 200 && datos.estado === 'pendiente' && datos.monto === '0.25' && datos.concepto === 'Cafe' && Boolean(datos.comercioNombre));
+
+  const intruso = await abrirSesion(Keypair.random());
+  const [ajeno] = await pedir('POST', `/api/pedidos/${id}/pagar`, { ...intruso, cuerpo: { uid } });
+  const [sinSesion] = await pedir('POST', `/api/pedidos/${id}/pagar`, { cuerpo: { uid } });
+  comprobar('nadie paga un cobro con la tarjeta de otra cuenta', ajeno === 404 && sinSesion === 401);
+
+  const antes = await permiso(dueno.publicKey(), info.toki);
+  const [estado, pago] = await pedir('POST', `/api/pedidos/${id}/pagar`, { ...sesion, cuerpo: { uid } });
+  const despues = await permiso(dueno.publicKey(), info.toki);
+  comprobar('la app paga el cobro del QR con el permiso del dueño', estado === 200 && pago.ok && antes - despues === aUnidades('0.25'), pago.hash ?? pago.motivo);
+
+  const [, terminal] = await pedir('GET', `/cobros/${id}`, { cabeceras: TERMINAL });
+  const [, pagado] = await pedir('GET', `/api/pedidos/${id}`);
+  comprobar('el terminal y la app ven el cobro pagado', terminal.hash === pago.hash && pagado.estado === 'pagado');
+  const [otraVez] = await pedir('POST', `/api/pedidos/${id}/pagar`, { ...sesion, cuerpo: { uid } });
+  const [, cuenta] = await pedir('GET', '/api/cuenta', sesion);
+  const ultimo = cuenta.movimientos.find((m) => m.tipo === 'cobro');
+  comprobar('el pago con QR queda en los movimientos y no se repite', ultimo?.medio === 'qr' && ultimo.monto === '0.25' && cuenta.tarjetas[0].gastadoHoy === '1.75' && despues === await permiso(dueno.publicKey(), info.toki),
+    `segundo intento: ${otraVez}`);
+}
+
+// 5c. PIN para pagar con el QR desde un celular sin la app: lo crea el dueño y se muestra una vez.
+{
+  const [, sinPin] = await pedir('GET', '/api/cuenta', sesion);
+  const intruso = await abrirSesion(Keypair.random());
+  const [ajeno] = await pedir('POST', `/api/tarjetas/${uid}/pin`, intruso);
+  const [estado, acceso] = await pedir('POST', `/api/tarjetas/${uid}/pin`, sesion);
+  const [, conPin] = await pedir('GET', '/api/cuenta', sesion);
+  comprobar('el dueño crea el PIN de su tarjeta', !sinPin.tarjetas[0].tienePin && ajeno === 404 && estado === 200 && /^\d{6}$/.test(acceso.codigo) && /^\d{4}$/.test(acceso.pin)
+    && conPin.tarjetas[0].tienePin && conPin.tarjetas[0].codigo === acceso.codigo && !JSON.stringify(conPin).includes(`"pin"`));
+
+  const { id } = await pedido('0.10', 'Chicle');
+  const [pagina] = await fetch(`${URL_SERVIDOR}/p/${id}`).then(async (r) => [r.status, await r.text()]);
+  const [ePago, cPago] = await pedir('POST', `/p/${id}/pagar`, { cuerpo: { codigo: acceso.codigo, pin: acceso.pin } });
+  comprobar('con el código y el PIN se paga desde la página del QR', pagina === 200 && ePago === 200 && cPago.ok, cPago.hash ?? cPago.motivo);
+}
+
 // 6. Bloqueo y límite diario, decididos por el dueño.
 {
   await pedir('PATCH', `/api/tarjetas/${uid}`, { ...sesion, cuerpo: { bloqueada: true } });
   const [bloqueado, motivo] = await cobro(uid, '1');
-  await pedir('PATCH', `/api/tarjetas/${uid}`, { ...sesion, cuerpo: { bloqueada: false, limiteDiario: 2 } });
+  // Hasta aquí la tarjeta gastó 1.85 hoy (1.50 con la tarjeta, 0.25 y 0.10 con el QR).
+  const barato = await pedido('0.10', 'Caramelo');
+  const pagarConQr = (id) => pedir('POST', `/api/pedidos/${id}/pagar`, { ...sesion, cuerpo: { uid } });
+  const [qrBloqueado] = await pagarConQr(barato.id);
+  await pedir('PATCH', `/api/tarjetas/${uid}`, { ...sesion, cuerpo: { bloqueada: false, limiteDiario: 2.5 } });
   const [sobreLimite, motivoLimite] = await cobro(uid, '1');
+  const caro = await pedido('1', 'Almuerzo');
+  const [qrSobreLimite] = await pagarConQr(caro.id);
+  const [qrDentro] = await pagarConQr(barato.id);
   const [dentro] = await cobro(uid, '0.50');
   comprobar('una tarjeta bloqueada no paga', bloqueado === 403, motivo.motivo);
   comprobar('el límite diario del dueño se respeta', sobreLimite === 402 && dentro === 200, motivoLimite.motivo);
+  comprobar('el bloqueo y el límite diario también valen para el QR', qrBloqueado === 403 && qrSobreLimite === 402 && qrDentro === 200,
+    `bloqueada ${qrBloqueado} · sobre el límite ${qrSobreLimite} · dentro del límite ${qrDentro}`);
 }
 
 // 7. Recarga de prueba con la cuenta ya creada: llega el monto fijo.
@@ -141,6 +197,13 @@ const uid = uidAzar();
     comprobar('el comercio ve la venta en su panel', comercio.rol === 'comercio' && estado === 200 && Boolean(venta) && Number(panel.hoy.total) >= 2,
       `hoy ${panel.hoy?.total} en ${panel.hoy?.aprobados} cobros`);
     comprobar('el panel separa las ventas por producto', panel.hoy.porConcepto.some((p) => p.concepto === 'Gaseosa'));
+    const enEspera = await pedido('0.90', 'Empanada');
+    const [, conEspera] = await pedir('GET', '/api/panel', comercio);
+    await pedir('POST', `/pedidos/${enEspera.id}/cancelar`, { cuerpo: {}, cabeceras: TERMINAL });
+    const [, sinEspera] = await pedir('GET', '/api/panel', comercio);
+    comprobar('el panel muestra el cobro que espera pago y cuál se pagó con QR',
+      conEspera.esperando.some((p) => p.id === enEspera.id && p.monto === '0.90') && !sinEspera.esperando.some((p) => p.id === enEspera.id)
+      && panel.cobros.some((c) => c.medio === 'qr' && c.concepto === 'Cafe') && venta.medio === 'tarjeta');
   } else {
     console.log('- sin COMERCIO_SECRET: no se prueba el panel del comercio');
   }
