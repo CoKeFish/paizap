@@ -113,9 +113,12 @@ Por eso el diseño tiene dos etapas:
   red. Toki paga las comisiones y patrocina las reservas de las cuentas, así que ni la familia ni
   el kiosco necesitan XLM. El servidor usa varias cuentas de envío en paralelo para que muchos
   terminales cobren a la vez en la hora pico del recreo.
-- **Red:** Stellar, con USDC de Circle. En testnet, el emisor es
-  `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`. El kiosco necesita una cuenta
-  habilitada para recibir USDC.
+- **Red y activo:** Stellar. La demo usa USDC de Circle en testnet (emisor
+  `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`). En producción Toki también cobra en
+  **USDT0**, el USDT de Tether en Stellar, que es el dólar digital que ya usan las familias
+  bolivianas; hoy existe solo en mainnet (`USDT0:GATISXX6BZ6NC7IKQBY37CJD4SOZL3CYZJWXEDG6JVIY4WBS6KXJHN6Q`).
+  Los dos tienen contrato de token (SAC), así que el cobro con permiso de gasto es el mismo código:
+  el activo es configuración. El kiosco necesita una cuenta habilitada para recibir ese activo.
 - **Errores que el terminal muestra:** saldo insuficiente, permiso vencido o agotado, límite
   diario alcanzado, tarjeta bloqueada y sin conexión.
 - **Cuentas y recarga:** planeamos usar [Pollar](https://pollar.xyz), un SDK de billeteras
