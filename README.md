@@ -8,6 +8,18 @@ ponen el límite y ven cada compra.
 > Estado: en desarrollo, sobre Stellar testnet. Esta página describe el diseño del producto; la
 > [hoja de ruta](#hoja-de-ruta) muestra qué está construido.
 
+## La idea
+
+Toki resuelve un caso que el QR no cubre: **quien paga no es quien gasta**, y quien gasta no tiene
+o no usa celular. Quien paga carga saldo en dólares, pone un límite y ve cada compra; quien gasta
+solo acerca una tarjeta. Empezamos por el colegio, donde ese caso es diario:
+
+| Quien paga | Quien gasta | Dónde |
+|---|---|---|
+| **Los papás** | **El alumno, en el recreo** | **El kiosco y las máquinas del colegio (primer mercado)** |
+| El hijo que migró | Sus papás o abuelos en Bolivia | La tienda del barrio |
+| Una organización de ayuda | Una familia damnificada | Almacenes registrados |
+
 ## El problema
 
 En Bolivia el QR ya es la forma normal de pagar: en 2025 se hicieron 891 millones de pagos con QR y
@@ -31,6 +43,15 @@ de USD 46,5 millones en el primer semestre de 2024 a USD 294 millones en el de 2
 sobre todo por los hogares
 ([Los Tiempos](https://www.lostiempos.com/actualidad/economia/20260726/falta-dolares-banca-migra-criptomonedas-norma-del-bcb)).
 
+Pagar el recreo con saldo prepago y control de los papás no es una idea nueva: es un mercado que
+ya existe en la región. OrderEAT, por ejemplo, funciona en más de 600 colegios de Latinoamérica y
+levantó USD 2 millones para duplicar su alcance
+([Forbes Argentina](https://www.forbesargentina.com/negocios/la-plataforma-uruguaya-ordereat-cerro-una-ronda-us2-millones-buscara-duplicar-sus-colegios-18-meses-foco-mexico-n98097/amp)).
+Esas soluciones no operan en Bolivia, guardan ellas el dinero de las familias y lo manejan en
+moneda local. Toki deja el saldo en dólares y en la cuenta de la familia, en un país donde el
+boliviano flota desde junio de 2026
+([Correo del Sur](https://correodelsur.com/economia/20260626/el-banco-central-de-bolivia-establece-en-bs-9-73-el-nuevo-tipo-de-cambio-flexible.html)).
+
 ## Cómo funciona
 
 1. El colegio o el kiosco instala un terminal Toki.
@@ -47,6 +68,10 @@ sobre todo por los hogares
 | **Autoservicio** | Precio fijo configurado en el terminal; al pagar, el relé activa la máquina | Expendedora, dispensador de agua, fotocopiadora, torniquete |
 
 El modo autoservicio no necesita teclado ni a nadie atendiendo.
+
+**Por qué un terminal propio:** queda fijo en el mostrador y el alumno lo usa solo, sin exigirle al
+kiosquero un celular con NFC ni que lo suelte para cobrar; y en las máquinas no hay nadie que
+cobre. El terminal cuesta menos de USD 40 en componentes.
 
 ## Por qué Toki
 
