@@ -1,0 +1,42 @@
+# Prueba de punta a punta: el terminal simulado cobra 2.50 en Stellar testnet a través del
+# servidor de Toki (que debe estar corriendo con su túnel; ver servidor/README.md).
+# Compilar con la URL del servidor y correr (desde hardware/firmware):
+#   doppler run --project toki --config dev -- docker run --rm -e WOKWI_CLI_TOKEN -v "$PWD":/work #     --entrypoint wokwi-cli toki-pio sim/esp32 --scenario cobro.test.yaml --timeout 90000
+name: 'Cobro con tarjeta en Stellar testnet'
+version: 1
+author: 'Toki'
+
+steps:
+  - wait-serial: 'Listo.'
+  - take-screenshot:
+      part-id: oled
+      save-to: 1-monto.png
+  - write-serial: "2.50\n"
+  - wait-serial: 'Cobrar 2.50 USDC: acerque la tarjeta'
+  - delay: 300ms
+  - take-screenshot:
+      part-id: oled
+      save-to: 2-acerque.png
+  - set-control:
+      part-id: tarjeta
+      name: pressed
+      value: 1
+  - wait-serial: 'Pago aprobado'
+  - set-control:
+      part-id: tarjeta
+      name: pressed
+      value: 0
+  - wait-serial: 'Relé ON'
+  - delay: 300ms
+  - expect-pin:
+      part-id: esp
+      name: 16
+      value: 1
+  - take-screenshot:
+      part-id: oled
+      save-to: 3-pago-ok.png
+  - wait-serial: 'Pago OK'
+  - expect-pin:
+      part-id: esp
+      name: 16
+      value: 0
