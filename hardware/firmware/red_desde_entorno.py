@@ -20,8 +20,11 @@ contenido = (
     "// Generado por red_desde_entorno.py en cada compilación. No editar.\n"
     "#define WIFI_SSID " + cadena_c("TOKI_WIFI_SSID") + "\n"
     "#define WIFI_CLAVE " + cadena_c("TOKI_WIFI_CLAVE") + "\n"
+    "#define WIFI_SSID2 " + cadena_c("TOKI_WIFI_SSID2") + "\n"
+    "#define WIFI_CLAVE2 " + cadena_c("TOKI_WIFI_CLAVE2") + "\n"
     "#define SERVIDOR_URL " + cadena_c("TOKI_SERVIDOR_URL") + "\n"
     "#define TERMINAL_TOKEN " + cadena_c("TERMINAL_TOKEN") + "\n"
+    "#define PRECIO_FIJO " + cadena_c("TOKI_PRECIO_FIJO") + "\n"
 )
 
 ruta = os.path.join(gen, "toki_red.h")
@@ -31,7 +34,8 @@ if anterior != contenido:  # no tocar el archivo si no cambió: evita recompilar
         archivo.write(contenido)
 
 env.Append(CPPPATH=[gen])
-print("Red: %s · servidor: %s" % (
+print("Red: %s · servidor: %s · modo: %s" % (
     os.environ.get("TOKI_WIFI_SSID") or "(sin Wi-Fi)",
     os.environ.get("TOKI_SERVIDOR_URL") or "(sin servidor: modo prueba)",
+    ("autoservicio a " + os.environ["TOKI_PRECIO_FIJO"]) if os.environ.get("TOKI_PRECIO_FIJO") else "caja",
 ))

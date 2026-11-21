@@ -119,8 +119,8 @@ el LED con su resistencia a GND lo deja así. No conectes ahí nada que lo lleve
 - **Placa ancha:** la ESP32-S3 y algunas ESP32 cubren una protoboard entera. Pon dos protoboards
   juntas con la placa a caballo entre ellas, o conecta la placa con cables hembra-hembra.
 
-**Teclado del modo caja:** dígitos para el monto, `D` punto decimal, `*` borrar, `A` cancelar y
-`#` cobrar. En el 4×3, `*` borra y, en la pantalla de cobro, cancela.
+**Teclado:** las teclas y los modos (caja y productos) están en [Modos](#modos). En el teclado
+4×3, que no tiene letras, `*` sin nada escrito cambia de modo.
 
 ## Cómo lee la tarjeta
 
@@ -139,25 +139,85 @@ la verificación SUN.
 
 ## Firmware
 
-`firmware/` tiene el programa del terminal: escribe un monto, presiona `#`, acerca la tarjeta y
-el terminal le pide el cobro al [servidor](../servidor/README.md). Si se aprueba, muestra el pago,
-pita, enciende el LED verde y activa el relé un segundo; si no, muestra el motivo. Por el monitor
-serie (115200 baudios) imprime el UID, la URL SUN de la tarjeta y la respuesta del servidor.
+`firmware/` tiene el programa del terminal. Lee la tarjeta, le pide el cobro al
+[servidor](../servidor/README.md) por Wi-Fi y, si se aprueba, muestra el pago, pita, enciende el
+LED verde, activa el relé un segundo y deja en pantalla un **QR de recibo** que abre la
+transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo.
 
-Sirve también para probar el hardware pieza por pieza: al arrancar dice qué pantalla y qué lector
-encontró, y sigue funcionando sin los que falten. En reposo, acercar una tarjeta solo muestra su
-UID por el monitor serie, sin cobrar: así se prueba el lector y se sabe el UID de una tarjeta
-nueva para registrarla.
+### Modos
 
-El monto también se puede escribir en el monitor serie (`12.50` + Enter; `a` cancela). Sirve para
-probar una placa sin teclado y para las pruebas automáticas del simulador. Con `w`, la placa dice
-a qué Wi-Fi está conectada y lista las redes que ve: solo ve las de 2.4 GHz, así que si tu red no
-aparece ahí, no le sirve. Con `l` vuelve a buscar el lector, para comprobar un cable corregido
-sin reiniciar.
+| Modo | Cómo se usa | Para |
+|---|---|---|
+| **Caja** | Se escribe el monto en el teclado (`D` es el punto, `*` borra) y `#` cobra | Tienda, cafetería |
+| **Productos** | La pantalla lista los productos con su precio y las teclas `1` a `9` eligen uno | Máquina expendedora |
+| **Precio fijo** | Sin teclado: cada tarjeta que se acerca paga el mismo monto | Torniquete, dispensador, lavadora |
 
-La red y el servidor se pasan al compilar con las variables `TOKI_WIFI_SSID`, `TOKI_WIFI_CLAVE`,
-`TOKI_SERVIDOR_URL` y `TERMINAL_TOKEN` (el equipo las tiene en Doppler). Sin ellas, el terminal
-queda en modo prueba y no cobra.
+- La tecla `B` alterna entre caja y productos, y el terminal recuerda el modo aunque se apague.
+- `A` o `*` cancelan mientras espera la tarjeta. Cualquier tecla cierra el QR del recibo.
+- Los productos se definen en `PRODUCTOS`, en `config.h`. La pantalla OLED muestra los 5 primeros.
+- El precio fijo se activa al compilar con la variable `TOKI_PRECIO_FIJO` (por ejemplo `1.50`).
+  En ese modo, después de cada pago el terminal espera a que retiren la tarjeta, para no cobrarla
+  dos veces.
+
+### Recibo con QR
+
+Después de un pago aprobado, la pantalla muestra durante 15 segundos (`RECIBO_MS`) un QR con un
+enlace corto del servidor, que redirige a la transacción en el explorador de Stellar. En los
+128×64 puntos de la OLED cabe un enlace de hasta 53 letras; por eso el enlace es corto y no el
+del explorador completo.
+
+### Si se cae la conexión
+
+Un cobro tarda unos segundos, y si el Wi-Fi se cae en ese momento el terminal no sabe si el
+servidor alcanzó a cobrar. Por eso:
+
+- Cada cobro lleva un identificador fijo. El terminal reintenta con el mismo identificador,
+  esperando a que vuelva el Wi-Fi, y el servidor devuelve el mismo resultado sin cobrar dos veces.
+- Si aun así no hay respuesta, la pantalla dice «Sin confirmar», no «Rechazado», y el terminal
+  sigue consultando ese cobro. Si se había cobrado, termina el pago: aviso, relé y recibo.
+- Se pueden configurar dos redes Wi-Fi: el terminal usa la que esté disponible.
+
+### Consumo
+
+El lector NFC y el Wi-Fi comparten el regulador de 3.3 V de la placa. Con la antena del lector
+siempre encendida y el Wi-Fi a máxima potencia, el voltaje cae y la conexión falla: la placa deja
+de ver redes o se desconecta a mitad de un cobro. El firmware lo evita así:
+
+- La antena del PN532 solo se enciende un instante en cada lectura, cada 150 ms.
+- El Wi-Fi transmite a 8.5 dBm (`WIFI_POTENCIA` en `config.h`), que alcanza a unos metros del
+  router.
+
+### Probar y diagnosticar
+
+Al arrancar, el terminal dice por el monitor serie (115200 baudios) qué pantalla y qué lector
+encontró, a qué red se conectó y si el servidor responde, y sigue funcionando sin las piezas que
+falten. En reposo, acercar una tarjeta solo muestra su UID, sin cobrar: así se prueba el lector y
+se sabe el UID de una tarjeta nueva para registrarla.
+
+| Comando | Qué hace |
+|---|---|
+| `12.50` | Pide un cobro por ese monto, como si se escribiera en el teclado |
+| `k 2`, `k B`, `k 1D50#` | Aprieta esas teclas, para probar sin teclado |
+| `a` | Cancela |
+| `w` | Dice a qué Wi-Fi está conectado y lista las redes que ve (solo ve las de 2.4 GHz) |
+| `s` | Comprueba que el servidor responda |
+| `l` | Vuelve a buscar el lector, para comprobar un cable corregido sin reiniciar |
+| `q texto` | Dibuja un QR de prueba con ese texto |
+
+Cada tecla del teclado se anuncia como `Tecla: X`, para comprobar su cableado.
+
+### Variables al compilar
+
+La red y el servidor se pasan al compilar con variables de entorno (el equipo las tiene en
+Doppler). Sin servidor, el terminal queda en modo prueba: recorre el flujo sin cobrar.
+
+| Variable | Para |
+|---|---|
+| `TOKI_WIFI_SSID`, `TOKI_WIFI_CLAVE` | Red Wi-Fi |
+| `TOKI_WIFI_SSID2`, `TOKI_WIFI_CLAVE2` | Segunda red, opcional |
+| `TOKI_SERVIDOR_URL` | Dirección del servidor, por ejemplo `http://bore.pub:<puerto>` |
+| `TERMINAL_TOKEN` | Clave del terminal ante el servidor |
+| `TOKI_PRECIO_FIJO` | Activa el modo de precio fijo con ese monto |
 
 | Entorno | Para |
 |---|---|

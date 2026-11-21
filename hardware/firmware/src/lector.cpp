@@ -77,7 +77,17 @@ bool lector::iniciar() {
   if (!version) return false;
   Serial.printf("PN532 firmware %lu.%lu\n", (version >> 16) & 0xFF, (version >> 8) & 0xFF);
   nfc.SAMConfig();
+  // Sin esto el PN532 se queda buscando una tarjeta sin parar, con la antena siempre encendida.
+  nfc.setPassiveActivationRetries(2);
   return true;
+}
+
+// Apaga la antena del lector. El PN532 la vuelve a encender solo en la siguiente lectura.
+// Encendida todo el tiempo gasta unos 100 mA, que junto con el Wi-Fi es más de lo que entrega con
+// holgura el regulador de 3.3 V de la placa: el Wi-Fi empieza a fallar.
+static void apagarAntena() {
+  uint8_t apagar[] = {PN532_COMMAND_RFCONFIGURATION, 0x01, 0x00};
+  nfc.sendCommandCheckAck(apagar, sizeof apagar, 50);
 }
 
 // Manda un APDU y devuelve true si la tarjeta responde 90 00.
@@ -125,10 +135,18 @@ static String leerUrlNdef() {
 bool lector::leer(Tarjeta &t) {
   uint8_t uid[7];
   uint8_t largoUid = 0;
-  if (!nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &largoUid, 100)) return false;
-  t.uid = hex(uid, largoUid);
-  t.url = leerUrlNdef();  // vacía si la tarjeta no es ISO 14443-4 (p. ej. NTAG213/215)
-  return true;
+  // Una lectura cada 150 ms como mucho: la antena queda apagada la mayor parte del tiempo.
+  static uint32_t ultimaLectura = 0;
+  if (millis() - ultimaLectura < 150) return false;
+  ultimaLectura = millis();
+
+  bool hayTarjeta = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &largoUid, 100);
+  if (hayTarjeta) {
+    t.uid = hex(uid, largoUid);
+    t.url = leerUrlNdef();  // vacía si la tarjeta no es ISO 14443-4 (p. ej. NTAG213/215)
+  }
+  apagarAntena();
+  return hayTarjeta;
 }
 
 #elif LECTOR == LECTOR_RC522

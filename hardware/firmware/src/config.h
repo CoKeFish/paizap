@@ -54,11 +54,55 @@
 #ifndef WIFI_CLAVE
 #define WIFI_CLAVE ""
 #endif
+// Segunda red, opcional (TOKI_WIFI_SSID2 y TOKI_WIFI_CLAVE2): el terminal usa la que esté
+// disponible, por ejemplo el Wi-Fi del local y el punto de acceso de un celular.
+#ifndef WIFI_SSID2
+#define WIFI_SSID2 ""
+#endif
+#ifndef WIFI_CLAVE2
+#define WIFI_CLAVE2 ""
+#endif
 #ifndef SERVIDOR_URL
 #define SERVIDOR_URL ""
 #endif
+
+// Potencia de transmisión del Wi-Fi. Con el lector NFC y la pantalla en el mismo regulador de
+// 3.3 V, la potencia máxima provoca caídas de voltaje y la conexión falla. 8.5 dBm alcanza a unos
+// metros del router; si la señal es débil, sube a WIFI_POWER_13dBm o WIFI_POWER_19_5dBm.
+#ifndef WIFI_POTENCIA
+#define WIFI_POTENCIA WIFI_POWER_8_5dBm
+#endif
 #ifndef TERMINAL_TOKEN
 #define TERMINAL_TOKEN ""
+#endif
+
+// ---- Modo del terminal ----
+// Con precio fijo (variable TOKI_PRECIO_FIJO al compilar, por ejemplo 1.50) el terminal trabaja
+// en autoservicio: sin teclado, cobra ese monto a cada tarjeta que se acerca y activa el relé.
+// Vacío = modo caja: el monto se escribe en el teclado.
+#ifndef PRECIO_FIJO
+#define PRECIO_FIJO ""
+#endif
+
+// Cuánto dura el pulso del relé que activa la máquina, en milisegundos.
+#ifndef RELE_MS
+#define RELE_MS 1000
+#endif
+
+// Cuánto se queda en pantalla el QR del recibo después de un pago, en milisegundos (0 = sin QR).
+#ifndef RECIBO_MS
+#define RECIBO_MS 15000
+#endif
+
+// ---- Productos (modo expendedora) ----
+// Con el teclado en modo productos, las teclas 1 a 9 eligen un producto de esta lista y el
+// terminal cobra su precio. La pantalla OLED muestra los 5 primeros.
+struct Producto {
+  const char *nombre;  // hasta 13 letras, sin tildes (la pantalla no las dibuja)
+  const char *precio;
+};
+#ifndef PRODUCTOS
+#define PRODUCTOS {{"Agua", "1.00"}, {"Gaseosa", "1.50"}, {"Galletas", "0.75"}, {"Cafe", "1.20"}}
 #endif
 
 #ifdef TOKI_SIM
