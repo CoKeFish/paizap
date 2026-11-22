@@ -27,11 +27,46 @@
   color: var(--rayo);
 }
 
+/* ---- Elegir el aparato: tres opciones, una encendida ---- */
+.sim-aparatos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+.sim-aparatos button {
+  min-height: 2.75rem;
+  padding: 0.4rem 1.1rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--noche-suave);
+  font: 600 1rem var(--letra);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.sim-aparatos button:hover:not(:disabled) {
+  border-color: var(--rayo);
+  color: #fff;
+}
+.sim-aparatos button[aria-pressed='true'] {
+  border-color: var(--rayo);
+  background: var(--rayo);
+  color: var(--noche);
+}
+.sim-aparatos button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.sim-aparatos button[aria-pressed='true']:disabled {
+  opacity: 1;
+}
+
 /* ---- El aparato y el panel, lado a lado ---- */
 .sim-cuerpo {
   display: grid;
   gap: 1.25rem;
-  margin-top: 1.25rem;
+  margin-top: 0.75rem;
 }
 @media (min-width: 62rem) {
   .sim-cuerpo {

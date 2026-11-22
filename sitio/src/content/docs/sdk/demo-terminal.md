@@ -67,8 +67,7 @@ La transacción está en la red:
 ## Cómo se autoriza al terminal
 
 La llave del terminal se agrega como firmante de la cuenta que tiene los permisos de gasto. Con
-eso el terminal puede cobrar con esos permisos, y nada más: no puede cambiar los firmantes de la
-cuenta.
+eso el terminal puede firmar los cobros. No puede cambiar los firmantes de la cuenta.
 
 ## Lo que acompaña al terminal
 
@@ -85,6 +84,6 @@ Todo está en el [repositorio de Paizap](https://github.com/CoKeFish/paizap):
 
 | Carpeta | Qué hay |
 |---|---|
-| `hardware/` | La electrónica y el firmware del terminal. El cobro firmado está en `firmware/src/firma.cpp`. |
+| `hardware/` | La electrónica y el firmware del terminal. |
 | `servidor/` | El servidor de la demo: de qué cuenta es cada tarjeta, límites y recibos. |
 | `app/` | La billetera y el panel. |

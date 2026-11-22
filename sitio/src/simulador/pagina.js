@@ -1,10 +1,12 @@
-// Une el simulador con la página de la demo: el panel, la lista de cobros, el registro, el estado
-// en JSON y el modelo 3D. Los identificadores de la página (sim-…) son fijos: los usan los agentes.
+// Une el simulador con la página de la demo: el selector de aparato, el panel, la lista de
+// cobros, el registro, el estado en JSON y el modelo 3D. Los identificadores de la página (sim-…)
+// son fijos: los usan los agentes.
 //
 // El panel muestra un solo momento a la vez (crear la cuenta, cobrar, pagar o el resultado), con
 // una frase que dice qué pasa y un botón principal. El modelo 3D muestra lo mismo y también se toca.
 import QRCode from 'qrcode';
 import { crearSimulador, olvidarTodo } from './aparato.js';
+import { APARATOS, INICIAL } from './catalogo.js';
 
 const base = document.body.dataset.base;
 const aqui = new URL(base, location.href).href;
@@ -66,39 +68,77 @@ const ETAPA = {
   esperando: 'pagar',
   aprobado: 'resultado',
 };
-const ORDEN = ['cuenta', 'cobrar', 'pagar', 'resultado'];
+const ETAPAS = ['reintentar', 'cuenta', 'cobrar', 'pagar', 'resultado'];
 const PRINCIPAL = { cuenta: 'sim-crear', reintentar: 'sim-reintentar', cobrar: 'sim-cobrar', pagar: 'sim-tarjeta', resultado: 'sim-otro' };
+// El recorrido que se ve arriba del panel. En la caja alguien cobra; con precio fijo, el aparato
+// cobra solo y el tercer paso es lo que hace al ver el pago.
+const CAMINO = {
+  caja: [
+    { nombre: 'Cuenta', etapas: ['cuenta'] },
+    { nombre: 'Cobrar', etapas: ['cobrar'] },
+    { nombre: 'Pagar', etapas: ['pagar'] },
+  ],
+  torniquete: [
+    { nombre: 'Cuenta', etapas: ['cuenta'] },
+    { nombre: 'Pagar', etapas: ['cobrar', 'pagar'] },
+    { nombre: 'Pasar', etapas: [] },
+  ],
+  dispensador: [
+    { nombre: 'Cuenta', etapas: ['cuenta'] },
+    { nombre: 'Pagar', etapas: ['cobrar', 'pagar'] },
+    { nombre: 'Recibir', etapas: [] },
+  ],
+};
 let etapaALaVista = '';
+let caminoPintado = '';
+
+function pintarCamino(aparato, etapa) {
+  const clave = `${aparato}/${etapa}`;
+  if (clave === caminoPintado || etapa === 'ninguna' || etapa === 'reintentar') return;
+  caminoPintado = clave;
+  const pasos = CAMINO[aparato];
+  // El paso actual es el que contiene la etapa; en «resultado» ya están todos hechos.
+  const lugar = etapa === 'resultado' ? pasos.length : pasos.findIndex((paso) => paso.etapas.includes(etapa));
+  $('sim-camino').replaceChildren(
+    ...pasos.map((paso, i) => {
+      const li = document.createElement('li');
+      li.textContent = paso.nombre;
+      li.dataset.estado = i < lugar ? 'hecho' : i === lugar ? 'actual' : 'pendiente';
+      if (i === lugar) li.setAttribute('aria-current', 'step');
+      return li;
+    }),
+  );
+}
 
 function mostrarEtapa(etapa) {
   if (etapa === etapaALaVista) return;
   // Si el foco estaba en el panel, pasa al botón del momento nuevo: quien usa el teclado no se pierde.
   const teniaFoco = panel.contains(document.activeElement);
-  for (const nombre of ['reintentar', ...ORDEN]) $(`etapa-${nombre}`).hidden = nombre !== etapa;
+  for (const nombre of ETAPAS) $(`etapa-${nombre}`).hidden = nombre !== etapa;
   sim.dataset.etapa = etapa;
-  const lugar = ORDEN.indexOf(etapa);
-  if (lugar >= 0) {
-    for (const paso of document.querySelectorAll('#sim-camino li')) {
-      const suLugar = ORDEN.indexOf(paso.dataset.paso);
-      paso.dataset.estado = suLugar < lugar ? 'hecho' : suLugar === lugar ? 'actual' : 'pendiente';
-      if (suLugar === lugar) paso.setAttribute('aria-current', 'step');
-      else paso.removeAttribute('aria-current');
-    }
-  }
   if (teniaFoco && etapaALaVista && PRINCIPAL[etapa]) $(PRINCIPAL[etapa]).focus({ preventScroll: true });
   etapaALaVista = etapa;
 }
 
 // La pista bajo el modelo: qué se puede tocar en este momento.
-function pista(estado) {
+function pista(estado, aparato) {
   if (modelo === 'cargando') return 'Cargando el modelo…';
   if (modelo === 'sin3d') return 'Este navegador no puede mostrar el modelo 3D. El panel funciona igual.';
   if (estado.fase === 'sin-cuenta') return 'Toca «Crear cuenta» en el teléfono.';
   if (estado.fase === 'creando') return 'El teléfono muestra cómo se crea tu cuenta.';
   if (estado.fase === 'error') return 'Toca el teléfono para volver a intentar.';
-  if (estado.fase === 'listo') return 'En el teclado del terminal: # cobra, * borra y D es el punto.';
-  if (estado.fase === 'esperando' && !estado.tarjetaPagando) return 'Toca la tarjeta, o llévala hasta el lector del terminal.';
+  if (estado.fase === 'listo' && aparato.modo === 'caja') return 'En el teclado del terminal: # cobra, * borra y D es el punto.';
+  if (estado.fase === 'esperando' && !estado.tarjetaPagando) return 'Toca la tarjeta o llévala al lector.';
   return 'Arrastra para girar.';
+}
+
+// El selector: qué aparato está elegido, y cuándo se puede cambiar.
+function pintarAparatos(estado) {
+  const ocupado = estado.fase === 'creando' || estado.tarjetaPagando || estado.devolviendo;
+  for (const boton of document.querySelectorAll('#sim-aparatos button')) {
+    boton.setAttribute('aria-pressed', String(boton.dataset.aparato === estado.aparato));
+    boton.disabled = ocupado;
+  }
 }
 
 // Crear la cuenta: los dos pasos, con su marca cuando están hechos.
@@ -115,10 +155,23 @@ function pintarAlta(estado) {
   }
 }
 
+// Cobrar: en la caja se escribe el monto; un aparato de precio fijo solo tiene que ponerse a cobrar.
+function pintarCobrar(estado, aparato) {
+  const fijo = aparato.modo === 'autoservicio';
+  $('sim-monto-rotulo').hidden = fijo;
+  $('sim-monto').hidden = fijo;
+  $('sim-cobrar').textContent = fijo ? `Poner ${aparato.el} a cobrar` : 'Cobrar';
+  $('sim-cobrar-nota').textContent = fijo ? `Precio fijo: ${aparato.precio} XLM de prueba ${aparato.porQue}.` : 'Es dinero de prueba: cobra lo que quieras, de 0.01 a 100.';
+  // El monto es uno solo. Lo que se escribe en el teclado del terminal aparece en el campo (salvo
+  // mientras se escribe en el campo, que es quien manda en ese momento).
+  if (document.activeElement !== $('sim-monto') && $('sim-monto').value !== estado.monto) $('sim-monto').value = estado.monto;
+}
+
 // El resultado del último cobro: se queda a la vista hasta el siguiente.
 function pintarResultado(estado) {
   const pago = estado.ultimoPago;
   if (!pago) return;
+  const aparato = APARATOS[pago.aparato] ?? APARATOS.caja;
   const devuelto = Boolean(pago.devolucion);
   $('etapa-resultado').dataset.devuelto = devuelto ? 'si' : 'no';
   $('sim-resultado-titulo').textContent = devuelto ? 'Pago devuelto' : 'Pago aprobado';
@@ -128,24 +181,26 @@ function pintarResultado(estado) {
     $('sim-resultado-detalle').dataset.valor = clave;
     const cuando = pago.segundos ? `, ${pago.segundos} s después de leer la tarjeta` : '';
     $('sim-resultado-detalle').replaceChildren(
-      `Cobro n.º ${pago.numero}. El terminal vio el pago en la red${cuando}. `,
+      `Cobro n.º ${pago.numero}. ${aparato.El} vio el pago en la red${cuando}. ${aparato.hizo} `.replace('  ', ' '),
       enlace('Ver la transacción en la red de Stellar', pago.enlace),
     );
     $('sim-resultado-devolucion').hidden = !devuelto;
     if (devuelto) {
       $('sim-resultado-devolucion').replaceChildren(
-        'El terminal devolvió el dinero a tu cuenta, firmando con su propia llave. ',
+        `${aparato.El} devolvió el dinero a tu cuenta, firmando con su propia llave. `,
         enlace('Ver la devolución', pago.devolucion.enlace),
       );
     }
   }
+  $('sim-otro').textContent = aparato.otraVez;
+  $('sim-otro').disabled = estado.devolviendo;
+  // La devolución es el momento en que firma el aparato: el botón lo dice.
   $('sim-devolver').hidden = devuelto || !pago.conTarjeta;
   $('sim-devolver').disabled = estado.devolviendo;
-  $('sim-devolver').textContent = estado.devolviendo ? 'Devolviendo…' : 'Devolver este pago';
-  $('sim-otro').disabled = estado.devolviendo;
+  $('sim-devolver').textContent = estado.devolviendo ? `Firma ${aparato.el}…` : `Devolver el pago (firma ${aparato.el})`;
 }
 
-// Los cobros hechos: una fila por cobro, con su estado y su prueba en la red.
+// Los cobros hechos: una fila por cobro, con su aparato, su estado y su prueba en la red.
 let cobrosPintados = '';
 function pintarCobros(cobros) {
   const clave = cobros.map((c) => c.numero + (c.devolucion ? 'd' : 'a')).join();
@@ -163,7 +218,13 @@ function pintarCobros(cobros) {
       const prueba = [enlace('Ver el pago', cobro.enlace)];
       if (cobro.devolucion) prueba.push(' ', enlace('Ver la devolución', cobro.devolucion.enlace));
       fila.dataset.estado = cobro.devolucion ? 'devuelto' : 'aprobado';
-      fila.append(celda(`n.º ${cobro.numero}`), celda(`${cobro.monto} XLM`), celda(cobro.devolucion ? 'Devuelto' : 'Aprobado'), celda(...prueba));
+      fila.append(
+        celda(`n.º ${cobro.numero}`),
+        celda((APARATOS[cobro.aparato] ?? APARATOS.caja).nombre),
+        celda(`${cobro.monto} XLM`),
+        celda(cobro.devolucion ? 'Devuelto' : 'Aprobado'),
+        celda(...prueba),
+      );
       return fila;
     }),
   );
@@ -171,20 +232,24 @@ function pintarCobros(cobros) {
 
 let solicitudDibujada = '';
 function pintar(estado) {
+  const aparato = APARATOS[estado.aparato];
   sim.dataset.fase = estado.fase;
+  sim.dataset.aparato = estado.aparato;
   $('sim-estado').textContent = estado.mensaje;
-  mostrarEtapa(ETAPA[estado.fase]);
-  $('sim-pista').textContent = pista(estado);
+  const etapa = ETAPA[estado.fase];
+  mostrarEtapa(etapa);
+  pintarCamino(estado.aparato, etapa);
+  $('sim-pista').textContent = pista(estado, aparato);
+  pintarAparatos(estado);
   pintarAlta(estado);
-
-  // Cobrar: el monto es uno solo. Lo que se escribe en el teclado del terminal aparece en el campo
-  // (salvo mientras se escribe en el campo, que es quien manda en ese momento).
-  if (document.activeElement !== $('sim-monto') && $('sim-monto').value !== estado.monto) $('sim-monto').value = estado.monto;
+  pintarCobrar(estado, aparato);
 
   // Pagar
   const puedePagar = estado.fase === 'esperando' && estado.cobro && !estado.tarjetaPagando;
   $('sim-tarjeta').disabled = !puedePagar;
   $('sim-tarjeta').textContent = estado.tarjetaPagando ? 'Pagando…' : 'Pagar con la tarjeta';
+  // Cancelar es cosa de la caja: un aparato de precio fijo siempre está cobrando.
+  $('sim-cancelar').hidden = aparato.modo !== 'caja';
   $('sim-cancelar').disabled = !(estado.fase === 'esperando' && !estado.tarjetaPagando);
   const solicitud = estado.cobro?.solicitud ?? '';
   $('sim-qr-caja').hidden = !solicitud;
@@ -200,15 +265,16 @@ function pintar(estado) {
   cuenta('sim-cuenta-tarjeta', estado.cuentaTarjeta);
   cuenta('sim-cuenta-aparato', estado.cuentaAparato);
   // Empezar de cero solo tiene sentido cuando ya hay una cuenta y nada está a medias.
-  $('sim-reiniciar').hidden = !(estado.fase === 'listo' || estado.fase === 'aprobado') || estado.devolviendo;
+  $('sim-reiniciar').hidden = !['listo', 'esperando', 'aprobado'].includes(estado.fase) || estado.tarjetaPagando || estado.devolviendo;
 
   // El mismo estado, en JSON, para quien lo quiera leer sin interpretar la página.
   $('sim-datos').textContent = JSON.stringify({
     fase: estado.fase,
     mensaje: estado.mensaje,
     red: 'Stellar testnet',
+    aparato: estado.aparato,
     cuenta: { direccion: estado.cuentaTarjeta, ...estado.cuenta },
-    cuentaTerminal: estado.cuentaAparato,
+    cuentaComercio: estado.cuentaAparato,
     monto: estado.monto,
     cobro: estado.cobro,
     ultimoPago: estado.ultimoPago,
@@ -257,6 +323,9 @@ function mostrarModelo() {
 }
 for (const id of ['sim-crear', 'sim-cobrar', 'sim-tarjeta', 'sim-devolver', 'sim-otro']) $(id).addEventListener('click', mostrarModelo);
 
+for (const boton of document.querySelectorAll('#sim-aparatos button')) {
+  boton.addEventListener('click', () => simulador.elegirAparato(boton.dataset.aparato));
+}
 $('sim-crear').addEventListener('click', () => simulador.crearCuenta());
 $('sim-reintentar').addEventListener('click', () => simulador.reintentar());
 $('sim-monto').addEventListener('input', () => simulador.escribir($('sim-monto').value));
@@ -275,7 +344,7 @@ $('sim-reiniciar').addEventListener('click', () => {
 });
 
 pintar(simulador.estado());
-simulador.preparar(); // si ya hay una cuenta creada en este navegador, la demo arranca en «cobrar»
+simulador.preparar(); // si ya hay una cuenta creada en este navegador, no se crea otra
 
 // El modelo 3D se carga aparte: si el navegador no puede mostrarlo, el panel funciona igual.
 (async () => {
@@ -285,6 +354,7 @@ simulador.preparar(); // si ya hay una cuenta creada en este navegador, la demo 
     escena = await crearEscena({
       lienzoPagina: $('sim-lienzo'),
       urlModelo: `${aqui}modelo/`,
+      aparatoInicial: simulador.estado().aparato ?? INICIAL,
       alPulsarTecla: (tecla) => simulador.tecla(tecla),
       alTocarTarjeta: pagarConTarjeta,
       alPasarTarjeta: pasarTarjeta,

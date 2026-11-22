@@ -1,15 +1,16 @@
 ---
-// La demo: un terminal de Paizap simulado que cobra de verdad en Stellar testnet, con el teléfono
-// y la tarjeta de quien paga. El panel muestra un momento a la vez (crear la cuenta, cobrar, pagar,
-// resultado); el modelo 3D muestra lo mismo y también se puede tocar. Lo técnico y lo que es para
-// agentes va plegado más abajo.
+// La demo: aparatos que cobran de verdad en Stellar testnet (un torniquete, un dispensador y un
+// terminal de caja), con el teléfono y la tarjeta de quien paga. Se elige un aparato; el panel
+// muestra un momento a la vez (crear la cuenta, cobrar, pagar, resultado) y el modelo 3D muestra
+// lo mismo y también se puede tocar. Lo técnico y lo que es para agentes va plegado más abajo.
 import '../styles/marca.css';
 import '../styles/portada.css';
 import '../styles/demo.css';
+import { APARATOS, INICIAL, ORDEN } from '../simulador/catalogo.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const docs = `${base}sdk/`;
-// Enlace al video del aparato real. Vacío: la página no lo menciona.
+// Enlace al video de la demo en una placa real. Vacío: la página no lo menciona.
 const VIDEO = '';
 ---
 
@@ -19,10 +20,10 @@ const VIDEO = '';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000b25" />
-    <title>Demo: cobra con un terminal de Paizap</title>
+    <title>Demo: aparatos que cobran en Stellar</title>
     <meta
       name="description"
-      content="Un terminal de cobro simulado que recibe pagos reales en la red de pruebas de Stellar. Creas tu cuenta, cobras un monto y lo pagas con una tarjeta."
+      content="Un torniquete, un dispensador y un terminal de caja simulados que reciben pagos reales en la red de pruebas de Stellar. Creas tu cuenta y pagas con una tarjeta."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="alternate" type="text/plain" href={`${base}llms.txt`} title="Cómo usar la demo, para agentes" />
@@ -39,31 +40,41 @@ const VIDEO = '';
     </header>
 
     <main>
-      <section id="simulador" class="ancho sim" aria-labelledby="sim-titulo" data-fase="preparando" data-etapa="ninguna">
+      <section id="simulador" class="ancho sim" aria-labelledby="sim-titulo" data-fase="preparando" data-etapa="ninguna" data-aparato={INICIAL}>
         <div class="sim-cabecera">
-          <h1 id="sim-titulo" class="titulo-marca">Cobra con un terminal de Paizap</h1>
+          <h1 id="sim-titulo" class="titulo-marca">Aparatos que cobran en Stellar</h1>
           <p class="entrada">
-            Un terminal de cobro que recibe pagos en la red Stellar. Aquí haces de cliente y de comercio: creas tu
-            cuenta en el teléfono, cobras en el terminal y pagas con tu tarjeta.
+            Un torniquete, un dispensador, una caja: cada uno lleva un microcontrolador que cobra en la red Stellar.
+            Elige un aparato, crea tu cuenta en el teléfono y paga con tu tarjeta.
           </p>
           <p class="sim-aviso">
-            <strong>Es un simulador.</strong> El terminal, el teléfono y la tarjeta son modelos 3D; la cuenta y los pagos
-            son reales, en la red de pruebas de Stellar (testnet).
-            {VIDEO && <a href={VIDEO}>Mira el aparato real en el video.</a>}
+            <strong>Es un simulador.</strong> Los aparatos, el teléfono y la tarjeta son modelos 3D; la cuenta y los
+            pagos son reales, en la red de pruebas de Stellar (testnet).
+            {VIDEO && <a href={VIDEO}>Mira la demo en una placa real.</a>}
           </p>
+        </div>
+
+        <div class="sim-aparatos" id="sim-aparatos" role="group" aria-label="Elige un aparato">
+          {
+            ORDEN.map((id) => (
+              <button type="button" id={`sim-aparato-${id}`} data-aparato={id} aria-pressed={id === INICIAL ? 'true' : 'false'}>
+                {APARATOS[id].nombre}
+              </button>
+            ))
+          }
         </div>
 
         <div class="sim-cuerpo">
           <div class="sim-3d">
-            <canvas id="sim-lienzo" role="img" aria-label="Modelo 3D: el teléfono de quien paga, el terminal de Paizap con su pantalla y su teclado, y una tarjeta."></canvas>
+            <canvas id="sim-lienzo" role="img" aria-label="Modelo 3D: el aparato elegido con su lector de tarjetas, el teléfono de quien paga y una tarjeta."></canvas>
             <p class="sim-pista" id="sim-pista">Cargando el modelo…</p>
           </div>
 
           <div class="sim-panel" id="sim-panel">
             <ol class="sim-camino" id="sim-camino" aria-label="Recorrido">
-              <li data-paso="cuenta" data-estado="pendiente">Cuenta</li>
-              <li data-paso="cobrar" data-estado="pendiente">Cobrar</li>
-              <li data-paso="pagar" data-estado="pendiente">Pagar</li>
+              <li data-estado="pendiente">Cuenta</li>
+              <li data-estado="pendiente">Pagar</li>
+              <li data-estado="pendiente">Pasar</li>
             </ol>
 
             <p id="sim-estado" class="sim-estado" role="status" aria-live="polite">Preparando la demo…</p>
@@ -82,12 +93,12 @@ const VIDEO = '';
             </div>
 
             <div class="etapa" id="etapa-cobrar" hidden>
-              <label for="sim-monto">Monto (XLM, la moneda de Stellar)</label>
+              <label for="sim-monto" id="sim-monto-rotulo">Monto (XLM, la moneda de Stellar)</label>
               <div class="fila">
                 <input id="sim-monto" name="monto" inputmode="decimal" autocomplete="off" value="" />
                 <button type="button" id="sim-cobrar" class="boton rayo">Cobrar</button>
               </div>
-              <p class="nota">Es dinero de prueba: cobra lo que quieras, de 0.01 a 100.</p>
+              <p class="nota" id="sim-cobrar-nota">Es dinero de prueba: cobra lo que quieras, de 0.01 a 100.</p>
             </div>
 
             <div class="etapa" id="etapa-pagar" hidden>
@@ -98,7 +109,7 @@ const VIDEO = '';
                 <div class="qr-cuerpo">
                   <img id="sim-qr" alt="Código QR del cobro" width="148" height="148" />
                   <p>
-                    Es el mismo QR que muestra el terminal. El terminal vigila la red hasta ver este pago.
+                    Es el mismo QR que muestra el aparato, que vigila la red hasta ver este pago.
                     <a id="sim-solicitud" href="#simulador">Abrir el cobro en una billetera</a>
                   </p>
                 </div>
@@ -111,8 +122,8 @@ const VIDEO = '';
               <p id="sim-resultado-detalle"></p>
               <p id="sim-resultado-devolucion" hidden></p>
               <div class="fila">
-                <button type="button" id="sim-otro" class="boton rayo">Cobrar otra vez</button>
-                <button type="button" id="sim-devolver" class="boton linea">Devolver este pago</button>
+                <button type="button" id="sim-otro" class="boton rayo">Pasar otra vez</button>
+                <button type="button" id="sim-devolver" class="boton linea">Devolver el pago (firma el aparato)</button>
               </div>
             </div>
           </div>
@@ -125,7 +136,10 @@ const VIDEO = '';
             <h2 id="cobros-titulo">Cobros hechos en este navegador</h2>
             <table>
               <thead>
-                <tr><th scope="col">Cobro</th><th scope="col">Monto</th><th scope="col">Estado</th><th scope="col">En la red</th></tr>
+                <tr>
+                  <th scope="col">Cobro</th><th scope="col">Aparato</th><th scope="col">Monto</th><th scope="col">Estado</th
+                  ><th scope="col">En la red</th>
+                </tr>
               </thead>
               <tbody id="sim-cobros"></tbody>
             </table>
@@ -142,18 +156,19 @@ const VIDEO = '';
             <summary>Detalles técnicos</summary>
             <div class="plegable-cuerpo">
               <p>
-                El terminal de esta página no es una placa. Es el núcleo de <a href={docs}>Stellar MCU SDK</a>, la
-                librería con la que está hecho el terminal, compilado para el navegador: arma y firma aquí cada
-                transacción y habla con un nodo de Stellar testnet. El terminal real es una placa ESP32-S3 con lector
-                de tarjetas NFC.
+                Los aparatos de esta página no son placas. Su cobro lo hace el núcleo de
+                <a href={docs}>Stellar MCU SDK</a>, la librería de pagos de Stellar para microcontroladores, compilado para
+                el navegador: arma y firma aquí cada transacción y habla con un nodo de Stellar testnet. En una placa
+                real, el mismo núcleo corre en una ESP32-S3 con lector de tarjetas NFC.
               </p>
               <p>
                 Tu cuenta se crea de verdad: la llave se genera en este navegador y la red de pruebas abre la cuenta al
-                cargarle fondos de prueba. La tarjeta de la demo paga desde esa cuenta.
+                cargarle fondos de prueba. La tarjeta de la demo paga desde esa cuenta. Los tres aparatos cobran a una
+                misma cuenta, la del comercio.
               </p>
               <dl class="datos">
                 <div><dt>Tu cuenta, la de quien paga</dt><dd id="sim-cuenta-tarjeta">Todavía no existe</dd></div>
-                <div><dt>La cuenta del terminal, la del comercio</dt><dd id="sim-cuenta-aparato">Todavía no existe</dd></div>
+                <div><dt>La cuenta del comercio, a la que cobran los aparatos</dt><dd id="sim-cuenta-aparato">Todavía no existe</dd></div>
               </dl>
               <h3>Consultas al nodo</h3>
               <pre id="sim-monitor" class="monitor" aria-label="Consultas al nodo de Stellar">Todavía ninguna.</pre>
@@ -167,17 +182,23 @@ const VIDEO = '';
               <h3>Con un navegador</h3>
               <ol class="lista">
                 <li>
-                  Mira el atributo <code>data-fase</code> de <code>#simulador</code>. Si es <code>sin-cuenta</code>, pulsa
-                  <code>#sim-crear</code> y espera a que sea <code>listo</code>. Si ya es <code>listo</code>, la cuenta
-                  estaba creada en este navegador.
+                  Elige un aparato con <code>#sim-aparato-torniquete</code>, <code>#sim-aparato-dispensador</code> o
+                  <code>#sim-aparato-caja</code>. Al abrir la página está elegido el torniquete.
                 </li>
-                <li>Escribe un monto en <code>#sim-monto</code> y pulsa <code>#sim-cobrar</code>. La fase pasa a <code>esperando</code>.</li>
+                <li>
+                  Mira el atributo <code>data-fase</code> de <code>#simulador</code>. Si es <code>sin-cuenta</code>, pulsa
+                  <code>#sim-crear</code> y espera a que deje de ser <code>creando</code>.
+                </li>
+                <li>
+                  El torniquete y el dispensador tienen precio fijo y cobran solos: la fase pasa a <code>esperando</code>.
+                  En la caja, escribe un monto en <code>#sim-monto</code> y pulsa <code>#sim-cobrar</code>.
+                </li>
                 <li>Pulsa <code>#sim-tarjeta</code> y espera a que la fase sea <code>aprobado</code>. Se queda así hasta el siguiente cobro.</li>
                 <li>
                   Lee el resultado en <code>#sim-datos</code>: es el estado en JSON, y <code>ultimoPago.enlace</code> lleva a
                   la transacción.
                 </li>
-                <li>Si quieres, <code>#sim-devolver</code> devuelve el pago y <code>#sim-otro</code> empieza otro cobro.</li>
+                <li>Si quieres, <code>#sim-devolver</code> hace que el aparato firme una devolución y <code>#sim-otro</code> empieza otro cobro.</li>
               </ol>
               <h3>Sin navegador</h3>
               <p>El mismo cobro corre con Node 18 o más nuevo. Baja tres archivos y ejecútalo:</p>

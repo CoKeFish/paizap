@@ -1,5 +1,7 @@
 ---
-// Portada de Paizap: qué es, su terminal y el SDK con el que está hecho. La demo va aparte, en /demo/.
+// Portada de Paizap: pagos de Stellar dentro de aparatos conectados. Qué aparatos, la demo en una
+// placa real (un terminal, que es eso: una demo) y la librería con que cobran. La demo interactiva
+// va aparte, en /demo/.
 import '../styles/marca.css';
 import '../styles/portada.css';
 
@@ -19,7 +21,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
     <title>Paizap: aparatos que cobran en Stellar</title>
     <meta
       name="description"
-      content="Paizap construye aparatos que cobran en Stellar. Su primer aparato es un terminal que cobra con un toque de tarjeta y firma él mismo cada cobro."
+      content="Paizap pone pagos de Stellar dentro de aparatos conectados: torniquetes, dispensadores, máquinas expendedoras. Se paga con un toque de tarjeta y el aparato cobra solo."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="apple-touch-icon" href={`${base}icono.png`} />
@@ -30,7 +32,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
       <nav class="ancho barra" aria-label="Principal">
         <a href={base} class="marca"><img src={`${base}logo-franja.png`} alt="Paizap" width="76" height="56" /></a>
         <ul>
-          <li class="solo-ancho"><a href="#terminal">El terminal</a></li>
+          <li class="solo-ancho"><a href="#aparatos">Aparatos</a></li>
           <li class="solo-ancho"><a href="#sdk">El SDK</a></li>
           <li><a href={demo}>Demo</a></li>
           <li><a href={docs}>Documentación</a></li>
@@ -41,8 +43,8 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
         <div>
           <h1 class="titulo-marca">Aparatos que cobran en Stellar.</h1>
           <p class="entrada">
-            Paizap construye aparatos que cobran en Stellar. El primero es un terminal que cobra con un toque de
-            tarjeta y firma él mismo cada cobro.
+            Paizap pone pagos de Stellar dentro de aparatos conectados: un torniquete, un dispensador, una máquina
+            expendedora. Se paga con un toque de tarjeta y el aparato cobra solo.
           </p>
           <p class="acciones">
             <a class="boton rayo" href={demo}>Probar la demo</a>
@@ -50,57 +52,81 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
           </p>
         </div>
         <a class="heroe-aparato" href={demo}>
-          <img src={`${base}aparato.webp`} alt="Un teléfono con la billetera de Paizap, el terminal amarillo mostrando un cobro y una tarjeta. Abre la demo." width="1280" height="798" />
+          <img
+            src={`${base}aparato.webp`}
+            alt="Un torniquete con su lector de tarjetas, un teléfono con la billetera de Paizap y una tarjeta. Abre la demo."
+            width="1280"
+            height="995"
+          />
         </a>
       </div>
     </header>
 
     <main>
-      <section id="terminal" class="bloque" aria-labelledby="terminal-titulo">
+      <section id="aparatos" class="bloque" aria-labelledby="aparatos-titulo">
+        <div class="ancho">
+          <h2 id="aparatos-titulo" class="titulo-marca">El cobro va dentro del aparato</h2>
+          <p class="entrada">
+            Un microcontrolador, un lector de tarjetas y una librería. Con eso el aparato arma su cobro, lo firma y
+            espera la confirmación de la red.
+          </p>
+          <ul class="usos">
+            <li><h3>Torniquete</h3><p>Se paga el pasaje y gira.</p></li>
+            <li><h3>Dispensador de agua</h3><p>Se paga y entrega.</p></li>
+            <li><h3>Expendedora o lavandería</h3><p>Se paga y la máquina arranca.</p></li>
+            <li><h3>Caja</h3><p>El vendedor escribe el monto y cobra.</p></li>
+          </ul>
+          <p class="cierre">
+            Paizap hace la integración: diseña la placa o adapta la electrónica que el aparato ya tiene.
+          </p>
+          <p class="acciones">
+            <a class="boton noche-boton" href={demo}>Probar un torniquete, un dispensador y una caja</a>
+          </p>
+        </div>
+      </section>
+
+      <section id="placa" class="bloque franja-clara" aria-labelledby="placa-titulo">
         <div class="ancho dos">
           <div>
-            <h2 id="terminal-titulo" class="titulo-marca">El terminal</h2>
+            <h2 id="placa-titulo" class="titulo-marca">Probado en una placa de verdad</h2>
             <p class="entrada">
-              Una tarjeta NFC y un terminal de bajo costo que cobran en dólares digitales. Quien paga acerca la
-              tarjeta y el comercio o la máquina cobra en segundos, sin celular, sin efectivo y sin cambio.
+              Para probarlo fuera del simulador, Paizap armó un terminal de demostración: una placa ESP32-S3 con
+              lector NFC, pantalla, teclado y relé.
             </p>
             <ul class="lista">
               <li>
-                <strong>El dueño de la cuenta pone un tope de gasto</strong> y la red lo hace cumplir: el terminal
+                <strong>Lee una tarjeta y firma él mismo el cobro.</strong> De acercar la tarjeta al «aprobado» pasan
+                de 7 a 9 segundos, con la confirmación de la red incluida.
+              </li>
+              <li>
+                <strong>El dueño de la cuenta pone un tope de gasto</strong> y la red lo hace cumplir: el aparato
                 nunca puede cobrar más de lo autorizado.
               </li>
               <li>
-                <strong>El terminal firma cada cobro.</strong> De la tarjeta al «aprobado» pasan de 7 a 9 segundos,
-                con la confirmación de la red incluida.
+                <strong>Con el relé activa una máquina.</strong> Es lo que hace girar un torniquete o arrancar una
+                lavadora.
               </li>
-              <li>
-                <strong>Dos modos.</strong> En una caja, el vendedor escribe el monto. En una máquina, el precio es
-                fijo y al cobrar un relé la activa: expendedora, dispensador de agua, lavandería, torniquete.
-              </li>
-              <li>
-                <strong>Componentes por menos de USD 40:</strong> una placa ESP32-S3, un lector NFC, una pantalla, un
-                teclado y un relé.
-              </li>
+              <li><strong>Componentes por menos de USD 40.</strong></li>
             </ul>
             <p class="acciones">
-              <a class="boton noche-boton" href={`${docs}demo-terminal/`}>Cómo cobra el terminal</a>
+              <a class="boton noche-boton" href={`${docs}demo-terminal/`}>Cómo cobra la demo</a>
               <a class="enlace" href={REPO_PAIZAP}>El código, en GitHub</a>
             </p>
           </div>
           <figure class="capturas">
-            <img src={`${base}demo/billetera.png`} alt="La billetera del dueño de la tarjeta: saldo, tope de gasto, tarjetas y pagos" width="485" height="1562" loading="lazy" />
-            <img src={`${base}demo/pagar.png`} alt="La pantalla para pagar un cobro del terminal desde el celular" width="500" height="900" loading="lazy" />
-            <figcaption>Con el terminal van una billetera para el dueño de la tarjeta y un panel de ventas para el comercio.</figcaption>
+            <img src={`${base}demo/billetera.png`} alt="La billetera de la demo: saldo, tope de gasto, tarjetas y pagos" width="485" height="1562" loading="lazy" />
+            <img src={`${base}demo/pagar.png`} alt="La pantalla de la demo para pagar un cobro desde el celular" width="500" height="900" loading="lazy" />
+            <figcaption>La demo trae una billetera para quien paga y un panel de ventas para el comercio.</figcaption>
           </figure>
         </div>
       </section>
 
-      <section id="sdk" class="bloque franja-clara" aria-labelledby="sdk-titulo">
+      <section id="sdk" class="bloque" aria-labelledby="sdk-titulo">
         <div class="ancho">
           <h2 id="sdk-titulo" class="titulo-marca">Hecho con Stellar MCU SDK</h2>
           <p class="entrada">
-            Para que el terminal firmara sus propios cobros, Paizap escribió una librería: pagos de Stellar para
-            microcontroladores. Es abierta, para que el siguiente aparato lo pueda construir cualquiera.
+            Lo que cobra dentro de cada aparato es una librería abierta: pagos de Stellar para microcontroladores. La
+            escribió Paizap, y cualquiera puede usarla en su propio aparato.
           </p>
           <table class="hoja">
             <caption>Medido en una ESP32-S3, contra Stellar testnet</caption>
@@ -112,7 +138,6 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
               <tr><th scope="row">Firma Ed25519</th><td>18 KB de flash</td></tr>
               <tr><th scope="row">Armar y firmar un pago</th><td>7 milisegundos</td></tr>
               <tr><th scope="row">De enviar un pago a verlo confirmado</th><td>3 a 6 segundos</td></tr>
-              <tr><th scope="row">Igual al SDK oficial de JavaScript</th><td>20 de 20 comparaciones, byte a byte</td></tr>
             </tbody>
           </table>
           <p class="acciones">

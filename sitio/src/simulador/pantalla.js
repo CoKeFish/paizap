@@ -1,9 +1,10 @@
-// La pantalla del aparato de la demo. El terminal que se imprime lleva una OLED chica, de
-// 128 × 64 puntos; en la demo web la pantalla es más grande (el doble de puntos por lado) para
-// que se lea bien en el modelo 3D. Mantiene el mismo aspecto: un solo color sobre negro, un
-// título arriba y lo importante en grande.
+// La pantalla del módulo de cobro: la misma en el terminal de caja, el torniquete y el dispensador.
+// El terminal que se imprime lleva una OLED chica, de 128 × 64 puntos; en la demo web la pantalla
+// es más grande (el doble de puntos por lado) para que se lea en el modelo 3D. Mantiene el mismo
+// aspecto: un solo color sobre negro, un título arriba y lo importante en grande.
 // Se dibuja en un lienzo y ese lienzo es la textura de la pantalla en el modelo.
 import QRCode from 'qrcode';
+import { APARATOS } from './catalogo.js';
 
 export const ANCHO = 1024;
 export const ALTO = 512;
@@ -11,6 +12,7 @@ const U = 4; // un punto de la pantalla son 4 del lienzo: 256 × 128 puntos
 const TINTA = '#e9f7ff';
 const TENUE = '#8fb4c9';
 const AVISO = '#ffcd00';
+const VERDE = '#7dffb8';
 const LETRA = '"Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", ui-monospace, monospace';
 
 function texto(ctx, t, x, y, puntos, opciones = {}) {
@@ -48,15 +50,17 @@ function qr(ctx, contenido) {
   }
 }
 
-/** Dibuja lo que muestra el aparato según el estado del simulador. */
+/** Dibuja lo que muestra el aparato elegido según el estado del simulador. */
 export function dibujarPantalla(ctx, estado) {
+  const aparato = APARATOS[estado.aparato] ?? APARATOS.caja;
+  const precioFijo = aparato.modo === 'autoservicio';
   ctx.fillStyle = '#02040a';
   ctx.fillRect(0, 0, ANCHO, ALTO);
 
-  // Antes de que exista la cuenta de quien paga, el terminal espera encendido.
+  // Antes de que exista la cuenta de quien paga, el aparato espera encendido.
   if (estado.fase === 'preparando' || estado.fase === 'sin-cuenta' || estado.fase === 'creando') {
     cabecera(ctx, 'en espera');
-    texto(ctx, 'Terminal listo', 6, 36, 22, { grueso: true });
+    texto(ctx, precioFijo ? `${aparato.concepto} ${aparato.precio} XLM` : 'Terminal listo', 6, 36, 22, { grueso: true });
     texto(ctx, estado.fase === 'preparando' ? 'Preparando...' : 'Falta la cuenta de quien paga', 6, 76, 11, { color: TENUE });
     return;
   }
@@ -71,14 +75,14 @@ export function dibujarPantalla(ctx, estado) {
   if (estado.devolviendo) {
     cabecera(ctx, 'devolviendo');
     texto(ctx, 'Devolviendo el pago', 6, 40, 17, { grueso: true });
-    texto(ctx, 'El aparato firma y envia...', 6, 72, 11, { color: TENUE });
+    texto(ctx, 'Este aparato firma y envia...', 6, 72, 11, { color: AVISO });
     return;
   }
 
   if (estado.fase === 'esperando' && estado.cobro) {
     cabecera(ctx, estado.tarjetaPagando ? 'cobrando' : 'esperando pago');
     qr(ctx, estado.cobro.solicitud);
-    texto(ctx, 'Total', 116, 28, 11, { color: TENUE });
+    texto(ctx, precioFijo ? aparato.concepto : 'Total', 116, 28, 11, { color: TENUE });
     texto(ctx, estado.cobro.monto, 116, 42, 30, { grueso: true });
     texto(ctx, 'XLM', 250, 62, 11, { alinear: 'right', color: TENUE });
     texto(ctx, `Cobro ${estado.cobro.numero}`, 116, 84, 11);
@@ -95,14 +99,22 @@ export function dibujarPantalla(ctx, estado) {
   if (estado.fase === 'aprobado' && estado.ultimoPago) {
     const devuelto = Boolean(estado.ultimoPago.devolucion);
     cabecera(ctx, devuelto ? 'devuelto' : 'aprobado');
-    texto(ctx, devuelto ? 'Pago devuelto' : 'Pago aprobado', 6, 30, 18, { grueso: true, color: devuelto ? TINTA : '#7dffb8' });
+    texto(ctx, devuelto ? 'Pago devuelto' : 'Pago aprobado', 6, 30, 18, { grueso: true, color: devuelto ? TINTA : VERDE });
     texto(ctx, estado.ultimoPago.monto, 6, 58, 34, { grueso: true });
     texto(ctx, 'XLM', 250, 82, 11, { alinear: 'right', color: TENUE });
-    texto(ctx, `Cobro ${estado.ultimoPago.numero}, ${devuelto ? 'de vuelta en la tarjeta' : 'visto en la red'}`, 6, 106, 11, { color: TENUE });
+    const abajo = devuelto ? 'De vuelta en la cuenta de quien pago' : precioFijo ? aparato.enPantalla : `Cobro ${estado.ultimoPago.numero}, visto en la red`;
+    texto(ctx, abajo, 6, 106, 11, { color: devuelto || !precioFijo ? TENUE : VERDE, grueso: precioFijo && !devuelto });
     return;
   }
 
-  // Listo: se escribe el monto, como en el modo caja del terminal.
+  // Listo. Con precio fijo, el aparato muestra lo que cobra; en la caja se escribe el monto.
+  if (precioFijo) {
+    cabecera(ctx, 'en espera');
+    texto(ctx, aparato.concepto, 6, 28, 11, { color: TENUE });
+    texto(ctx, aparato.precio, 250, 36, 44, { grueso: true, alinear: 'right' });
+    texto(ctx, 'XLM', 250, 86, 11, { alinear: 'right', color: TENUE });
+    return;
+  }
   cabecera(ctx, 'cobrar');
   texto(ctx, 'Monto', 6, 28, 11, { color: TENUE });
   texto(ctx, estado.monto || '0', 250, 36, 44, { grueso: true, alinear: 'right' });

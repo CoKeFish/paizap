@@ -1,78 +1,33 @@
-// La escena en 3D: el terminal (su carcasa, su pantalla y su teclado), el teléfono de quien paga
-// y su tarjeta de prueba. La base del terminal es la que se imprime; la tapa lleva una ventana de
-// pantalla más grande, solo para la demo web (simulador/tapa_demo.scad).
+// La escena en 3D: un aparato que cobra (torniquete, dispensador o terminal de caja), el teléfono
+// de quien paga y su tarjeta de prueba.
 //
 // El modelo muestra lo que pasa y también se puede tocar:
-//   - el teléfono y las teclas responden al clic;
+//   - el teléfono y las teclas de la caja responden al clic;
 //   - la tarjeta se toca (va sola al lector) o se agarra y se lleva a mano hasta el lector;
 //   - la cámara se acerca sola al teléfono cuando lo que importa pasa ahí (al crear la cuenta y
 //     después de pasar la tarjeta) y vuelve a mostrar todo cuando termina;
+//   - cuando el aparato ve el pago, actúa: el torniquete gira, el dispensador entrega;
+//   - cuando el aparato devuelve un pago, se ve el dinero ir del aparato al teléfono;
 //   - se puede girar un poco arrastrando; al soltar, la vista vuelve a su lugar.
 //
-// Las medidas están en milímetros y salen del modelo de la carcasa (hardware/carcasa).
+// Cada aparato se arma en su archivo (aparatos/). Las medidas están en milímetros.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { STLLoader } from 'three/addons/loaders/STLLoader.js';
-import { ALTO, ANCHO, dibujarPantalla } from './pantalla.js';
+import { crearCaja } from './aparatos/caja.js';
+import { crearDispensador } from './aparatos/dispensador.js';
+import { crearTorniquete } from './aparatos/torniquete.js';
+import { NOCHE, RAYO, lienzo, texturaDe } from './piezas.js';
 import { ALTO as ALTO_TELEFONO, ANCHO as ANCHO_TELEFONO, dibujarTelefono } from './telefono.js';
 
-// De la carcasa: ancho, alto del frente, inclinación de la tapa y dónde va cada pieza sobre ella.
-const ANCHO_MM = 86;
-const LARGO_MM = 172;
-const ALTO_FRENTE = 20.5;
-const INCLINACION = 10;
-const GROSOR_TAPA = 2;
-const CENTRO = ANCHO_MM / 2;
-const PANTALLA_V = 151.4; // centro de la ventana de la pantalla, medido sobre la tapa
-const PANTALLA = { ancho: 64, alto: 32 }; // la ventana de la demo, en milímetros
-const LECTOR_V = 110.85; // centro del lector de tarjetas
-const TECLADO = { v0: 9, ancho: 69, alto: 77 };
-// Las teclas, de la fila más cercana a quien usa el terminal a la más lejana.
-const TECLAS = [
-  ['*', '0', '#', 'D'],
-  ['7', '8', '9', 'C'],
-  ['4', '5', '6', 'B'],
-  ['1', '2', '3', 'A'],
-];
-const SIN_USO = new Set(['B', 'C']); // en el modo caja no hacen nada: van apagadas
-// El teléfono de quien paga: un rectángulo de puntas redondas, acostado a la izquierda del terminal.
-const TELEFONO = { ancho: 72, largo: 150, grosor: 7, radio: 11, x: -100, z: 26, giro: 0.16 };
-
-const NOCHE = '#000b25';
-const RAYO = '#ffcd00';
+// El teléfono de quien paga: un rectángulo de puntas redondas, acostado a la izquierda del aparato.
+const TELEFONO = { ancho: 72, largo: 150, grosor: 7, radio: 11, giro: 0.16 };
+const TARJETA = { ancho: 85.6, alto: 54, giro: -0.32 };
 // Desde dónde se mira todo, y cuánto se puede girar (en radianes) antes de soltar.
 const MIRADA = new THREE.Vector3(167, 228, 291).normalize();
 const GIRO = { lado: 0.42, alto: 0.16 };
 const VIAJE_CAMARA_MS = 750; // lo que tarda la cámara en ir de una vista a otra
-const MIRAR_PAGO_MS = 3500; // cuánto se queda la cámara en el teléfono después de un pago
+const MIRAR_PAGO_MS = 2000; // cuánto se queda la cámara en el teléfono después de un pago
 const ALCANCE_LECTOR = 30; // a cuántos milímetros del lector se lee la tarjeta llevada a mano
-
-function lienzo(ancho, alto) {
-  const c = document.createElement('canvas');
-  c.width = ancho;
-  c.height = alto;
-  return c;
-}
-
-function texturaDe(c) {
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
-}
-
-function texturaTecla(letra, apagada) {
-  const c = lienzo(128, 128);
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = apagada ? '#5d6884' : '#eef1f8';
-  ctx.fillRect(0, 0, 128, 128);
-  ctx.fillStyle = apagada ? '#3d4763' : NOCHE;
-  ctx.font = '700 78px "Barlow", system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(letra, 64, 70);
-  return texturaDe(c);
-}
 
 function texturaTarjeta() {
   const c = lienzo(856, 540);
@@ -110,7 +65,8 @@ function texturaSombra() {
 }
 
 /**
- * Arma la escena sobre `lienzoPagina`. `urlModelo` es la carpeta con base.stl y tapa.stl.
+ * Arma la escena sobre `lienzoPagina`. `urlModelo` es la carpeta con base.stl y tapa.stl, de la
+ * caja. `aparatoInicial` es el que se ve al empezar.
  *
  * Avisa cuando se pulsa una tecla (`alPulsarTecla`), cuando se toca la tarjeta (`alTocarTarjeta`),
  * cuando la tarjeta llega al lector llevada a mano (`alPasarTarjeta`, que devuelve si con eso
@@ -119,14 +75,14 @@ function texturaSombra() {
  * Devuelve cómo actualizarla con el estado del simulador, cómo llevar la tarjeta sola al lector y
  * dónde está cada cosa en la página (`donde`), para quien quiera arrastrar la tarjeta sin mirar.
  */
-export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTocarTarjeta, alPasarTarjeta, alTocarTelefono }) {
+export async function crearEscena({ lienzoPagina, urlModelo, aparatoInicial, alPulsarTecla, alTocarTarjeta, alPasarTarjeta, alTocarTelefono }) {
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pintor = new THREE.WebGLRenderer({ canvas: lienzoPagina, antialias: true, alpha: true });
   pintor.setPixelRatio(Math.min(devicePixelRatio, 2));
   pintor.outputColorSpace = THREE.SRGBColorSpace;
 
   const escena = new THREE.Scene();
-  const camara = new THREE.PerspectiveCamera(30, 1, 10, 4000);
+  const camara = new THREE.PerspectiveCamera(30, 1, 10, 6000);
 
   const controles = new OrbitControls(camara, lienzoPagina);
   controles.enablePan = false;
@@ -144,146 +100,7 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
   contraluz.position.set(-200, 120, -220);
   escena.add(contraluz);
 
-  // El modelo viene con el eje Z hacia arriba y una esquina en el origen: se acuesta sobre la
-  // mesa y se centra. El frente (donde está el teclado) queda mirando a la cámara.
-  const aparato = new THREE.Group();
-  aparato.rotation.x = -Math.PI / 2;
-  aparato.position.set(-CENTRO, 0, LARGO_MM / 2);
-  escena.add(aparato);
-
-  const cargador = new STLLoader();
-  const [base, tapaModelo] = await Promise.all([cargador.loadAsync(`${urlModelo}base.stl`), cargador.loadAsync(`${urlModelo}tapa.stl`)]);
-  for (const forma of [base, tapaModelo]) forma.computeVertexNormals();
-  // Lo que no responde al clic pero sí tapa lo que tiene detrás.
-  const cuerpo = [
-    new THREE.Mesh(base, new THREE.MeshStandardMaterial({ color: '#16264f', roughness: 0.55, metalness: 0.05 })),
-    new THREE.Mesh(tapaModelo, new THREE.MeshStandardMaterial({ color: RAYO, roughness: 0.5, metalness: 0.05 })),
-  ];
-  aparato.add(...cuerpo);
-
-  // Lo que va sobre la tapa se coloca en su propio sistema: u de lado a lado, v del frente al
-  // fondo sobre la pendiente, w hacia afuera (la cara exterior está en w = GROSOR_TAPA).
-  const tapa = new THREE.Group();
-  tapa.position.set(0, 0, ALTO_FRENTE);
-  tapa.rotation.x = THREE.MathUtils.degToRad(INCLINACION);
-  aparato.add(tapa);
-
-  // Pantalla: un lienzo que se vuelve a dibujar con cada cambio y llena la ventana de la tapa.
-  const lienzoPantalla = lienzo(ANCHO, ALTO);
-  const ctxPantalla = lienzoPantalla.getContext('2d');
-  const texturaPantalla = texturaDe(lienzoPantalla);
-  const pantalla = new THREE.Mesh(
-    new THREE.PlaneGeometry(PANTALLA.ancho, PANTALLA.alto),
-    new THREE.MeshBasicMaterial({ map: texturaPantalla }),
-  );
-  pantalla.position.set(CENTRO, PANTALLA_V, 1.2);
-  tapa.add(pantalla);
-  cuerpo.push(pantalla);
-
-  // Teclado: la membrana y sus 16 teclas.
-  const membrana = new THREE.Mesh(
-    new THREE.BoxGeometry(TECLADO.ancho, TECLADO.alto, 0.9),
-    new THREE.MeshStandardMaterial({ color: '#0b1634', roughness: 0.8 }),
-  );
-  membrana.position.set(CENTRO, TECLADO.v0 + TECLADO.alto / 2, GROSOR_TAPA + 0.45);
-  tapa.add(membrana);
-  cuerpo.push(membrana);
-
-  const tocables = [];
-  const teclas = new Map();
-  const costado = new THREE.MeshStandardMaterial({ color: '#c9d0e2', roughness: 0.7 });
-  const costadoApagado = new THREE.MeshStandardMaterial({ color: '#4a5572', roughness: 0.8 });
-  TECLAS.forEach((fila, j) => {
-    fila.forEach((letra, i) => {
-      const apagada = SIN_USO.has(letra);
-      const lado = apagada ? costadoApagado : costado;
-      const cara = new THREE.MeshStandardMaterial({ map: texturaTecla(letra, apagada), roughness: 0.6, emissive: RAYO, emissiveIntensity: 0 });
-      const tecla = new THREE.Mesh(new THREE.BoxGeometry(11, 11, 1.4), [lado, lado, lado, lado, cara, lado]);
-      tecla.position.set(CENTRO - TECLADO.ancho / 2 + 12 + i * 15, TECLADO.v0 + 14.5 + j * 16, GROSOR_TAPA + 1.5);
-      tecla.userData = { tecla: letra, reposo: tecla.position.z, cara };
-      tapa.add(tecla);
-      if (apagada) {
-        cuerpo.push(tecla);
-      } else {
-        tocables.push(tecla);
-        teclas.set(letra, tecla);
-      }
-    });
-  });
-
-  // La luz del relé: se enciende cuando el terminal entrega.
-  const luzRele = new THREE.Mesh(new THREE.SphereGeometry(2.2, 20, 12), new THREE.MeshStandardMaterial({ color: '#26355f', emissive: '#000000' }));
-  luzRele.position.set(CENTRO + 33, LECTOR_V + 14, GROSOR_TAPA + 0.8);
-  tapa.add(luzRele);
-
-  // La tarjeta de prueba descansa al lado del terminal. Va al lector sola, o llevada a mano.
-  const dorso = new THREE.MeshStandardMaterial({ color: NOCHE, roughness: 0.5 });
-  const tarjeta = new THREE.Mesh(
-    new THREE.BoxGeometry(85.6, 0.9, 54),
-    [dorso, dorso, new THREE.MeshStandardMaterial({ map: texturaTarjeta(), roughness: 0.45 }), dorso, dorso, dorso],
-  );
-  const reposoTarjeta = { posicion: new THREE.Vector3(96, 0.6, 36), giro: new THREE.Euler(0, -0.32, 0) };
-  tarjeta.position.copy(reposoTarjeta.posicion);
-  tarjeta.rotation.copy(reposoTarjeta.giro);
-  tarjeta.userData = { tarjeta: true };
-  escena.add(tarjeta);
-  tocables.push(tarjeta);
-
-  // El teléfono: el cuerpo, con las puntas redondas, y la pantalla, que es otro lienzo.
-  const contorno = new THREE.Shape();
-  {
-    const { ancho: a, largo: l, radio: r } = TELEFONO;
-    contorno.moveTo(-a / 2 + r, -l / 2);
-    contorno.lineTo(a / 2 - r, -l / 2);
-    contorno.quadraticCurveTo(a / 2, -l / 2, a / 2, -l / 2 + r);
-    contorno.lineTo(a / 2, l / 2 - r);
-    contorno.quadraticCurveTo(a / 2, l / 2, a / 2 - r, l / 2);
-    contorno.lineTo(-a / 2 + r, l / 2);
-    contorno.quadraticCurveTo(-a / 2, l / 2, -a / 2, l / 2 - r);
-    contorno.lineTo(-a / 2, -l / 2 + r);
-    contorno.quadraticCurveTo(-a / 2, -l / 2, -a / 2 + r, -l / 2);
-  }
-  const telefono = new THREE.Group();
-  telefono.position.set(TELEFONO.x, 0, TELEFONO.z);
-  telefono.rotation.y = TELEFONO.giro;
-  const cuerpoTelefono = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(contorno, { depth: TELEFONO.grosor, bevelEnabled: true, bevelThickness: 0.7, bevelSize: 0.7, bevelSegments: 3, curveSegments: 8 }),
-    new THREE.MeshStandardMaterial({ color: '#1b2130', roughness: 0.4, metalness: 0.35 }),
-  );
-  cuerpoTelefono.rotation.x = -Math.PI / 2; // acostado: el contorno queda sobre la mesa
-  cuerpoTelefono.position.y = 0.7;
-  const lienzoTelefono = lienzo(ANCHO_TELEFONO, ALTO_TELEFONO);
-  const ctxTelefono = lienzoTelefono.getContext('2d');
-  const texturaTelefono = texturaDe(lienzoTelefono);
-  const pantallaTelefono = new THREE.Mesh(
-    new THREE.PlaneGeometry(TELEFONO.ancho - 5, (TELEFONO.ancho - 5) * (ALTO_TELEFONO / ANCHO_TELEFONO)),
-    new THREE.MeshBasicMaterial({ map: texturaTelefono }),
-  );
-  pantallaTelefono.rotation.x = -Math.PI / 2;
-  pantallaTelefono.position.y = TELEFONO.grosor + 1.5;
-  for (const pieza of [cuerpoTelefono, pantallaTelefono]) {
-    pieza.userData = { telefono: true };
-    telefono.add(pieza);
-    tocables.push(pieza);
-  }
-  escena.add(telefono);
-
-  const sombra = new THREE.Mesh(
-    new THREE.PlaneGeometry(640, 560),
-    new THREE.MeshBasicMaterial({ map: texturaSombra(), transparent: true, depthWrite: false }),
-  );
-  sombra.rotation.x = -Math.PI / 2;
-  sombra.position.set(-8, -0.4, 6);
-  escena.add(sombra);
-
-  escena.updateMatrixWorld(true);
-  // Dónde queda la tarjeta cuando el lector la lee, y a qué altura viaja en la mano.
-  const sobreElLector = tapa.localToWorld(new THREE.Vector3(CENTRO, LECTOR_V, 13));
-  const giroLector = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(INCLINACION), 0, 0));
-  const giroReposo = new THREE.Quaternion().setFromEuler(reposoTarjeta.giro);
-  const ALTURA_MANO = sobreElLector.y + 8;
-
-  // ---- Animaciones cortas: una tecla que baja, la tarjeta y la cámara que van y vuelven ----
+  // ---- Animaciones cortas: lo que se mueve un rato y para ----
   const animaciones = new Set();
   function animar(duracion, paso) {
     if (sinMovimiento) {
@@ -305,15 +122,111 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
   }
   const espera = (ms) => new Promise((listo) => setTimeout(listo, sinMovimiento ? 0 : ms));
 
+  // ---- Los aparatos: se arman todos y se muestra uno ----
+  const aparatos = {
+    torniquete: crearTorniquete({ animar, espera }),
+    dispensador: crearDispensador({ animar, espera }),
+    caja: await crearCaja({ urlModelo, animar, espera }),
+  };
+  for (const aparato of Object.values(aparatos)) {
+    escena.add(aparato.grupo);
+    aparato.medir();
+    aparato.grupo.visible = false;
+  }
+  let actual = aparatos[aparatoInicial] ?? aparatos.caja;
+  actual.grupo.visible = true;
+
+  // La tarjeta de prueba descansa a la derecha del aparato. Va al lector sola, o llevada a mano.
+  const dorso = new THREE.MeshStandardMaterial({ color: NOCHE, roughness: 0.5 });
+  const tarjeta = new THREE.Mesh(
+    new THREE.BoxGeometry(TARJETA.ancho, 0.9, TARJETA.alto),
+    [dorso, dorso, new THREE.MeshStandardMaterial({ map: texturaTarjeta(), roughness: 0.45 }), dorso, dorso, dorso],
+  );
+  const reposoTarjeta = new THREE.Vector3(actual.lados.tarjeta[0], 0.6, actual.lados.tarjeta[1]);
+  const giroReposo = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, TARJETA.giro, 0));
+  tarjeta.position.copy(reposoTarjeta);
+  tarjeta.quaternion.copy(giroReposo);
+  tarjeta.userData = { tarjeta: true };
+  escena.add(tarjeta);
+
+  // El teléfono: el cuerpo, con las puntas redondas, y la pantalla, que es otro lienzo.
+  const contorno = new THREE.Shape();
+  {
+    const { ancho: a, largo: l, radio: r } = TELEFONO;
+    contorno.moveTo(-a / 2 + r, -l / 2);
+    contorno.lineTo(a / 2 - r, -l / 2);
+    contorno.quadraticCurveTo(a / 2, -l / 2, a / 2, -l / 2 + r);
+    contorno.lineTo(a / 2, l / 2 - r);
+    contorno.quadraticCurveTo(a / 2, l / 2, a / 2 - r, l / 2);
+    contorno.lineTo(-a / 2 + r, l / 2);
+    contorno.quadraticCurveTo(-a / 2, l / 2, -a / 2, l / 2 - r);
+    contorno.lineTo(-a / 2, -l / 2 + r);
+    contorno.quadraticCurveTo(-a / 2, -l / 2, -a / 2 + r, -l / 2);
+  }
+  const telefono = new THREE.Group();
+  telefono.position.set(actual.lados.telefono[0], 0, actual.lados.telefono[1]);
+  telefono.rotation.y = TELEFONO.giro;
+  const cuerpoTelefono = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(contorno, { depth: TELEFONO.grosor, bevelEnabled: true, bevelThickness: 0.7, bevelSize: 0.7, bevelSegments: 3, curveSegments: 8 }),
+    new THREE.MeshStandardMaterial({ color: '#1b2130', roughness: 0.4, metalness: 0.35 }),
+  );
+  cuerpoTelefono.rotation.x = -Math.PI / 2; // acostado: el contorno queda sobre la mesa
+  cuerpoTelefono.position.y = 0.7;
+  const lienzoTelefono = lienzo(ANCHO_TELEFONO, ALTO_TELEFONO);
+  const ctxTelefono = lienzoTelefono.getContext('2d');
+  const texturaTelefono = texturaDe(lienzoTelefono);
+  const pantallaTelefono = new THREE.Mesh(
+    new THREE.PlaneGeometry(TELEFONO.ancho - 5, (TELEFONO.ancho - 5) * (ALTO_TELEFONO / ANCHO_TELEFONO)),
+    new THREE.MeshBasicMaterial({ map: texturaTelefono }),
+  );
+  pantallaTelefono.rotation.x = -Math.PI / 2;
+  pantallaTelefono.position.y = TELEFONO.grosor + 1.5;
+  const piezasTelefono = [cuerpoTelefono, pantallaTelefono];
+  for (const pieza of piezasTelefono) {
+    pieza.userData = { telefono: true };
+    telefono.add(pieza);
+  }
+  escena.add(telefono);
+
+  const sombra = new THREE.Mesh(
+    new THREE.PlaneGeometry(760, 640),
+    new THREE.MeshBasicMaterial({ map: texturaSombra(), transparent: true, depthWrite: false }),
+  );
+  sombra.rotation.x = -Math.PI / 2;
+  sombra.position.set(0, -0.4, 6);
+  escena.add(sombra);
+
+  // El dinero que viaja cuando el aparato devuelve un pago: una luz que va del aparato al teléfono.
+  const moneda = new THREE.Mesh(new THREE.SphereGeometry(5, 20, 14), new THREE.MeshStandardMaterial({ color: RAYO, emissive: RAYO, emissiveIntensity: 0.9 }));
+  moneda.visible = false;
+  escena.add(moneda);
+
+  // ---- Lo que depende del aparato que se ve ----
+  // Qué responde al clic y qué solo tapa; dónde se lee la tarjeta y a qué altura viaja en la mano.
+  let tocables = [];
+  let todo = [];
+  const sobreElLector = new THREE.Vector3();
+  const giroLector = new THREE.Quaternion();
+  let alturaMano = 60;
+  let arcoTarjeta = 40; // cuánto sube la tarjeta cuando va sola al lector: más si el lector está alto
+  function tomarMedidas() {
+    tocables = [...actual.teclas.values(), tarjeta, ...piezasTelefono];
+    todo = [...tocables, ...actual.solidos];
+    sobreElLector.copy(actual.lector.posicion);
+    giroLector.copy(actual.lector.giro);
+    alturaMano = sobreElLector.y + 8;
+    arcoTarjeta = Math.max(30, sobreElLector.y * 0.8);
+  }
+  tomarMedidas();
+
   // ---- Vistas: la cámara muestra todo o se acerca al teléfono ----
   // Cada vista encuadra justo lo suyo, sea cual sea el tamaño del lienzo.
-  function vistaDe(cosas, phi, theta, ocupa) {
-    const cajas = cosas.map((cosa) => new THREE.Box3().setFromObject(cosa));
+  function vistaDe(cajas, phi, theta, ocupa) {
     return {
       phi,
       theta,
       ocupa, // cuánto del lienzo puede llenar, de 0 a 2 en cada eje
-      centro: cajas.reduce((todo, caja) => todo.union(caja), new THREE.Box3()).getCenter(new THREE.Vector3()),
+      centro: cajas.reduce((junto, caja) => junto.union(caja), new THREE.Box3()).getCenter(new THREE.Vector3()),
       esquinas: cajas.flatMap((caja) =>
         [0, 1, 2, 3, 4, 5, 6, 7].map(
           (n) => new THREE.Vector3(n & 1 ? caja.max.x : caja.min.x, n & 2 ? caja.max.y : caja.min.y, n & 4 ? caja.max.z : caja.min.z),
@@ -325,11 +238,17 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     };
   }
   const casa = new THREE.Spherical().setFromVector3(MIRADA);
-  const vistas = {
-    todo: vistaDe([aparato, tarjeta, telefono], casa.phi, casa.theta, { ancho: 1.84, alto: 1.6 }),
+  const vistas = {};
+  // Las cajas del teléfono y de la tarjeta en su lugar, para el aparato que se ve.
+  function armarVistas() {
+    const { telefono: suTelefono, tarjeta: suTarjeta } = actual.lados;
+    const cajaTelefono = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(suTelefono[0], 5, suTelefono[1]), new THREE.Vector3(96, 10, 160));
+    const cajaTarjeta = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(suTarjeta[0], 1, suTarjeta[1]), new THREE.Vector3(98, 2, 78));
+    vistas.todo = vistaDe([actual.limites, cajaTarjeta, cajaTelefono], casa.phi, casa.theta, { ancho: 1.84, alto: 1.6 });
     // El teléfono, casi desde arriba y derecho, para que su pantalla se lea.
-    telefono: vistaDe([telefono], 0.5, TELEFONO.giro + 0.1, { ancho: 1.7, alto: 1.62 }),
-  };
+    vistas.telefono = vistaDe([cajaTelefono], 0.5, TELEFONO.giro + 0.1, { ancho: 1.7, alto: 1.62 });
+    for (const vista of Object.values(vistas)) encuadrar(vista);
+  }
 
   const tamano = { ancho: 1, alto: 1 };
   const proyectada = new THREE.Vector3();
@@ -355,8 +274,8 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     // La distancia más corta desde la que entra todo lo de la vista.
     camara.clearViewOffset();
     let cerca = 80;
-    let lejos = 3000;
-    for (let i = 0; i < 26; i++) {
+    let lejos = 5000;
+    for (let i = 0; i < 28; i++) {
       const medio = (cerca + lejos) / 2;
       const b = bordes(vista, medio);
       if (b.x1 - b.x0 <= vista.ocupa.ancho && b.y1 - b.y0 <= vista.ocupa.alto) lejos = medio;
@@ -389,9 +308,11 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     controles.minPolarAngle = Math.max(vista.phi - GIRO.alto, 0.12);
     controles.maxPolarAngle = Math.min(vista.phi + GIRO.alto, Math.PI * 0.46);
   }
+  // Lleva la cámara a una vista. Devuelve una promesa que termina cuando llega.
   function irA(nombre, ms = VIAJE_CAMARA_MS) {
     enfoque = nombre;
     const a = vistas[nombre];
+    if (!a) return Promise.resolve(); // el lienzo todavía no tiene tamaño: no hay vistas
     const este = ++viaje;
     // Sale de donde esté la cámara: pudo girarla quien mira.
     const ahora = new THREE.Spherical().setFromVector3(camara.position.clone().sub(controles.target));
@@ -399,7 +320,7 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     camaraEnViaje = true;
     habilitar();
     const entre = THREE.MathUtils.lerp;
-    animar(ms, (t) => {
+    return animar(ms, (t) => {
       if (este !== viaje) return;
       mira.centro.lerpVectors(desde.centro, a.centro, t);
       mira.radio = entre(desde.radio, a.radio, t);
@@ -427,6 +348,7 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
   let mirandoElPago = false; // la tarjeta ya tocó el lector y el pago está en camino
   let mirarHasta = 0; // hasta cuándo se mira el teléfono por un pago o una devolución
   let ultimoMovimiento = null;
+  let porEntregar = null; // el aparato que vio un pago y todavía no actuó: espera a que se lo mire
   function vistaQueToca() {
     const fase = estadoActual?.fase;
     if (fase === 'sin-cuenta' || fase === 'creando') return 'telefono';
@@ -435,16 +357,43 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
   }
   function revisarVista() {
     const toca = vistaQueToca();
-    if (toca !== enfoque) irA(toca);
+    const llegada = toca !== enfoque ? irA(toca) : Promise.resolve();
+    // El aparato actúa cuando la cámara vuelve a mostrarlo: así se ve girar el torniquete o caer la botella.
+    if (toca === 'todo' && porEntregar) {
+      const aparato = porEntregar;
+      porEntregar = null;
+      llegada.then(() => {
+        if (aparato === actual) aparato.alAprobar();
+      });
+    }
   }
 
-  // ---- Las teclas ----
-  function pulsar(letra) {
-    const tecla = teclas.get(letra);
-    if (!tecla) return;
-    animar(160, (t) => {
-      tecla.position.z = tecla.userData.reposo - 0.7 * Math.sin(Math.PI * t);
+  // ---- Cambiar de aparato: sale uno, entra otro, y el teléfono y la tarjeta se acomodan ----
+  let cambio = 0;
+  function cambiarA(id) {
+    const nuevo = aparatos[id];
+    if (!nuevo || nuevo === actual) return;
+    const este = ++cambio;
+    for (const aparato of Object.values(aparatos)) {
+      aparato.grupo.visible = aparato === nuevo;
+      aparato.grupo.scale.setScalar(1);
+    }
+    actual = nuevo;
+    porEntregar = null;
+    tomarMedidas();
+    const telefonoDesde = telefono.position.clone();
+    const telefonoHasta = new THREE.Vector3(actual.lados.telefono[0], 0, actual.lados.telefono[1]);
+    const tarjetaDesde = reposoTarjeta.clone();
+    const tarjetaHasta = new THREE.Vector3(actual.lados.tarjeta[0], 0.6, actual.lados.tarjeta[1]);
+    animar(320, (t) => {
+      if (este !== cambio) return;
+      actual.grupo.scale.setScalar(0.6 + 0.4 * t); // el aparato nuevo llega creciendo
+      telefono.position.lerpVectors(telefonoDesde, telefonoHasta, t);
+      reposoTarjeta.lerpVectors(tarjetaDesde, tarjetaHasta, t);
+      if (tarjetaEn === 'reposo') tarjeta.position.copy(reposoTarjeta);
     });
+    armarVistas();
+    irA(vistaQueToca());
   }
 
   // ---- La tarjeta: en reposo, en la mano de quien la arrastra, o de viaje (animada) ----
@@ -461,12 +410,12 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     if (estadoActual?.tarjetaPagando) mirandoElPago = true;
     revisarVista();
   }
-  async function volverAlReposo(ms = 520, arco = 26) {
+  async function volverAlReposo(ms = 520, arco = arcoTarjeta) {
     tarjetaEn = 'viaje';
     const desde = tarjeta.position.clone();
     const giro = tarjeta.quaternion.clone();
     await animar(ms, (t) => {
-      tarjeta.position.lerpVectors(desde, reposoTarjeta.posicion, t);
+      tarjeta.position.lerpVectors(desde, reposoTarjeta, t);
       tarjeta.position.y += arco * Math.sin(Math.PI * t); // sube y baja en arco
       tarjeta.quaternion.slerpQuaternions(giro, giroReposo, t);
     });
@@ -477,9 +426,9 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     if (tarjetaEn !== 'reposo') return;
     tarjetaEn = 'viaje';
     const desde = tarjeta.position.clone();
-    await animar(520, (t) => {
+    await animar(560, (t) => {
       tarjeta.position.lerpVectors(desde, sobreElLector, t);
-      tarjeta.position.y += 26 * Math.sin(Math.PI * t);
+      tarjeta.position.y += arcoTarjeta * Math.sin(Math.PI * t);
       tarjeta.quaternion.slerpQuaternions(giroReposo, giroLector, t);
     });
     tocoElLector();
@@ -508,11 +457,34 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     lienzoPagina.style.cursor = 'grab';
   }
 
+  // El aparato devuelve un pago: mientras firma y envía, el dinero va saliendo hacia el teléfono.
+  let latiendo = false;
+  async function latir() {
+    if (latiendo) return;
+    latiendo = true;
+    const desde = new THREE.Vector3();
+    const hasta = new THREE.Vector3();
+    while (estadoActual?.devolviendo) {
+      desde.copy(sobreElLector);
+      hasta.copy(telefono.position).setY(TELEFONO.grosor + 6);
+      const alto = Math.max(50, desde.y * 0.5);
+      moneda.visible = true;
+      await animar(760, (t) => {
+        moneda.position.lerpVectors(desde, hasta, t);
+        moneda.position.y += alto * Math.sin(Math.PI * t);
+        moneda.scale.setScalar(0.5 + Math.sin(Math.PI * t)); // nace chica, crece y se apaga al llegar
+      });
+      moneda.visible = false;
+      await espera(140);
+      if (sinMovimiento) break;
+    }
+    latiendo = false;
+  }
+
   // ---- El puntero: qué hay debajo, y dónde cae sobre un plano horizontal ----
   const rayo = new THREE.Raycaster();
   const puntero = new THREE.Vector2();
   const plano = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  const todo = [...tocables, ...cuerpo];
   function apuntar(evento) {
     const borde = lienzoPagina.getBoundingClientRect();
     puntero.set(((evento.clientX - borde.left) / borde.width) * 2 - 1, -((evento.clientY - borde.top) / borde.height) * 2 + 1);
@@ -577,12 +549,12 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
       if (evento.pointerId !== punteroTarjeta) return;
       if (dondeBajo && Math.hypot(evento.clientX - dondeBajo.x, evento.clientY - dondeBajo.y) > 6) movida = true;
       if (!movida) return;
-      const punto = enElPlano(evento, ALTURA_MANO);
+      const punto = enElPlano(evento, alturaMano);
       if (!punto) return;
       destinoMano.copy(punto).add(agarre);
-      destinoMano.x = THREE.MathUtils.clamp(destinoMano.x, -180, 210);
-      destinoMano.z = THREE.MathUtils.clamp(destinoMano.z, -140, 150);
-      destinoMano.y = ALTURA_MANO;
+      destinoMano.x = THREE.MathUtils.clamp(destinoMano.x, -280, 300);
+      destinoMano.z = THREE.MathUtils.clamp(destinoMano.z, -200, 220);
+      destinoMano.y = alturaMano;
       // Llegó al lector: se avisa una sola vez por arrastre. Si empieza un pago, se apoya y lee.
       if (!avisada && Math.hypot(destinoMano.x - sobreElLector.x, destinoMano.z - sobreElLector.z) < ALCANCE_LECTOR) {
         avisada = true;
@@ -611,8 +583,8 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     if (cancelado || !dondeBajo || Math.hypot(evento.clientX - dondeBajo.x, evento.clientY - dondeBajo.y) > 6) return;
     const objeto = bajoElPuntero(evento);
     if (!objeto) return;
-    if (teclas.get(objeto.userData.tecla) === objeto) {
-      pulsar(objeto.userData.tecla);
+    if (objeto.userData.tecla && actual.teclas.get(objeto.userData.tecla) === objeto) {
+      actual.pulsar(objeto.userData.tecla);
       alPulsarTecla(objeto.userData.tecla);
     } else if (objeto.userData.telefono) {
       alTocarTelefono();
@@ -629,7 +601,7 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     camara.aspect = ancho / alto;
     camara.updateProjectionMatrix();
     Object.assign(tamano, { ancho, alto });
-    for (const vista of Object.values(vistas)) encuadrar(vista);
+    armarVistas();
     // Con el tamaño nuevo, la cámara queda de una vez en la vista que toca.
     viaje++;
     camaraEnViaje = false;
@@ -647,9 +619,9 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
   pintor.setAnimationLoop((ahora) => {
     for (const cuadro of animaciones) cuadro();
     if (tarjetaEn === 'reposo') {
-      tarjeta.position.y = reposoTarjeta.posicion.y + (tarjetaLlama && !sinMovimiento ? 4 + 2.5 * Math.sin(ahora / 260) : 0);
+      tarjeta.position.y = reposoTarjeta.y + (tarjetaLlama && !sinMovimiento ? 4 + 2.5 * Math.sin(ahora / 260) : 0);
     } else if (tarjetaEn === 'mano' && movida) {
-      // Sigue al puntero con suavidad y se inclina como la tapa al acercarse al lector.
+      // Sigue al puntero con suavidad y se inclina como el lector al acercarse a él.
       tarjeta.position.lerp(destinoMano, sinMovimiento ? 1 : 0.35);
       const cerca = 1 - Math.min(1, Math.hypot(tarjeta.position.x - sobreElLector.x, tarjeta.position.z - sobreElLector.z) / 90);
       tarjeta.quaternion.copy(giroEnMano.slerpQuaternions(giroReposo, giroLector, cerca));
@@ -658,16 +630,29 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
     pintor.render(escena, camara);
   });
 
-  /** Refleja el estado del simulador: las dos pantallas, la luz del relé y adónde mira la cámara. */
+  /** Refleja el estado del simulador: el aparato elegido, las pantallas y adónde mira la cámara. */
+  let cobroVisto = 0;
+  let pagoVisto = '';
   function actualizar(estado) {
+    const antes = estadoActual;
     estadoActual = estado;
-    dibujarPantalla(ctxPantalla, estado);
-    texturaPantalla.needsUpdate = true;
+    if (estado.aparato !== actual.id) cambiarA(estado.aparato);
+    actual.dibujar(estado);
     dibujarTelefono(ctxTelefono, estado);
     texturaTelefono.needsUpdate = true;
-    luzRele.material.color.set(estado.rele ? '#3dff9a' : '#26355f');
-    luzRele.material.emissive.set(estado.rele ? '#19c96b' : '#000000');
     tarjetaLlama = estado.fase === 'esperando' && Boolean(estado.cobro) && !estado.tarjetaPagando;
+
+    // Un cobro nuevo: el aparato se prepara (llega otra persona, se repone la botella).
+    if (estado.cobro && estado.cobro.numero !== cobroVisto) {
+      cobroVisto = estado.cobro.numero;
+      actual.alEmpezar();
+    }
+    // El aparato vio el pago: va a actuar en cuanto la cámara lo muestre.
+    if (estado.fase === 'aprobado' && estado.ultimoPago && estado.ultimoPago.hash !== pagoVisto) {
+      pagoVisto = estado.ultimoPago.hash;
+      porEntregar = actual;
+    }
+    if (estado.devolviendo && !antes?.devolviendo) latir();
 
     // El pago terminó, bien o mal: lo que sigue lo decide si hubo un movimiento en la cuenta.
     if (!estado.tarjetaPagando) mirandoElPago = false;
@@ -689,12 +674,12 @@ export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTo
       nombre === 'tarjeta'
         ? tarjeta.position.clone()
         : nombre === 'lector'
-          ? new THREE.Vector3(sobreElLector.x, ALTURA_MANO, sobreElLector.z)
+          ? new THREE.Vector3(sobreElLector.x, alturaMano, sobreElLector.z)
           : telefono.position.clone().setY(TELEFONO.grosor);
     punto.project(camara);
     const borde = lienzoPagina.getBoundingClientRect();
     return { x: borde.left + ((punto.x + 1) / 2) * borde.width, y: borde.top + ((1 - punto.y) / 2) * borde.height };
   }
 
-  return { actualizar, acercarTarjeta, pulsar, donde };
+  return { actualizar, acercarTarjeta, donde };
 }

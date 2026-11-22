@@ -8,35 +8,44 @@ export const GET: APIRoute = ({ site }) => {
 
   const texto = `# Paizap
 
-> Paizap construye aparatos que cobran en Stellar. Este sitio trae un simulador de su primer
-> aparato, un terminal de cobro, que hace pagos reales en la red de pruebas de Stellar (testnet).
-> La librería con la que está hecho es Stellar MCU SDK: pagos de Stellar para microcontroladores.
+> Paizap pone pagos de Stellar dentro de aparatos conectados: torniquetes, dispensadores, cajas.
+> Este sitio trae un simulador con tres aparatos que hacen pagos reales en la red de pruebas de
+> Stellar (testnet). La librería con la que cobran es Stellar MCU SDK: pagos de Stellar para
+> microcontroladores.
 
-Es un simulador: no hay una placa detrás. El aparato real es una placa ESP32-S3 con lector de
-tarjetas NFC. Los pagos sí son reales, en testnet, y los arma y firma el núcleo de Stellar MCU SDK.
-No hace falta iniciar sesión ni tener una cuenta: el simulador crea las suyas y les pide fondos de
-prueba a friendbot.
+Es un simulador: no hay placas detrás. Los pagos sí son reales, en testnet, y los arma y firma el
+núcleo de Stellar MCU SDK. No hace falta iniciar sesión: la demo crea una cuenta de prueba en el
+navegador y le pide fondos de prueba a friendbot.
 
 ## Usar el simulador con un navegador
 
 Página: ${raiz}demo/
 
-El panel muestra un solo momento a la vez: crear la cuenta, cobrar, pagar y el resultado. La fase
-está en el atributo \`data-fase\` de \`#simulador\`: preparando, sin-cuenta, creando, listo,
-esperando, aprobado o error. Espera las fases, no los textos.
+Hay tres aparatos: un torniquete y un dispensador, que tienen precio fijo y cobran solos, y un
+terminal de caja, donde se escribe el monto. El panel muestra un solo momento a la vez: crear la
+cuenta, cobrar, pagar y el resultado.
 
-1. Espera a que la fase deje de ser \`preparando\`. Si es \`sin-cuenta\`, pulsa \`#sim-crear\`
-   («Crear mi cuenta») y espera \`data-fase="listo"\`: se crea de verdad la cuenta de quien paga, con
-   fondos de prueba. Tarda de 4 a 20 segundos. Si ya es \`listo\`, la cuenta estaba creada en este
-   navegador. Si queda en \`error\`, pulsa \`#sim-reintentar\` («Volver a intentar»).
-2. Escribe un monto en XLM en el campo \`#sim-monto\` (de 0.01 a 100) y pulsa \`#sim-cobrar\`
-   («Cobrar»). La fase pasa a \`esperando\`: el aparato arma el cobro y vigila la red.
-3. Pulsa \`#sim-tarjeta\` («Pagar con la tarjeta») y espera \`data-fase="aprobado"\`.
-   Tarda de 3 a 15 segundos. La fase se queda en \`aprobado\` hasta el siguiente cobro.
-4. Opcional: pulsa \`#sim-devolver\` («Devolver este pago») para que el terminal firme y envíe él
-   mismo un pago. Termina cuando \`ultimoPago.devolucion\` deja de ser nulo.
-5. Para cobrar de nuevo, pulsa \`#sim-otro\` («Cobrar otra vez») y vuelve al paso 2.
-6. Para volver a ver cómo se crea la cuenta, pulsa \`#sim-reiniciar\` («Empezar de cero, con una
+El estado está en dos atributos de \`#simulador\`. Espera los atributos, no los textos.
+
+- \`data-aparato\`: torniquete, dispensador o caja.
+- \`data-fase\`: preparando, sin-cuenta, creando, listo, esperando, aprobado o error.
+
+1. Elige un aparato con \`#sim-aparato-torniquete\`, \`#sim-aparato-dispensador\` o
+   \`#sim-aparato-caja\`. Al abrir la página está elegido el torniquete.
+2. Espera a que la fase deje de ser \`preparando\`. Si es \`sin-cuenta\`, pulsa \`#sim-crear\`
+   («Crear mi cuenta») y espera a que deje de ser \`creando\`: se crea de verdad la cuenta de quien
+   paga, con fondos de prueba. Tarda de 4 a 20 segundos. Si queda en \`error\`, pulsa
+   \`#sim-reintentar\` («Volver a intentar»).
+3. Con el torniquete o el dispensador no hay que cobrar: la fase pasa sola a \`esperando\`. Con la
+   caja, escribe un monto en XLM en \`#sim-monto\` (de 0.01 a 100) y pulsa \`#sim-cobrar\`
+   («Cobrar»); la fase pasa a \`esperando\`.
+4. Pulsa \`#sim-tarjeta\` («Pagar con la tarjeta») y espera \`data-fase="aprobado"\`. Tarda de 3 a
+   15 segundos. La fase se queda en \`aprobado\` hasta el siguiente cobro. En el modelo, el
+   torniquete gira y el dispensador entrega una botella.
+5. Opcional: pulsa \`#sim-devolver\` («Devolver el pago») para que el aparato firme y envíe él mismo
+   un pago. Termina cuando \`ultimoPago.devolucion\` deja de ser nulo.
+6. Para otro cobro en el mismo aparato, pulsa \`#sim-otro\`.
+7. Para volver a ver cómo se crea la cuenta, pulsa \`#sim-reiniciar\` («Empezar de cero, con una
    cuenta nueva»): la página se recarga y vuelve a la fase \`sin-cuenta\`.
 
 En el modelo 3D también se puede pagar llevando la tarjeta a mano hasta el lector, con un
@@ -46,8 +55,9 @@ lo mismo.
 
 Dónde leer el resultado:
 
-- \`#sim-datos\`: el estado en JSON. Trae \`fase\`, \`cuenta\` (la de quien paga, con su saldo), \`cobro\` (el cobro en espera),
-  \`ultimoPago\` (con su \`hash\`, su \`enlace\` y su \`devolucion\`) y \`cobros\` (los cobros hechos).
+- \`#sim-datos\`: el estado en JSON. Trae \`fase\`, \`aparato\`, \`cuenta\` (la de quien paga, con su
+  saldo), \`cobro\` (el cobro en espera), \`ultimoPago\` (con su \`hash\`, su \`enlace\` y su
+  \`devolucion\`) y \`cobros\` (los cobros hechos).
 - \`#sim-estado\`: una frase con lo que pasa ahora.
 - \`#sim-registro\`: la lista de lo que pasó, con un enlace a cada cuenta y transacción en
   stellar.expert.
@@ -67,10 +77,10 @@ transacciones. Usa cuentas nuevas con fondos de friendbot: no gasta fondos de na
 
 ## Enlaces
 
-- [Demo](${raiz}demo/): el terminal simulado.
+- [Demo](${raiz}demo/): los aparatos simulados.
 - [Documentación de Stellar MCU SDK](${raiz}sdk/): inicio rápido, guías, referencia y medidas.
 - [Stellar MCU SDK en GitHub](https://github.com/CoKeFish/stellar-mcu-sdk): la librería, en C, con licencia Apache 2.0.
-- [Paizap en GitHub](https://github.com/CoKeFish/paizap): el terminal, su servidor y su app.
+- [Paizap en GitHub](https://github.com/CoKeFish/paizap): la demo en una placa real, con su servidor y su app.
 `;
 
   return new Response(texto, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

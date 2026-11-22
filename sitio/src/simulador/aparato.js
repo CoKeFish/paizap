@@ -1,21 +1,23 @@
-// La demo de Paizap: un terminal que cobra en Stellar testnet, el teléfono de quien paga y su tarjeta.
+// La demo de Paizap: aparatos que cobran en Stellar testnet, el teléfono de quien paga y su tarjeta.
 //
 // Hay dos cuentas, creadas en este navegador: la de quien paga (se ve en el teléfono y de ella
-// paga la tarjeta de prueba) y la del terminal (el comercio). Las transacciones las arma y firma
-// el núcleo de Stellar MCU SDK, compilado para el navegador (public/simulador). Todo es real, en
-// la red de pruebas.
+// paga la tarjeta de prueba) y la del comercio (a la que cobran los aparatos). Las transacciones
+// las arma y firma el núcleo de Stellar MCU SDK, compilado para el navegador (public/simulador).
+// Todo es real, en la red de pruebas.
 //
 // El recorrido:
 //   crear cuenta  el teléfono muestra cómo se crea: se genera la llave aquí y la red abre la
-//                 cuenta con fondos de prueba. Por detrás también se abre la del terminal.
-//   cobrar        el terminal arma el cobro, con su número, y empieza a vigilar la red
-//   aprobar       el terminal encuentra el pago en los eventos de la red, con su monto y su número
-//   devolver      el terminal devuelve un pago: arma la transacción, la firma y la envía él mismo
+//                 cuenta con fondos de prueba. Por detrás también se abre la del comercio.
+//   cobrar        el aparato arma el cobro, con su número, y empieza a vigilar la red. Con precio
+//                 fijo (torniquete, dispensador) cobra solo; en la caja, alguien escribe el monto.
+//   aprobar       el aparato encuentra el pago en los eventos de la red, con su monto y su número
+//   devolver      el aparato devuelve un pago: arma la transacción, la firma y la envía él mismo
 //
-// Quien ya creó su cuenta en este navegador no la crea de nuevo: la demo arranca en «cobrar».
+// Quien ya creó su cuenta en este navegador no la crea de nuevo.
 //
-// El teclado sigue al firmware del terminal: dígitos, D punto decimal, * borrar, A limpiar,
-// # cobrar; con un cobro en espera, A o * lo cancelan.
+// El teclado de la caja sigue al firmware del terminal: dígitos, D punto decimal, * borrar,
+// A limpiar, # cobrar; con un cobro en espera, A o * lo cancelan.
+import { APARATOS, INICIAL } from './catalogo.js';
 
 const CUENTA_EN_EXPLORADOR = 'https://stellar.expert/explorer/testnet/account/';
 const TX_EN_EXPLORADOR = 'https://stellar.expert/explorer/testnet/tx/';
@@ -23,11 +25,9 @@ const MONTO_MINIMO = 0.01; // por cobro, en XLM de prueba
 const MONTO_MAXIMO = 100;
 const MONTO_SUGERIDO = '1.5';
 const ESPERA_MAXIMA_MS = 4 * 60 * 1000; // un cobro que nadie paga se cancela solo
-const RELE_MS = 2500; // cuánto queda encendida la luz de «entregado»
 const PASO_MS = 800; // lo mínimo que se ve cada paso al crear la cuenta
 const COBROS_GUARDADOS = 12;
-const LISTO = 'Ahora eres el comercio: escribe un monto y cobra.';
-const SIN_CUENTA = 'Primero eres el cliente: crea tu cuenta para tener con qué pagar.';
+const SIN_CUENTA = 'Primero crea tu cuenta: de ahí sale el dinero con que pagas.';
 const pausa = (ms) => new Promise((listo) => setTimeout(listo, ms));
 
 // Lo que se guarda en este navegador: las llaves (para no crear la cuenta en cada visita), el
@@ -99,29 +99,29 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     fase: 'preparando', // preparando | sin-cuenta | creando | listo | esperando | aprobado | error
     mensaje: 'Preparando la demo…',
     reintento: null, // con fase «error»: qué se vuelve a intentar, 'preparar' o 'crear'
+    aparato: INICIAL, // el aparato elegido: torniquete, dispensador o caja
     // La cuenta de quien paga, como la muestra el teléfono.
     cuenta: { llave: false, abierta: false, saldo: null },
     movimiento: null, // lo último que pasó en esa cuenta: { tipo: 'pago' | 'devolucion', monto }
     cuentaTarjeta: '',
     cuentaAparato: '',
-    monto: '', // el monto que se está escribiendo: el mismo en el teclado y en la página
+    monto: '', // en la caja, el monto que se está escribiendo: el mismo en el teclado y en la página
     cobro: null, // el cobro en espera: { numero, monto, solicitud, desdeLedger }
     tarjetaPagando: false,
     devolviendo: false,
-    rele: false,
     // El último cobro aprobado. Se queda hasta el siguiente cobro:
-    // { numero, monto, hash, enlace, segundos, conTarjeta, devolucion: null | { hash, enlace } }
+    // { numero, monto, aparato, hash, enlace, segundos, conTarjeta, devolucion: null | { hash, enlace } }
     ultimoPago: null,
     cobros: cobrosGuardados(), // los cobros aprobados, del más nuevo al más viejo
   };
   let crearPlaca = null; // createDevice, de la adaptación
-  let aparato = null;
-  let tarjeta = null;
+  let aparato = null; // quien cobra: la cuenta del comercio
+  let tarjeta = null; // quien paga
   let turno = 0; // cada cobro tiene su turno: si cambia, el cobro anterior deja de vigilar
   let reemplazar = true; // el monto a la vista es una sugerencia: la primera tecla lo reemplaza
   let pagoDeLaTarjeta = null; // el pago en curso de la tarjeta de prueba
   let tarjetaLeidaEn = 0;
-  let vistoPorElAparato = 0; // número del cobro cuyo pago el terminal ya vio en la red
+  let vistoPorElAparato = 0; // número del cobro cuyo pago el aparato ya vio en la red
 
   const avisar = (cambios = {}) => {
     Object.assign(estado, cambios);
@@ -130,6 +130,9 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
   const registrar = (texto, extra = {}) => alRegistrar({ texto, ...extra });
   const corta = (cuenta) => `${cuenta.slice(0, 4)}…${cuenta.slice(-4)}`;
   const saldoDe = (cuenta) => Number(cuenta.balance).toFixed(2);
+  const elegido = () => APARATOS[estado.aparato];
+  const precioFijo = () => elegido().modo === 'autoservicio';
+  const hayCuenta = () => estado.fase === 'listo' || estado.fase === 'esperando' || estado.fase === 'aprobado';
 
   // Lo que avisa el núcleo en cada paso, dicho como lo imprime el terminal por su monitor serie.
   const monitor = (quien) => (paso, datos) => {
@@ -144,13 +147,27 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     return cobros;
   }
 
+  // El aparato quedó libre. Con precio fijo se pone a cobrar solo; en la caja espera un monto.
+  function quedarListo(mensaje, cobrarSolo = true) {
+    reemplazar = true;
+    const solo = precioFijo() && cobrarSolo;
+    avisar({
+      fase: 'listo',
+      cobro: null,
+      tarjetaPagando: false,
+      monto: estado.monto || MONTO_SUGERIDO,
+      mensaje: mensaje ?? (precioFijo() ? `${elegido().El} no está cobrando. Ponlo a cobrar para seguir.` : 'Ahora eres el comercio: escribe un monto y cobra.'),
+    });
+    if (solo) cobrar();
+  }
+
   async function cargar() {
     crearPlaca ??= (await import(/* @vite-ignore */ urlAdaptacion)).createDevice;
   }
   // Las dos llaves: si no estaban guardadas, se generan aquí, en el navegador.
   async function abrirLlaves() {
     [aparato, tarjeta] = await Promise.all([
-      crearPlaca({ seed: semilla('aparato'), onEvent: monitor('Terminal') }),
+      crearPlaca({ seed: semilla('aparato'), onEvent: monitor('Aparato') }),
       crearPlaca({ seed: semilla('tarjeta'), onEvent: monitor('Tarjeta') }),
     ]);
     avisar({ cuentaAparato: aparato.account, cuentaTarjeta: tarjeta.account });
@@ -165,19 +182,14 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
       await cargar();
       if (!llaveGuardada('tarjeta') || !llaveGuardada('aparato')) return sinCuenta();
       await abrirLlaves();
-      const [delTerminal, deQuienPaga] = await Promise.all([aparato.readAccount(), tarjeta.readAccount()]);
-      if (!delTerminal || !deQuienPaga) return sinCuenta(); // la red de pruebas se reinició: se crea de nuevo
+      const [delComercio, deQuienPaga] = await Promise.all([aparato.readAccount(), tarjeta.readAccount()]);
+      if (!delComercio || !deQuienPaga) return sinCuenta(); // la red de pruebas se reinició: se crea de nuevo
       registrar(`Tu cuenta ya estaba creada en este navegador: ${corta(tarjeta.account)}.`, {
         enlace: CUENTA_EN_EXPLORADOR + tarjeta.account,
         rotulo: 'Ver la cuenta',
       });
-      reemplazar = true;
-      avisar({
-        fase: 'listo',
-        cuenta: { llave: true, abierta: true, saldo: saldoDe(deQuienPaga) },
-        monto: estado.monto || MONTO_SUGERIDO,
-        mensaje: LISTO,
-      });
+      avisar({ cuenta: { llave: true, abierta: true, saldo: saldoDe(deQuienPaga) } });
+      quedarListo();
     } catch (error) {
       registrar(`No se pudo preparar la demo: ${error.message}`, { tipo: 'error' });
       avisar({ fase: 'error', reintento: 'preparar', mensaje: 'No se pudo preparar la demo. Revisa la conexión y vuelve a intentar.' });
@@ -203,14 +215,13 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
       const [, deQuienPaga] = await Promise.all([abrir(aparato), abrir(tarjeta), pausa(PASO_MS)]);
       const saldo = saldoDe(deQuienPaga);
       registrar(`La red de pruebas de Stellar abrió tu cuenta, con ${saldo} XLM de prueba.`);
-      registrar(`El terminal también tiene su cuenta, la del comercio: ${corta(aparato.account)}.`, {
+      registrar(`Los aparatos cobran a la cuenta del comercio: ${corta(aparato.account)}.`, {
         enlace: CUENTA_EN_EXPLORADOR + aparato.account,
         rotulo: 'Ver la cuenta',
       });
       avisar({ cuenta: { llave: true, abierta: true, saldo }, mensaje: `Cuenta abierta, con ${saldo} XLM de prueba.` });
-      await pausa(PASO_MS * 1.5); // que se alcance a ver la cuenta lista antes de pasar a cobrar
-      reemplazar = true;
-      avisar({ fase: 'listo', monto: estado.monto || MONTO_SUGERIDO, mensaje: `Tu cuenta está lista. ${LISTO}` });
+      await pausa(PASO_MS * 1.5); // que se alcance a ver la cuenta lista antes de seguir
+      quedarListo(precioFijo() ? undefined : 'Tu cuenta está lista. Ahora eres el comercio: escribe un monto y cobra.');
     } catch (error) {
       registrar(`No se pudo crear la cuenta: ${error.message}`, { tipo: 'error' });
       avisar({ fase: 'error', reintento: 'crear', mensaje: 'No se pudo crear la cuenta. Revisa la conexión y vuelve a intentar.' });
@@ -220,6 +231,16 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
   function reintentar() {
     if (estado.fase !== 'error') return;
     return estado.reintento === 'crear' ? crearCuenta() : preparar();
+  }
+
+  // Cambiar de aparato. Si había un cobro esperando, se deja: el aparato nuevo arma el suyo.
+  function elegirAparato(id) {
+    if (!APARATOS[id] || id === estado.aparato) return;
+    if (estado.fase === 'creando' || estado.tarjetaPagando || estado.devolviendo) return;
+    turno++;
+    const conCuenta = hayCuenta();
+    avisar({ aparato: id });
+    if (conCuenta) quedarListo();
   }
 
   // El saldo que muestra el teléfono, leído de la red después de cada pago.
@@ -251,9 +272,8 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     }
     if (miTurno === turno) {
       turno++;
-      reemplazar = true;
-      registrar(`Nadie pagó el cobro n.º ${cobro.numero}: el terminal lo canceló.`);
-      avisar({ fase: 'listo', cobro: null, tarjetaPagando: false, mensaje: 'El cobro venció sin pago. Escribe un monto y cobra.' });
+      registrar(`Nadie pagó el cobro n.º ${cobro.numero}: ${elegido().el} lo canceló.`);
+      quedarListo(precioFijo() ? `${elegido().El} dejó de esperar el pago. Ponlo a cobrar para seguir.` : 'El cobro venció sin pago. Escribe un monto y cobra.', false);
     }
   }
 
@@ -267,6 +287,7 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     const ultimoPago = {
       numero: cobro.numero,
       monto: cobro.monto,
+      aparato: estado.aparato,
       hash: pago.hash,
       enlace: TX_EN_EXPLORADOR + pago.hash,
       segundos,
@@ -274,29 +295,27 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
       devolucion: null,
     };
     registrar(
-      `El terminal vio el pago en la red: ${pago.amount} XLM, cobro n.º ${pago.order}. Cobro aprobado` +
+      `${elegido().El} vio el pago en la red: ${pago.amount} XLM, cobro n.º ${pago.order}. Cobro aprobado` +
         (segundos ? ` a los ${segundos} s de leer la tarjeta.` : '.'),
       { enlace: ultimoPago.enlace, rotulo: 'Ver la transacción', tipo: 'ok' },
     );
     avisar({
       fase: 'aprobado',
-      rele: true,
       cobro: null,
       tarjetaPagando: false,
       ultimoPago,
       cobros: anotar(ultimoPago),
       movimiento: conTarjeta ? { tipo: 'pago', monto: cobro.monto } : estado.movimiento,
-      mensaje: 'Cobro terminado: el dinero ya está en la cuenta del terminal.',
+      mensaje: `Pago aprobado: ${elegido().alAprobar}.`,
     });
     if (conTarjeta) refrescarSaldo();
-    await pausa(RELE_MS);
-    if (miTurno === turno) avisar({ rele: false });
   }
 
+  // Armar un cobro. Con precio fijo el monto es el del aparato; en la caja, el que se escribió.
   async function cobrar(texto) {
     if (estado.fase === 'sin-cuenta') return avisar({ mensaje: 'Primero crea tu cuenta en el teléfono.' });
     if ((estado.fase !== 'listo' && estado.fase !== 'aprobado') || estado.devolviendo) return;
-    const monto = montoValido(texto ?? estado.monto);
+    const monto = precioFijo() ? elegido().precio : montoValido(texto ?? estado.monto);
     if (!monto) {
       avisar({ fase: 'listo', mensaje: `Escribe un monto entre ${MONTO_MINIMO} y ${MONTO_MAXIMO} XLM.` });
       return;
@@ -304,30 +323,36 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     const miTurno = ++turno;
     pagoDeLaTarjeta = null;
     tarjetaLeidaEn = 0;
-    avisar({ fase: 'esperando', rele: false, monto, cobro: null, mensaje: 'Preparando el cobro…' });
+    avisar({ fase: 'esperando', cobro: null, ...(precioFijo() ? {} : { monto }), mensaje: `${elegido().El} prepara el cobro…` });
     try {
       const red = await aparato.networkState();
       const numero = siguienteNumero();
       const cobro = { numero, monto, solicitud: aparato.paymentRequest(monto, numero), desdeLedger: red.ledger };
       if (miTurno !== turno) return;
-      registrar(`Cobro n.º ${numero} por ${monto} XLM. El terminal muestra el QR y vigila la red.`);
-      avisar({ cobro, mensaje: `El terminal espera ${monto} XLM. Vuelves a ser el cliente: paga con tu tarjeta.` });
+      registrar(`Cobro n.º ${numero} por ${monto} XLM. ${elegido().El} muestra el QR y vigila la red.`);
+      avisar({
+        cobro,
+        mensaje: precioFijo()
+          ? `${elegido().El} cobra ${monto} XLM ${elegido().porQue}. Paga con tu tarjeta.`
+          : `El terminal espera ${monto} XLM. Vuelves a ser el cliente: paga con tu tarjeta.`,
+      });
       vigilar(cobro, miTurno);
     } catch (error) {
+      if (miTurno !== turno) return;
       registrar(`No se pudo preparar el cobro: ${error.message}`, { tipo: 'error' });
-      avisar({ fase: 'listo', cobro: null, mensaje: 'El nodo no respondió. Vuelve a cobrar.' });
+      quedarListo(precioFijo() ? 'El nodo no respondió. Vuelve a poner el aparato a cobrar.' : 'El nodo no respondió. Vuelve a cobrar.', false);
     }
   }
 
+  // Cancelar el cobro, desde la caja. Un aparato de precio fijo no cancela: siempre está cobrando.
   function cancelar() {
-    if (estado.fase !== 'esperando' || estado.tarjetaPagando) return;
+    if (estado.fase !== 'esperando' || estado.tarjetaPagando || precioFijo()) return;
     turno++;
-    reemplazar = true;
     if (estado.cobro) registrar(`Cobro n.º ${estado.cobro.numero} cancelado en el terminal.`);
-    avisar({ fase: 'listo', cobro: null, mensaje: 'Cobro cancelado. Escribe un monto y cobra.' });
+    quedarListo('Cobro cancelado. Escribe un monto y cobra.');
   }
 
-  // La tarjeta de prueba paga, desde tu cuenta, el cobro que el terminal tiene en espera.
+  // La tarjeta de prueba paga, desde tu cuenta, el cobro que el aparato tiene en espera.
   async function acercarTarjeta() {
     const cobro = estado.cobro;
     if (estado.fase !== 'esperando' || !cobro || estado.tarjetaPagando) return;
@@ -338,7 +363,7 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     try {
       await pagoDeLaTarjeta;
     } catch (error) {
-      if (vistoPorElAparato === cobro.numero) return; // el pago llegó igual: el terminal ya lo vio
+      if (vistoPorElAparato === cobro.numero) return; // el pago llegó igual: el aparato ya lo vio
       pagoDeLaTarjeta = null;
       registrar(`La tarjeta no pudo pagar: ${error.message}`, { tipo: 'error' });
       avisar({ tarjetaPagando: false, mensaje: 'La tarjeta no pudo pagar. El cobro sigue en espera: vuelve a intentar.' });
@@ -348,25 +373,25 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
   // Alguien toca la tarjeta cuando no hay un cobro que pagar: se le dice qué falta.
   function tarjetaSinCobro() {
     if (estado.fase === 'sin-cuenta') avisar({ mensaje: 'Primero crea tu cuenta en el teléfono: la tarjeta paga desde ahí.' });
-    if (estado.fase === 'listo') avisar({ mensaje: 'Primero cobra en el terminal: la tarjeta paga cuando hay un cobro.' });
-    if (estado.fase === 'aprobado' && !estado.devolviendo) avisar({ mensaje: 'Ese cobro ya está pagado. Cobra otra vez para usar la tarjeta.' });
+    if (estado.fase === 'listo') avisar({ mensaje: `Primero hace falta un cobro: la tarjeta paga cuando ${elegido().el} está cobrando.` });
+    if (estado.fase === 'aprobado' && !estado.devolviendo) avisar({ mensaje: 'Ese cobro ya está pagado. Empieza otro para usar la tarjeta.' });
   }
 
   // Alguien toca el teléfono: crea la cuenta si falta; si no, se le dice qué sigue.
   function tocarTelefono() {
     if (estado.fase === 'sin-cuenta') return crearCuenta();
     if (estado.fase === 'error') return reintentar();
-    if (estado.fase === 'listo') avisar({ mensaje: 'Tu cuenta ya está lista. Ahora cobra en el terminal.' });
+    if (estado.fase === 'listo' && !precioFijo()) avisar({ mensaje: 'Tu cuenta ya está lista. Ahora cobra en el terminal.' });
   }
 
-  // El terminal paga: devuelve el último cobro a tu cuenta. Aquí firma el terminal con su llave.
+  // El aparato paga: devuelve el último cobro a tu cuenta. Aquí firma el aparato con su llave.
   async function devolver() {
     const pago = estado.ultimoPago;
     if (estado.fase !== 'aprobado' || !pago || pago.devolucion || !pago.conTarjeta || estado.devolviendo) return;
-    avisar({ devolviendo: true, mensaje: 'El terminal devuelve el dinero: arma el pago y lo firma con su propia llave…' });
+    avisar({ devolviendo: true, mensaje: `${elegido().El} devuelve el dinero: arma el pago y lo firma con su propia llave…` });
     try {
       const hecho = await aparato.pay({ destination: tarjeta.account, amount: pago.monto, order: pago.numero });
-      registrar(`El terminal devolvió ${pago.monto} XLM del cobro n.º ${pago.numero}, firmando con su propia llave.`, {
+      registrar(`${elegido().El} devolvió ${pago.monto} XLM del cobro n.º ${pago.numero}, firmando con su propia llave.`, {
         enlace: hecho.link,
         rotulo: 'Ver la devolución',
         tipo: 'ok',
@@ -377,7 +402,7 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
         ultimoPago,
         cobros: anotar(ultimoPago),
         movimiento: { tipo: 'devolucion', monto: pago.monto },
-        mensaje: 'Devolución hecha: esta vez el que pagó fue el terminal.',
+        mensaje: `Devolución hecha: esta vez el que pagó fue ${elegido().el}.`,
       });
       refrescarSaldo();
     } catch (error) {
@@ -386,23 +411,23 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     }
   }
 
-  // Después de un cobro aprobado, el terminal vuelve a pedir un monto.
+  // Después de un cobro aprobado, el aparato vuelve a cobrar (o, en la caja, a pedir un monto).
   function otroCobro() {
     if (estado.fase !== 'aprobado' || estado.devolviendo) return;
-    reemplazar = true;
-    avisar({ fase: 'listo', mensaje: LISTO });
+    quedarListo();
   }
 
-  // El monto escrito en la página: el terminal muestra lo mismo.
+  // El monto escrito en la página: el terminal de caja muestra lo mismo.
   function escribir(texto) {
-    if (estado.fase !== 'listo') return;
+    if (estado.fase !== 'listo' || precioFijo()) return;
     reemplazar = false;
     const monto = String(texto).replace(',', '.').replace(/[^\d.]/g, '').slice(0, 9);
     if (monto !== estado.monto) avisar({ monto });
   }
 
-  // Una tecla del teclado del terminal.
+  // Una tecla del teclado del terminal de caja.
   function tecla(t) {
+    if (precioFijo()) return;
     if (estado.fase === 'sin-cuenta') return avisar({ mensaje: 'Primero crea tu cuenta en el teléfono.' });
     if (estado.fase === 'esperando') {
       if (t === 'A' || t === '*') cancelar();
@@ -417,13 +442,14 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     else if (t === 'A') monto = '';
     else return; // B y C no hacen nada en el modo caja
     reemplazar = false;
-    avisar({ fase: 'listo', monto, mensaje: LISTO });
+    avisar({ fase: 'listo', monto, mensaje: 'Ahora eres el comercio: escribe un monto y cobra.' });
   }
 
   return {
     preparar,
     crearCuenta,
     reintentar,
+    elegirAparato,
     cobrar,
     cancelar,
     acercarTarjeta,
