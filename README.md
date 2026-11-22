@@ -99,11 +99,13 @@ SDK.
 
 Lo que la demo comprobó:
 
-- **El aparato firma el cobro él mismo.** Firmó seis cobros en testnet, tres de ellos con tarjeta
-  física. El último con tarjeta es
-  [esta transacción](https://stellar.expert/explorer/testnet/tx/6f2127ebd08855e3b83446a301e966da843d5f2ae21cae5bb7edba8dffcd3f46).
-  El código está en [`hardware/firmware/src/firma.cpp`](hardware/firmware/src/firma.cpp) y se
-  activa al compilar con `TOKI_FIRMA_TERMINAL=1`.
+- **El aparato firma el cobro él mismo.** Firmó ocho cobros en testnet, cuatro de ellos con
+  tarjeta física. El último con tarjeta es
+  [esta transacción](https://stellar.expert/explorer/testnet/tx/dab4fb6bd5882fc1ebc62faf4d17848e1db2ba4c8905a9ebdfbb8fab1b2cd09b).
+  El aparato arma el cobro, lo firma y lo envía directo a un nodo de Stellar; el servidor de
+  la demo dice de qué cuenta es la tarjeta, revisa su límite y anota el recibo. El código
+  está en [`hardware/firmware/src/firma.cpp`](hardware/firmware/src/firma.cpp) y se activa al
+  compilar con `TOKI_FIRMA_TERMINAL=1`; sin esa opción, el cobro lo firma el servidor.
 - **Se puede cobrar con una tarjeta, que no puede firmar.** El cobro usa el permiso de gasto del
   contrato del token: el dueño de la cuenta fija un tope y un vencimiento, y la red los hace
   cumplir. La plata se queda en su cuenta hasta que paga.
@@ -129,20 +131,31 @@ Los próximos 30 días, del 23 de noviembre al 22 de diciembre de 2026:
 | Semana | Qué hacemos | Meta |
 |---|---|---|
 | 1 (23 al 29 nov) | Dejar la librería lista para un tercero: guía de inicio y los dos ejemplos | Una persona ajena al equipo compila un ejemplo y paga en testnet siguiendo solo la guía |
-| 2 (30 nov al 6 dic) | Llevar el mismo núcleo a un segundo microcontrolador, el RP2040 con su chip de Wi-Fi. Empezar la postulación a Stellar Instawards | El mismo ejemplo de pago corre en 2 microcontroladores |
-| 3 (7 al 13 dic) | Una característica nueva: el cobro con número de pedido. El aparato espera el pago de otra persona y lo reconoce por su memo | Ejemplo publicado y probado en testnet |
+| 2 (30 nov al 6 dic) | Llevar el mismo núcleo a un segundo microcontrolador, el RP2040 con su chip de Wi-Fi. Empezar la postulación a Stellar Instawards, por medio del capítulo local de embajadores | El mismo ejemplo de pago corre en 2 microcontroladores |
+| 3 (7 al 13 dic) | Un ejemplo nuevo: el cobro con número de pedido. La librería ya lee ese número en el pago; el ejemplo espera el pago de otra persona y lo reconoce por él | Ejemplo publicado y probado en testnet |
 | 4 (14 al 22 dic) | Enviar la postulación a Stellar Instawards y compartir la librería con desarrolladores de Stellar | Postulación enviada; 3 desarrolladores externos la compilan y dejan sus comentarios en el repositorio |
 
-- **Costo del mes:** el hardware para el segundo microcontrolador y el tiempo de los dos.
+- **Costo del mes:** el tiempo de los dos y el hardware para probar el segundo microcontrolador:
+  una placa con RP2040 y Wi-Fi cuesta [USD 6](https://www.raspberrypi.com/news/raspberry-pi-pico-w-your-6-iot-platform/).
+- **Con qué se financia lo que sigue:** [Stellar Instawards](https://stellar.org/blog/ecosystem/introducing-the-stellar-ambassador-program),
+  premios de hasta USD 15.000 para experimentar y hacer prototipos, que se piden por medio de
+  los capítulos de embajadores de Stellar.
 - **Lo primero que se comprueba:** que alguien ajeno al equipo use la librería sin nuestra ayuda.
 - **Regla para seguir:** librería funcionando en 2 microcontroladores, usada por 3 desarrolladores
   externos, y postulación enviada.
 
-## Quiénes somos
+## Equipo
 
-Paizap es un equipo de dos personas con experiencia en IoT y en pagos sobre Stellar. Mantiene
-Stellar MCU SDK, que es abierto, y hace la integración en el aparato de cada cliente: diseña la
-placa del aparato cuando hace falta, o adapta la electrónica que el aparato ya tiene.
+Un equipo que une electrónica y negocios.
+
+| Quién | Rol | Qué aporta |
+|---|---|---|
+| **Rodion Romanovich** ([@CoKeFish](https://github.com/CoKeFish)) | Hardware y Stellar | Ingeniería electrónica e integración blockchain para microcontroladores |
+| **Clyn Roje Quispe Villegas** | Negocio y producto | Desarrollo de negocio y enfoque de producto |
+
+Paizap mantiene Stellar MCU SDK, que es abierto, y hace la integración en el aparato de cada
+cliente: diseña la placa del aparato cuando hace falta, o adapta la electrónica que el aparato
+ya tiene.
 
 Seguimos después de la hackathon: la postulación a Stellar Instawards sale antes del 22 de
 diciembre de 2026.
