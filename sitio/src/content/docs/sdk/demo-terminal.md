@@ -88,6 +88,6 @@ Todo está en el [repositorio de Paizap](https://github.com/CoKeFish/paizap):
 
 | Carpeta | Qué hay |
 |---|---|
-| `hardware/` | La electrónica y el firmware del terminal. |
+| `hardware/` | La electrónica y el firmware del terminal. El cobro firmado está en [`firmware/src/firma.cpp`](https://github.com/CoKeFish/paizap/blob/main/hardware/firmware/src/firma.cpp). |
 | `servidor/` | El servidor de la demo: de qué cuenta es cada tarjeta, límites y recibos. |
 | `app/` | La billetera y el panel. |

@@ -112,5 +112,5 @@ de esa cuenta.
 
 ## Dónde verlo completo
 
-El terminal de la demo hace este recorrido en cada cobro con tarjeta. Su código está en el
-[repositorio de Paizap](https://github.com/CoKeFish/paizap).
+El terminal de la demo hace este recorrido en cada cobro con tarjeta. Su código está en
+[`hardware/firmware/src/firma.cpp`](https://github.com/CoKeFish/paizap/blob/main/hardware/firmware/src/firma.cpp), en el repositorio de Paizap.
