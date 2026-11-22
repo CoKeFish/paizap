@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/*
+ * Identidad visual de Paizap. Todo sale del logo: el azul noche del fondo, el amarillo de «ZAP» y
+ * de los arcos, y la letra gruesa e inclinada.
+ *
+ *   - Azul noche: la estructura. La franja que abre cada pantalla, el texto y los botones.
+ *   - Amarillo rayo: la energía. Una sola acción por pantalla (la principal) y los acentos sobre
+ *     el azul. Nunca como texto ni como línea fina sobre fondo claro: no se lee.
+ *   - Letra de marca (Barlow Condensed, gruesa e inclinada): los montos y los títulos de pantalla.
+ *     Todo lo demás va en Barlow.
+ *
+ * Los recursos (logo, íconos, pantalla de arranque) salen de marca/logo-original.png con
+ * marca/generar.py. El azul también está en capacitor.config.ts y en los estilos de Android.
+ */
+
+@font-face { font-family: "Barlow"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fuentes/barlow-400.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fuentes/barlow-500.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fuentes/barlow-600.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fuentes/barlow-700.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 800; font-style: italic; font-display: swap; src: url("/fuentes/barlow-condensada-800-cursiva.woff2") format("woff2"); }
+
+@theme {
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-marca: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+
+  /* Del logo */
+  --color-noche: #000b25;        /* azul noche: el fondo del logo */
+  --color-rayo: #ffcd00;         /* amarillo: «ZAP» y los arcos */
+  --color-rayo-fuerte: #ecbb00;  /* el amarillo al pasar el cursor o tocar */
+
+  /* Sobre el azul noche */
+  --color-noche-alta: #0d1a3d;   /* cuadros dentro de la franja */
+  --color-noche-linea: #26355f;  /* bordes y líneas */
+  --color-noche-suave: #a7b2cf;  /* texto secundario */
+
+  /* Sobre fondo claro */
+  --color-fondo: #f1f3f8;        /* fondo de la página */
+  --color-panel: #ffffff;        /* tarjetas y cuadros */
+  --color-borde: #dce1ec;
+  --color-texto: #000b25;
+  --color-suave: #56617b;        /* texto secundario */
+  --color-marca: #000b25;        /* botones y barras */
+  --color-marca-texto: #ffffff;
+  --color-acento: #2447c6;       /* enlaces y foco */
+
+  /* Estados. El aviso es naranja, para que no se confunda con el amarillo de la marca. */
+  --color-ok: #0e7a3e;
+  --color-ok-fondo: #dcf5e5;
+  --color-aviso: #9a4a00;
+  --color-aviso-fondo: #ffeedb;
+  --color-error: #b3232b;
+  --color-error-fondo: #fce4e4;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  /* En Android la app ocupa toda la pantalla: se deja libre el lugar de las barras del sistema.
+     Capacitor entrega esas medidas en --safe-area-inset-*; el navegador, en env(). */
+  padding-top: max(env(safe-area-inset-top), var(--safe-area-inset-top, 0px));
+  padding-bottom: max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom, 0px));
+}
+
+/* Detrás de la barra de estado del celular siempre hay azul noche (sus íconos van en blanco),
+   también cuando el contenido se desplaza por debajo. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: max(env(safe-area-inset-top), var(--safe-area-inset-top, 0px));
+  background: var(--color-noche);
+  z-index: 40;
+}
+
+/* Dentro de una superficie azul noche, los mismos nombres de color dan su versión para fondo
+   oscuro: así las piezas de interfaz sirven en los dos fondos sin cambiarles nada. */
+.en-noche {
+  --color-suave: var(--color-noche-suave);
+  --color-fondo: var(--color-noche-alta);
+  --color-borde: var(--color-noche-linea);
+  --color-acento: var(--color-rayo);
+  background: var(--color-noche);
+  color: #ffffff;
+}
+
+/* La letra de marca: gruesa, angosta e inclinada, como el logo. Para montos y títulos. */
+.titulo {
+  font-family: var(--font-marca);
+  font-weight: 800;
+  font-style: italic;
+  line-height: 0.95;
+  letter-spacing: 0.005em;
+}
+
+/* Los montos se alinean en columnas. */
+.cifras {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Una venta que acaba de llegar al panel se marca un momento. */
+@keyframes llegada {
+  from { background-color: var(--color-rayo); }
+  to { background-color: transparent; }
+}
+.recien-llegado {
+  animation: llegada 2.5s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recien-llegado { animation: none; }
+}
