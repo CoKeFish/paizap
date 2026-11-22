@@ -12,9 +12,15 @@ microcontrolador cobre, confirme y firme él mismo pagos en [Stellar](https://st
 </p>
 <p align="center"><em>Modelo de la demo: un torniquete que cobra, la billetera y la tarjeta.</em></p>
 
-**El producto es la librería.** Stellar MCU SDK no necesita un servidor: sus ejemplos cobran y
-pagan hablando solo con un nodo público de Stellar. Paizap no vende un terminal: el terminal con
-tarjeta de este repositorio es una demostración hecha con la librería.
+**Quién es quién**
+
+- **Stellar MCU SDK** es el producto: una librería abierta para microcontroladores. No necesita un
+  servidor: sus ejemplos cobran y pagan hablando solo con un nodo público de Stellar.
+- **Su usuario** es el desarrollador de firmware de un integrador o fabricante de dispositivos IoT
+  que cobran.
+- **Paizap** es la startup: hace la librería y cobra por integrarla en esos dispositivos.
+- **El terminal con tarjeta** de este repositorio es una demo hecha con la librería. Quien paga y
+  el comercio son los clientes de nuestro usuario, no los nuestros.
 
 > Estado: demo pública en vivo y librería abierta, sobre Stellar testnet. Abajo está
 > [lo que ya funciona](#lo-que-ya-funciona) y la [hoja de ruta](#hoja-de-ruta).
