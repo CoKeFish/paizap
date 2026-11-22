@@ -10,13 +10,20 @@ export const GET: APIRoute = ({ site }) => {
   const texto = `# Paizap
 
 > Paizap lleva pagos de Stellar a dispositivos IoT: torniquetes, dispensadores, cajas.
-> Este sitio trae un simulador con tres aparatos que hacen pagos reales en la red de pruebas de
-> Stellar (testnet). La librería con la que cobran es Stellar MCU SDK: una librería de pagos de
-> Stellar para microcontroladores, no para un chip. El núcleo es C99 portable.
+> Este sitio trae un simulador con tres aparatos que cobran con dinero de prueba en la red de
+> pruebas de Stellar (testnet): nadie gasta dinero real. La librería con la que cobran es Stellar
+> MCU SDK: una librería de pagos de Stellar para microcontroladores, no para un chip. El núcleo es
+> C99 portable.
 
-Es un simulador: no hay aparatos reales detrás. Los pagos sí son reales, en testnet, y los arma y firma el
-núcleo de Stellar MCU SDK. No hace falta iniciar sesión: la demo crea una cuenta de prueba en el
-navegador y le pide fondos de prueba a friendbot.
+Es un simulador y usa dinero de prueba:
+
+- No hay aparatos reales detrás y nadie gasta dinero real. Pagar aquí no usa tarjetas, cuentas
+  bancarias ni datos de pago de nadie.
+- Los pagos se hacen con XLM de testnet, que no tienen valor. Cada pago es una transacción que
+  queda registrada en la red de pruebas de Stellar y se puede comprobar ahí.
+- Las transacciones las arma y firma el núcleo de Stellar MCU SDK.
+- No hace falta iniciar sesión: la demo crea una cuenta de prueba en el navegador y le pide fondos
+  de prueba a friendbot, el servicio de la red de pruebas que los regala.
 
 ## Usar el simulador con un navegador
 
@@ -48,7 +55,7 @@ El estado está en atributos de \`#simulador\`. Espera los atributos, no los tex
 1. Elige un aparato con \`#sim-aparato-torniquete\`, \`#sim-aparato-dispensador\` o
    \`#sim-aparato-caja\`. Al abrir la página está elegido el torniquete.
 2. Espera a que la fase deje de ser \`preparando\`. Si es \`sin-cuenta\`, pulsa \`#sim-crear\`
-   («Crear mi cuenta») y espera a que deje de ser \`creando\`: se crea de verdad la cuenta de quien
+   («Crear mi cuenta») y espera a que deje de ser \`creando\`: se crea en la red de pruebas la cuenta de quien
    paga, con fondos de prueba. Tarda de 4 a 20 segundos. Si queda en \`error\`, pulsa
    \`#sim-reintentar\` («Volver a intentar»).
 3. Con el torniquete o el dispensador no hay que cobrar: la fase pasa sola por \`cobrando\` y

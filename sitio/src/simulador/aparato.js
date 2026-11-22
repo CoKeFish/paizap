@@ -3,7 +3,7 @@
 // Hay dos cuentas, creadas en este navegador: la de quien paga (se ve en el teléfono y de ella
 // paga la tarjeta de prueba) y la del comercio (a la que cobran los aparatos). Las transacciones
 // las arma y firma el núcleo de Stellar MCU SDK, compilado para el navegador (public/simulador).
-// Todo es real, en la red de pruebas.
+// Todo ocurre en la red de pruebas, con dinero de prueba: nadie gasta dinero real.
 //
 // El recorrido:
 //   crear cuenta  el teléfono muestra cómo se crea: se genera la llave aquí y la red abre la
@@ -333,8 +333,8 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
       avisar({
         cobro,
         mensaje: precioFijo()
-          ? `${elegido().El} cobra ${monto} XLM ${elegido().porQue}. Paga con tu tarjeta.`
-          : `El terminal espera ${monto} XLM. Vuelves a ser el cliente: paga con tu tarjeta.`,
+          ? `${elegido().El} cobra ${monto} XLM de prueba ${elegido().porQue}. Paga con tu tarjeta.`
+          : `El terminal espera ${monto} XLM de prueba. Vuelves a ser el cliente: paga con tu tarjeta.`,
       });
       vigilar(cobro, miTurno);
     } catch (error) {
@@ -357,7 +357,7 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     const cobro = estado.cobro;
     if (estado.fase !== 'esperando' || !cobro || estado.tarjetaPagando) return;
     tarjetaLeidaEn = Date.now();
-    avisar({ tarjetaPagando: true, mensaje: 'Tarjeta leída. El pago viaja por la red de Stellar…' });
+    avisar({ tarjetaPagando: true, mensaje: 'Tarjeta leída. El pago viaja por la red de pruebas de Stellar…' });
     registrar(`Tu tarjeta paga ${cobro.monto} XLM al cobro n.º ${cobro.numero}, desde tu cuenta.`);
     pagoDeLaTarjeta = tarjeta.pay({ destination: aparato.account, amount: cobro.monto, order: cobro.numero });
     try {

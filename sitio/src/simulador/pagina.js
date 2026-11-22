@@ -178,8 +178,8 @@ function pintarResultado(estado) {
     $('sim-resultado-detalle').dataset.valor = clave;
     const cuando = pago.segundos ? `, ${pago.segundos} s después de leer la tarjeta` : '';
     $('sim-resultado-detalle').replaceChildren(
-      `Cobro n.º ${pago.numero}. ${aparato.El} vio el pago en la red${cuando}. ${aparato.hizo} `.replace('  ', ' '),
-      enlace('Ver la transacción en la red de Stellar', pago.enlace),
+      `Cobro n.º ${pago.numero}, con dinero de prueba. ${aparato.El} vio el pago en la red de pruebas${cuando}. ${aparato.hizo} `.replace('  ', ' '),
+      enlace('Ver la transacción en la red de pruebas de Stellar', pago.enlace),
     );
     $('sim-resultado-devolucion').hidden = !devuelto;
     if (devuelto) {
