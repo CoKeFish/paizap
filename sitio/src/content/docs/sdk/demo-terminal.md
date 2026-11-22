@@ -24,7 +24,7 @@ permiso para cobrarle hasta cierto monto, que la red hace cumplir.
 
 ## Qué hace el terminal con el SDK
 
-1. Lee la tarjeta y le pregunta al servidor de la demo de qué cuenta es.
+1. Lee la tarjeta y obtiene la cuenta de su dueño.
 2. Le pide a la red la hora y la secuencia de su cuenta.
 3. Arma el `transfer_from` del permiso de gasto y lo simula.
 4. Comprueba que el costo no pase de su tope, firma y envía.
@@ -87,5 +87,5 @@ Todo está en el [repositorio de Paizap](https://github.com/CoKeFish/paizap):
 | Carpeta | Qué hay |
 |---|---|
 | `hardware/` | La electrónica y el firmware del terminal. El cobro firmado está en [`firmware/src/firma.cpp`](https://github.com/CoKeFish/paizap/blob/main/hardware/firmware/src/firma.cpp). |
-| `servidor/` | El servidor de la demo: de qué cuenta es cada tarjeta, límites y recibos. |
+| `servidor/` | El servidor de la demo y de la app. |
 | `app/` | La billetera y el panel. |

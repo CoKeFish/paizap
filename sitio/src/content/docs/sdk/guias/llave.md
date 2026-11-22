@@ -74,5 +74,3 @@ común y algo más por una llamada a contrato.
   actualizar el programa sin perderla, graba solo la aplicación.
 - **Pon topes en el aparato:** un monto máximo por pago y un tope de comisión. Acotan lo que se
   puede perder si alguien toma el aparato. Ver [Seguridad](../../seguridad/).
-- **En el ESP32,** el guardado se puede cifrar con una llave grabada en el propio chip
-  ([NVS encryption](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/storage/nvs_encryption.html)).

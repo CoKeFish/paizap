@@ -30,7 +30,7 @@ El ejemplo compila para los dos con PlatformIO (`espressif32@6.9.0`, Arduino).
 |---|---|---|---|
 | **Red** | Wi-Fi propio con mbedTLS | Wi-Fi con un radio aparte, lwIP y mbedTLS, que trae el pico-sdk | Módulo Wi-Fi o 4G que entrega HTTPS |
 | **Guardado** | NVS | Flash externa | Flash interna |
-| **Llave** | NVS, que se puede cifrar con una llave grabada en el chip | En RP2350, memoria de un solo uso protegida | Flash interna con protección de lectura |
+| **Llave** | NVS | En RP2350, memoria de un solo uso protegida | Flash interna con protección de lectura |
 | **Firma** | Monocypher | Monocypher | Monocypher |
 
 ## Llevarlo a otro microcontrolador
