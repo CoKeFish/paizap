@@ -34,10 +34,12 @@ Cómo está pensada la página:
   el resultado, con una frase que dice qué pasa y un botón principal.
 - **El resultado se queda.** El pago aprobado sigue a la vista, con su enlace a la transacción,
   hasta el siguiente cobro. Debajo queda la lista de cobros hechos, con su estado.
-- **El modelo muestra lo mismo y se puede tocar.** El teléfono, las teclas y la tarjeta
-  responden; el monto es uno solo para el teclado y el campo de la página. El modelo tiene alto
-  propio, siempre encuadra el teléfono, el terminal y la tarjeta enteros, se gira un poco y
-  vuelve solo a su lugar.
+- **El modelo muestra lo mismo y se puede tocar.** El teléfono y las teclas responden; la
+  tarjeta se toca (va sola al lector) o se agarra y se lleva a mano hasta el lector. El monto es
+  uno solo para el teclado y el campo de la página.
+- **La cámara acompaña.** Se acerca al teléfono cuando lo que importa pasa ahí (al crear la
+  cuenta, y después de pasar la tarjeta para ver el pago) y vuelve a mostrar todo cuando termina.
+  El modelo tiene alto propio, se gira un poco y vuelve solo a su lugar.
 - **Lo técnico va plegado:** el registro de lo que hizo el aparato, las cuentas, las consultas
   al nodo y las instrucciones para agentes.
 

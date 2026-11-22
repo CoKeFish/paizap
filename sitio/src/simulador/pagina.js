@@ -93,11 +93,11 @@ function mostrarEtapa(etapa) {
 function pista(estado) {
   if (modelo === 'cargando') return 'Cargando el modelo…';
   if (modelo === 'sin3d') return 'Este navegador no puede mostrar el modelo 3D. El panel funciona igual.';
-  if (estado.fase === 'sin-cuenta') return 'Toca el teléfono para crear tu cuenta.';
+  if (estado.fase === 'sin-cuenta') return 'Toca «Crear cuenta» en el teléfono.';
   if (estado.fase === 'creando') return 'El teléfono muestra cómo se crea tu cuenta.';
   if (estado.fase === 'error') return 'Toca el teléfono para volver a intentar.';
   if (estado.fase === 'listo') return 'En el teclado del terminal: # cobra, * borra y D es el punto.';
-  if (estado.fase === 'esperando' && !estado.tarjetaPagando) return 'Toca la tarjeta para pagar.';
+  if (estado.fase === 'esperando' && !estado.tarjetaPagando) return 'Toca la tarjeta, o llévala hasta el lector del terminal.';
   return 'Arrastra para girar.';
 }
 
@@ -224,14 +224,25 @@ const simulador = crearSimulador({
   alConsultar: consultar,
 });
 
-function pagarConTarjeta() {
+const hayQuePagar = () => {
   const estado = simulador.estado();
-  if (estado.fase === 'esperando' && estado.cobro && !estado.tarjetaPagando) {
+  return estado.fase === 'esperando' && Boolean(estado.cobro) && !estado.tarjetaPagando;
+};
+// Pagar con un toque (en el botón o en la tarjeta): la tarjeta va sola al lector.
+function pagarConTarjeta() {
+  if (hayQuePagar()) {
     escena?.acercarTarjeta();
     simulador.acercarTarjeta();
   } else {
     simulador.tarjetaSinCobro();
   }
+}
+// La tarjeta llegó al lector llevada a mano. Devuelve si con eso empezó un pago.
+function pasarTarjeta() {
+  const paga = hayQuePagar();
+  if (paga) simulador.acercarTarjeta();
+  else simulador.tarjetaSinCobro();
+  return paga;
 }
 
 // En pantallas angostas el modelo y el panel van uno sobre el otro. Si al pulsar un botón el
@@ -276,8 +287,11 @@ simulador.preparar(); // si ya hay una cuenta creada en este navegador, la demo 
       urlModelo: `${aqui}modelo/`,
       alPulsarTecla: (tecla) => simulador.tecla(tecla),
       alTocarTarjeta: pagarConTarjeta,
+      alPasarTarjeta: pasarTarjeta,
       alTocarTelefono: () => simulador.tocarTelefono(),
     });
+    // Dónde está cada cosa del modelo en la página: sirve para arrastrar la tarjeta sin mirar.
+    $('sim-lienzo').donde = escena.donde;
     modelo = 'listo';
   } catch (error) {
     console.error(error);

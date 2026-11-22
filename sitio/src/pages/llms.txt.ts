@@ -39,6 +39,11 @@ esperando, aprobado o error. Espera las fases, no los textos.
 6. Para volver a ver cómo se crea la cuenta, pulsa \`#sim-reiniciar\` («Empezar de cero, con una
    cuenta nueva»): la página se recarga y vuelve a la fase \`sin-cuenta\`.
 
+En el modelo 3D también se puede pagar llevando la tarjeta a mano hasta el lector, con un
+arrastre. \`document.getElementById('sim-lienzo').donde('tarjeta')\` y \`.donde('lector')\` dan,
+en píxeles de la página, dónde agarrarla y adónde llevarla. No hace falta: \`#sim-tarjeta\` hace
+lo mismo.
+
 Dónde leer el resultado:
 
 - \`#sim-datos\`: el estado en JSON. Trae \`fase\`, \`cuenta\` (la de quien paga, con su saldo), \`cobro\` (el cobro en espera),
