@@ -65,6 +65,8 @@ servidores; falta el que corre dentro del dispositivo.
   | Proyecto | Aparato | Cómo llega a Stellar |
   |---|---|---|
   | [stellar-candyman](https://github.com/sui77/stellar-candyman) | Dispensador de dulces con microcontrolador | Protocolo escrito a mano; su autor cuenta que no conoce ningún SDK de Stellar para Arduino |
+  | [SkyPort](https://github.com/SkyPort-Labs2/skyport-soroban) (2026) | Plataforma de aterrizaje con microcontrolador | El microcontrolador firma un recibo y un servidor en Node.js envía la transacción |
+  | [OffGate](https://github.com/hyrlhc/offgate) (2026) | Torniquete con microcontrolador | Verifica sin conexión; la llave del operador vive en un servidor |
   | [Alerta médica](https://github.com/arantxaamr/alerta-medica-esp32-stellar) (2026) | Botón de alerta con microcontrolador | El firmware quedó en pausa; funciona con el teléfono y un servidor |
   | [SatoshiPay](https://github.com/satoshipay/stellar-candy-dispenser) | Máquina de dulces | Node.js en una Raspberry Pi, que es un computador |
   | [soroban-pumpit](https://github.com/tupui/soroban-pumpit) (2024) | Bomba con sensores | Python en una Raspberry Pi |
