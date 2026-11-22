@@ -3,13 +3,24 @@ import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttribute
 import QRCode from 'qrcode'
 import { Check, Copy, LoaderCircle, X } from 'lucide-react'
 
-type Variante = 'principal' | 'secundario' | 'texto' | 'peligro'
+// `rayo` es el botón amarillo: la acción principal de la pantalla, una sola. `sobre-noche` es el
+// botón secundario dentro de la franja azul.
+type Variante = 'principal' | 'rayo' | 'secundario' | 'sobre-noche' | 'texto' | 'peligro'
 
 const ESTILO: Record<Variante, string> = {
-  principal: 'bg-marca text-marca-texto hover:opacity-90',
-  secundario: 'bg-panel text-texto border border-borde hover:bg-fondo',
-  texto: 'text-acento hover:underline px-0!',
-  peligro: 'bg-panel text-error border border-error/40 hover:bg-error-fondo',
+  principal: 'bg-marca text-marca-texto text-sm font-semibold hover:opacity-90',
+  rayo: 'titulo bg-rayo text-noche min-h-12 text-xl uppercase tracking-wide hover:bg-rayo-fuerte',
+  secundario: 'bg-panel text-texto text-sm font-semibold border border-borde hover:bg-fondo',
+  'sobre-noche': 'bg-transparent text-white text-sm font-semibold border border-noche-linea hover:bg-noche-alta',
+  texto: 'text-acento text-sm font-semibold hover:underline px-0!',
+  peligro: 'bg-panel text-error text-sm font-semibold border border-error/40 hover:bg-error-fondo',
+}
+
+/** Las clases de un botón, para darle su aspecto también a un enlace. */
+export function estiloDeBoton(variante: Variante = 'principal', ancho = false): string {
+  return `inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 transition
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento
+    disabled:cursor-not-allowed disabled:opacity-50 ${ESTILO[variante]} ${ancho ? 'w-full' : ''}`
 }
 
 export function Boton({
@@ -19,9 +30,7 @@ export function Boton({
     <button
       type="button"
       disabled={disabled || ocupado}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition
-        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento
-        disabled:cursor-not-allowed disabled:opacity-50 ${ESTILO[variante]} ${ancho ? 'w-full' : ''} ${className}`}
+      className={`${estiloDeBoton(variante, ancho)} ${className}`}
       {...resto}
     >
       {ocupado && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
@@ -32,7 +41,7 @@ export function Boton({
 
 export function Cuadro({ titulo, accion, children, className = '' }: { titulo?: string; accion?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-borde bg-panel p-4 ${className}`}>
+    <section className={`rounded-2xl border border-borde bg-panel p-4 ${className}`}>
       {(titulo || accion) && (
         <div className="mb-3 flex items-center justify-between gap-3">
           {titulo && <h2 className="text-base font-semibold">{titulo}</h2>}
@@ -49,8 +58,8 @@ export function Campo({ etiqueta, ayuda, className = '', ...resto }: InputHTMLAt
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{etiqueta}</span>
       <input
-        className={`min-h-11 w-full rounded-lg border border-borde bg-panel px-3 text-base outline-none
-          focus:border-acento focus:ring-2 focus:ring-acento/20 ${className}`}
+        className={`min-h-11 w-full rounded-xl border border-borde bg-panel px-3 text-base text-texto outline-none
+          focus:border-acento focus:ring-2 focus:ring-acento/30 ${className}`}
         {...resto}
       />
       {ayuda && <span className="mt-1 block text-sm text-suave">{ayuda}</span>}
@@ -71,7 +80,7 @@ export function Etiqueta({ tono = 'neutro', children }: { tono?: Tono; children:
 }
 
 export function Aviso({ tono = 'neutro', children }: { tono?: Tono; children: ReactNode }) {
-  return <p role={tono === 'error' ? 'alert' : undefined} className={`rounded-lg px-3 py-2 text-sm ${TONO[tono]}`}>{children}</p>
+  return <p role={tono === 'error' ? 'alert' : undefined} className={`rounded-xl px-3 py-2 text-sm ${TONO[tono]}`}>{children}</p>
 }
 
 /** Ventana sobre la pantalla: en el celular sube desde abajo; en pantallas grandes va al centro. */
@@ -82,12 +91,12 @@ export function Ventana({ titulo, alCerrar, children }: { titulo: string; alCerr
     return () => document.removeEventListener('keydown', tecla)
   }, [alCerrar])
   return (
-    <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/40 sm:items-center" onClick={alCerrar}>
+    <div className="fixed inset-0 z-20 flex items-end justify-center bg-noche/60 sm:items-center" onClick={alCerrar}>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={titulo}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-panel p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-panel p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-3xl"
         onClick={(evento) => evento.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-3">

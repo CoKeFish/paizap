@@ -1,4 +1,7 @@
-# App de Toki (web y Android)
+# App de Paizap (web y Android)
+
+**Paizap** es la marca con la que sale la app (nombre, logo, colores y letra). En el código, en
+las variables y en el servidor sigue el nombre interno del proyecto, Toki.
 
 Una sola base de código (React + Tailwind) que sale de dos formas:
 
@@ -77,7 +80,7 @@ VITE_SERVIDOR_URL=http://localhost:8090 npm run dev     # http://localhost:5180
 ## APK de Android
 
 ```bash
-npm run apk          # compila la web, la pasa a Android y deja app/toki.apk
+npm run apk          # compila la web, la pasa a Android y deja app/paizap.apk
 npm run cap:open     # abre el proyecto en Android Studio
 ```
 
@@ -85,19 +88,54 @@ Usa el JDK de Android Studio y el SDK de Android del PC (ver `build-apk.ps1`). E
 fábrica la dirección del túnel de pruebas (`http://bore.pub:48123`); para otra, define
 `VITE_SERVIDOR_URL` antes de compilar. Dentro de la app también se cambia, en «Mi cuenta».
 
-Para instalarlo en un celular, pasa `toki.apk` por WhatsApp o Drive y permite «Instalar apps
-desconocidas». En el emulador: `adb install -r toki.apk` (desde el emulador, el PC es
+Para instalarlo en un celular, pasa `paizap.apk` por WhatsApp o Drive y permite «Instalar apps
+desconocidas». En el emulador: `adb install -r paizap.apk` (desde el emulador, el PC es
 `http://10.0.2.2:8090`).
+
+## Identidad visual
+
+Todo sale del logo (`marca/logo-original.png`): su azul, su amarillo y su letra gruesa e inclinada.
+
+| Qué | Valor | Para qué |
+|---|---|---|
+| Azul noche | `#000B25` | La estructura: la franja que abre cada pantalla, el texto y los botones |
+| Amarillo rayo | `#FFCD00` | La energía: el botón de la acción principal y los acentos sobre el azul |
+| Fondo claro | `#F1F3F8` | El resto de la pantalla; las tarjetas van en blanco |
+| Letra de marca | Barlow Condensed, 800 cursiva | Los montos y los títulos de pantalla |
+| Letra de texto | Barlow | Todo lo demás |
+
+Cómo se usa:
+
+- **La franja azul noche** abre cada pantalla: el logo y, debajo, el número que importa (el saldo,
+  lo vendido hoy, el monto a pagar). El arco amarillo del logo asoma por la derecha.
+- **Un solo botón amarillo por pantalla**, el de la acción principal («Pagar», «Recargar», «Crear
+  mi cuenta»). Los demás botones van en azul o con borde.
+- **El amarillo es relleno o acento sobre azul.** Como texto o línea fina sobre fondo claro no se
+  lee, así que ahí no va.
+- **El aviso es naranja**, para que no se confunda con el amarillo de la marca.
+- **El logo va sobre azul noche.** `logo.png` y `logo-franja.png` traen ese azul de fondo, así que
+  sobre una superficie del mismo color no se nota el recorte. Sobre otros fondos se usa
+  `icono.png`, el cuadro con esquinas redondeadas.
+
+Dónde está cada cosa:
+
+- **Colores y letra:** `src/index.css` (`@theme`). El azul se repite en `capacitor.config.ts`, en
+  `index.html` (`theme-color`) y en `android/app/src/main/res/values/ic_launcher_background.xml`.
+- **Logo, arco y franja:** `src/components/marca.tsx`.
+- **Recursos:** `public/` (logo, favicon y la letra en `public/fuentes/`, con su licencia OFL) y
+  `android/app/src/main/res/` (íconos y pantalla de arranque).
+- **Todos los recursos salen de un solo archivo.** Con un logo mejor (más grande, o exportado de
+  un vector), se reemplaza `marca/logo-original.png` y se corre `python marca/generar.py`
+  (necesita Pillow). El original tiene 417 px: alcanza para pantalla, no para imprimir.
+- **La página liviana del QR** (`servidor/src/pagina-pago.mjs`) repite estos colores y esta letra.
 
 ## Dónde cambiar cosas
 
-- **Colores y letra:** `src/index.css` (`@theme`). La marca todavía no está definida; todo sale
-  de esos valores.
 - **Piezas de interfaz:** `src/components/ui.tsx`.
 - **Pantallas:** `src/pages/` (`Entrada`, `Billetera`, `Panel`, `Pagar`, `Recibo`, `Ajustes`).
 - **Página liviana del QR de pago** (código y PIN, sin la web): `servidor/src/pagina-pago.mjs`.
 - **Conexión con el servidor y tipos de sus respuestas:** `src/lib/api.ts`.
-- **Ícono y nombre de la app:** `android/app/src/main/res/` y `capacitor.config.ts`.
+- **Nombre de la app:** `capacitor.config.ts` y `android/app/src/main/res/values/strings.xml`.
 
 ## Pendiente
 

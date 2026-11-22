@@ -163,7 +163,7 @@ async function pedirSinSesion<T>(metodo: string, ruta: string, cuerpo?: unknown,
       body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     })
   } catch {
-    throw new ErrorDeServidor(0, 'No hay conexión con el servidor de Toki.')
+    throw new ErrorDeServidor(0, 'No hay conexión con el servidor de Paizap.')
   }
   let datos: { ok?: boolean; motivo?: string } = {}
   try {

@@ -4,7 +4,7 @@ import { cambiarServidor, esNativa, servidor } from '../lib/api'
 import { useSesion } from '../lib/sesion'
 import { Aviso, Boton, Campo, Copiar, Qr, Ventana } from '../components/ui'
 
-/** En la app de Android, a qué servidor de Toki se conecta. En la web no hace falta: es el mismo. */
+/** En la app de Android, a qué servidor de Paizap se conecta. En la web no hace falta: es el mismo. */
 export function DireccionDelServidor() {
   const { reintentar } = useSesion()
   const [url, setUrl] = useState(servidor())
@@ -19,7 +19,7 @@ export function DireccionDelServidor() {
       }}
     >
       <Campo
-        etiqueta="Servidor de Toki"
+        etiqueta="Servidor de Paizap"
         placeholder="http://bore.pub:48123"
         value={url}
         onChange={(evento) => setUrl(evento.target.value)}

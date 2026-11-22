@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { mensajeDe } from '../lib/api'
 import { crearLlave, leerLlave } from '../lib/billetera'
 import { useSesion } from '../lib/sesion'
+import { LogoGrande } from '../components/marca'
 import { Aviso, Boton, Campo } from '../components/ui'
 import { DireccionDelServidor } from './Ajustes'
 
@@ -27,20 +28,22 @@ export function Entrada() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-5 py-10">
+    <main className="en-noche flex min-h-screen flex-col items-center justify-center px-5 py-10">
+     <div className="flex w-full max-w-md flex-col gap-6">
       <header>
-        <h1 className="text-4xl font-bold">Toki</h1>
-        <p className="mt-2 text-lg text-suave">Paga con un toque de tu tarjeta. Tú decides cuánto se puede gastar.</p>
+        <LogoGrande />
+        <h1 className="titulo mt-6 text-5xl">Paga con un toque.</h1>
+        <p className="mt-3 text-lg text-suave">Con tu tarjeta o con el QR del terminal. Tú decides cuánto se puede gastar.</p>
       </header>
 
       {error && <Aviso tono="error">{error}</Aviso>}
 
       {!conLlave ? (
         <div className="space-y-3">
-          <Boton ancho ocupado={ocupado} onClick={() => entrarCon(crearLlave())}>Crear mi cuenta</Boton>
-          <Boton ancho variante="secundario" disabled={ocupado} onClick={() => setConLlave(true)}>Ya tengo una cuenta</Boton>
+          <Boton ancho variante="rayo" ocupado={ocupado} onClick={() => entrarCon(crearLlave())}>Crear mi cuenta</Boton>
+          <Boton ancho variante="sobre-noche" disabled={ocupado} onClick={() => setConLlave(true)}>Ya tengo una cuenta</Boton>
           <p className="text-sm text-suave">
-            La cuenta se crea en este dispositivo y solo tú tienes su llave. Toki no la guarda ni la puede recuperar.
+            La cuenta se crea en este dispositivo y solo tú tienes su llave. Paizap no la guarda ni la puede recuperar.
           </p>
         </div>
       ) : (
@@ -62,8 +65,8 @@ export function Entrada() {
             autoCapitalize="characters"
             spellCheck={false}
           />
-          <Boton ancho type="submit" ocupado={ocupado}>Entrar</Boton>
-          <Boton ancho variante="secundario" disabled={ocupado} onClick={() => setConLlave(false)}>Volver</Boton>
+          <Boton ancho variante="rayo" type="submit" ocupado={ocupado}>Entrar</Boton>
+          <Boton ancho variante="sobre-noche" disabled={ocupado} onClick={() => setConLlave(false)}>Volver</Boton>
         </form>
       )}
 
@@ -71,6 +74,7 @@ export function Entrada() {
         {info && <p>Red de Stellar: {info.red}. Moneda: {info.moneda}.</p>}
         <DireccionDelServidor />
       </footer>
+     </div>
     </main>
   )
 }

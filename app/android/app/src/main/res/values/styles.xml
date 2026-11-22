@@ -16,7 +16,9 @@
     </style>
 
 
+    <!-- Arranque: azul noche del logo, con el icono de la app al centro. -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
     </style>
 </resources>

@@ -5,6 +5,7 @@ import { App } from '@capacitor/app'
 import './index.css'
 import { esNativa } from './lib/api'
 import { ProveedorDeSesion, useSesion } from './lib/sesion'
+import { LogoGrande } from './components/marca'
 import { Aviso, Boton, Cargando } from './components/ui'
 import { DireccionDelServidor } from './pages/Ajustes'
 import { Billetera } from './pages/Billetera'
@@ -38,17 +39,19 @@ function Inicio() {
   if (estado === 'abierta') return rol === 'comercio' ? <Panel /> : <Billetera />
   if (estado === 'sin-cuenta') return <Entrada />
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-5 py-10">
-      <h1 className="text-4xl font-bold">Toki</h1>
-      {estado === 'cargando' && <Cargando texto="Conectando…" />}
-      {estado === 'sin-servidor' && <p className="text-suave">Escribe la dirección del servidor de Toki para empezar.</p>}
-      {estado === 'error' && (
-        <>
-          <Aviso tono="error">{error}</Aviso>
-          <Boton onClick={reintentar}>Reintentar</Boton>
-        </>
-      )}
-      {estado !== 'cargando' && <DireccionDelServidor />}
+    <main className="en-noche flex min-h-screen flex-col items-center justify-center px-5 py-10">
+      <div className="flex w-full max-w-md flex-col gap-4">
+        <LogoGrande />
+        {estado === 'cargando' && <Cargando texto="Conectando…" />}
+        {estado === 'sin-servidor' && <p className="text-suave">Escribe la dirección del servidor de Paizap para empezar.</p>}
+        {estado === 'error' && (
+          <>
+            <Aviso tono="error">{error}</Aviso>
+            <Boton variante="rayo" onClick={reintentar}>Reintentar</Boton>
+          </>
+        )}
+        {estado !== 'cargando' && <DireccionDelServidor />}
+      </div>
     </main>
   )
 }

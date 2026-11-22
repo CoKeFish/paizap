@@ -47,6 +47,8 @@ bloqueo y su límite diario:
   billetera si está en ese navegador, y en Android ofrece abrir la app (`toki://pagar/<id>`).
 - **Sin la billetera** (`POST /p/<id>/pagar {codigo, pin}`): la página `/p/<id>` es liviana, no
   depende de la web y pide el código de cuenta (6 dígitos) y el PIN (4 dígitos) de la tarjeta.
+  Lleva la marca Paizap (ver la identidad visual en el README de `app/`); el logo y la letra los
+  toma de la web y, si el servidor corre sin ella, usa la letra del sistema.
   Del PIN se guarda solo su hash; tras 5 intentos fallidos, el código queda bloqueado 10 minutos.
 
 El PIN lo crea el dueño desde la app (`POST /api/tarjetas/<uid>/pin`) y se muestra una sola vez.

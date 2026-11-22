@@ -5,6 +5,7 @@ import { Settings } from 'lucide-react'
 import { mensajeDe, pedir, type Movimiento, type Panel as DatosDelPanel } from '../lib/api'
 import { cuando, cuentaCorta, hace, monto, motivoClaro } from '../lib/formato'
 import { useSesion, useSondeo } from '../lib/sesion'
+import { Franja, Monto } from '../components/marca'
 import { Aviso, Cargando, Boton, Copiar, Cuadro, Etiqueta } from '../components/ui'
 import { Ajustes } from './Ajustes'
 
@@ -32,7 +33,12 @@ export function Panel() {
   }, 2500)
 
   if (!panel) {
-    return <main className="mx-auto max-w-5xl px-4 py-6">{error ? <Aviso tono="error">{error}</Aviso> : <Cargando />}</main>
+    return (
+      <>
+        <Franja ancho="max-w-5xl" arco={false} />
+        <main className="mx-auto max-w-5xl px-4 py-6">{error ? <Aviso tono="error">{error}</Aviso> : <Cargando />}</main>
+      </>
+    )
   }
 
   const { hoy, moneda } = panel
@@ -41,39 +47,51 @@ export function Panel() {
   const promedio = hoy.aprobados ? Number(hoy.total) / hoy.aprobados : 0
 
   return (
-    <main className="mx-auto max-w-5xl space-y-4 px-4 pt-5 pb-10">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <>
+    {/* Arriba, en la franja: lo vendido hoy y los números del día. */}
+    <Franja
+      ancho="max-w-5xl"
+      arco={false}
+      accion={
+        <Boton variante="sobre-noche" onClick={() => setAjustes(true)}>
+          <Settings className="size-4" aria-hidden /> Mi cuenta
+        </Boton>
+      }
+    >
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <h1 className="text-xl font-bold">Ventas de hoy</h1>
-          <p className="text-sm text-suave">Comercio {cuentaCorta(cuenta)}</p>
+          <h1 className="text-sm text-suave">Vendido hoy · Comercio {cuentaCorta(cuenta)}</h1>
+          <Monto valor={monto(hoy.total)} moneda={moneda} className="mt-1 text-7xl" />
+          <p className="mt-3">
+            {contacto === null ? (
+              <Etiqueta>Terminal sin conectar</Etiqueta>
+            ) : (
+              <Etiqueta tono={terminalActivo ? 'ok' : 'aviso'}>Terminal: último contacto {hace(contacto)}</Etiqueta>
+            )}
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          {contacto === null ? (
-            <Etiqueta>Terminal sin conectar</Etiqueta>
-          ) : (
-            <Etiqueta tono={terminalActivo ? 'ok' : 'aviso'}>Terminal: último contacto {hace(contacto)}</Etiqueta>
-          )}
-          <Boton variante="secundario" onClick={() => setAjustes(true)}>
-            <Settings className="size-4" aria-hidden /> Mi cuenta
-          </Boton>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Dato titulo="Cobros aprobados" valor={String(hoy.aprobados)} detalle={hoy.aprobados ? `Promedio ${monto(promedio)}` : undefined} />
+          <Dato titulo="Rechazados" valor={String(hoy.rechazados)} />
+          <Dato
+            titulo="Saldo de la cuenta"
+            valor={panel.saldo === null ? '…' : monto(panel.saldo)}
+            detalle={`${moneda} en Stellar, ya disponible`}
+            className="col-span-2 sm:col-span-1"
+          />
         </div>
-      </header>
+      </div>
+    </Franja>
 
+    <main className="mx-auto max-w-5xl space-y-4 px-4 pt-4 pb-10">
       {error && <Aviso tono="error">{error}</Aviso>}
 
       {panel.esperando.length > 0 && (
-        <Aviso tono="aviso">
+        <p className="rounded-xl bg-rayo/30 px-3 py-2 text-sm font-medium">
           En el terminal: esperando el pago de {monto(panel.esperando[0].monto)} {moneda}
           {panel.esperando[0].concepto && ` (${panel.esperando[0].concepto})`}, con tarjeta o con QR.
-        </Aviso>
+        </p>
       )}
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Dato titulo="Vendido hoy" valor={`${monto(hoy.total)} ${moneda}`} destacado />
-        <Dato titulo="Cobros aprobados" valor={String(hoy.aprobados)} detalle={hoy.aprobados ? `Promedio ${monto(promedio)}` : undefined} />
-        <Dato titulo="Rechazados" valor={String(hoy.rechazados)} />
-        <Dato titulo="Saldo de la cuenta" valor={panel.saldo === null ? '…' : `${monto(panel.saldo)} ${moneda}`} detalle="En Stellar, ya disponible" />
-      </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Cuadro titulo="Cobros" className="min-w-0 lg:col-span-2">
@@ -143,15 +161,17 @@ export function Panel() {
 
       {ajustes && <Ajustes alCerrar={() => setAjustes(false)} />}
     </main>
+    </>
   )
 }
 
-function Dato({ titulo, valor, detalle, destacado }: { titulo: string; valor: string; detalle?: string; destacado?: boolean }) {
+/** Un número del día, dentro de la franja azul. */
+function Dato({ titulo, valor, detalle, className = '' }: { titulo: string; valor: string; detalle?: string; className?: string }) {
   return (
-    <div className={`rounded-xl border p-4 ${destacado ? 'border-marca bg-marca text-marca-texto' : 'border-borde bg-panel'}`}>
-      <p className={`text-sm ${destacado ? 'opacity-80' : 'text-suave'}`}>{titulo}</p>
-      <p className="cifras mt-1 text-2xl font-bold">{valor}</p>
-      {detalle && <p className={`mt-1 text-xs ${destacado ? 'opacity-80' : 'text-suave'}`}>{detalle}</p>}
+    <div className={`min-w-36 rounded-2xl bg-fondo p-4 ${className}`}>
+      <p className="text-sm text-suave">{titulo}</p>
+      <p className="titulo cifras mt-1 text-4xl">{valor}</p>
+      {detalle && <p className="mt-1 text-xs text-suave">{detalle}</p>}
     </div>
   )
 }

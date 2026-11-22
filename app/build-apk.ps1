@@ -21,5 +21,5 @@ $resultado = $LASTEXITCODE
 Pop-Location
 if ($resultado) { exit $resultado }
 
-Copy-Item android\app\build\outputs\apk\debug\app-debug.apk toki.apk -Force
-Write-Host "APK listo: app\toki.apk (servidor de fábrica: $env:VITE_SERVIDOR_URL)"
+Copy-Item android\app\build\outputs\apk\debug\app-debug.apk paizap.apk -Force
+Write-Host "APK listo: app\paizap.apk (servidor de fábrica: $env:VITE_SERVIDOR_URL)"

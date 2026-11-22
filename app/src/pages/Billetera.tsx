@@ -7,6 +7,7 @@ import { mensajeDe, pedir, type Cuenta, type Movimiento, type Tarjeta, type Tarj
 import { firmarPermiso } from '../lib/billetera'
 import { cuando, cuentaCorta, diasHasta, fechaLarga, hace, monto, motivoClaro } from '../lib/formato'
 import { useSesion, useSondeo } from '../lib/sesion'
+import { Franja, Monto } from '../components/marca'
 import { Aviso, Barra, Boton, Campo, Cargando, Copiar, Cuadro, Etiqueta, Interruptor, Qr, Ventana } from '../components/ui'
 import { Ajustes } from './Ajustes'
 
@@ -41,9 +42,12 @@ export function Billetera() {
 
   if (!cuenta || !info) {
     return (
-      <main className="mx-auto max-w-md px-4 py-6">
-        {error ? <Aviso tono="error">{error}</Aviso> : <Cargando />}
-      </main>
+      <>
+        <Franja arco={false} />
+        <main className="mx-auto max-w-md px-4 py-6">
+          {error ? <Aviso tono="error">{error}</Aviso> : <Cargando />}
+        </main>
+      </>
     )
   }
 
@@ -57,30 +61,26 @@ export function Billetera() {
   const nombreDe = (uid?: string) => cuenta.tarjetas.find((t) => t.uid === uid)?.nombre || uid || ''
 
   return (
-    <main className="mx-auto max-w-md space-y-4 px-4 pt-5 pb-10">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">Toki</h1>
-          <p className="text-sm text-suave">Cuenta {cuentaCorta(direccion)}</p>
-        </div>
-        <Boton variante="secundario" onClick={() => setAbierta('ajustes')} aria-label="Mi cuenta">
+    <>
+    {/* Arriba, en la franja: el saldo y la acción principal. */}
+    <Franja
+      accion={
+        <Boton variante="sobre-noche" onClick={() => setAbierta('ajustes')}>
           <Settings className="size-4" aria-hidden /> Mi cuenta
         </Boton>
-      </header>
+      }
+    >
+      <h1 className="mt-5 text-sm text-suave">Saldo de la cuenta {cuentaCorta(direccion)}</h1>
+      <Monto valor={monto(cuenta.saldo)} moneda={moneda} className="mt-1 text-6xl" />
+      <Boton variante="rayo" className="mt-5" onClick={() => setAbierta('recargar')}>
+        <ArrowDownLeft className="size-5" aria-hidden /> Recargar
+      </Boton>
+    </Franja>
 
+    <main className="mx-auto max-w-md space-y-4 px-4 pt-4 pb-10">
       {error && <Aviso tono="error">{error}</Aviso>}
 
       <Pasos cuenta={cuenta} abrir={setAbierta} />
-
-      <Cuadro>
-        <p className="text-sm text-suave">Saldo</p>
-        <p className="cifras mt-1 text-4xl font-bold">
-          {monto(cuenta.saldo)} <span className="text-lg font-semibold text-suave">{moneda}</span>
-        </p>
-        <Boton className="mt-4" onClick={() => setAbierta('recargar')}>
-          <ArrowDownLeft className="size-4" aria-hidden /> Recargar
-        </Boton>
-      </Cuadro>
 
       <Cuadro
         titulo="Tope de gasto"
@@ -88,8 +88,8 @@ export function Billetera() {
       >
         {restante > 0 ? (
           <div className="space-y-2">
-            <p className="cifras text-2xl font-bold">
-              {monto(restante)} <span className="text-base font-semibold text-suave">{moneda}</span>
+            <p className="titulo cifras text-4xl">
+              {monto(restante)} <span className="text-[0.5em] text-suave">{moneda}</span>
             </p>
             {cuenta.permiso.firmado && Number(cuenta.permiso.firmado) >= restante && (
               <>
@@ -104,7 +104,7 @@ export function Billetera() {
           </div>
         ) : (
           <p className="text-sm text-suave">
-            Tus tarjetas todavía no pueden pagar. Firma un tope: Toki podrá cobrar hasta ese monto y nada más.
+            Tus tarjetas todavía no pueden pagar. Firma un tope: Paizap podrá cobrar hasta ese monto y nada más.
           </p>
         )}
       </Cuadro>
@@ -147,6 +147,7 @@ export function Billetera() {
         <EditarTarjeta tarjeta={abierta.tarjeta} limitePorDefecto={cuenta.limiteDiario} moneda={moneda} alCerrar={cerrar} alTerminar={alTerminar} />
       )}
     </main>
+    </>
   )
 }
 
@@ -198,7 +199,8 @@ function FilaDeTarjeta({ tarjeta, limitePorDefecto, moneda, alCambiar, editar }:
         </div>
         {tarjeta.bloqueada ? <Etiqueta tono="error">Bloqueada</Etiqueta> : <Etiqueta tono="ok">Activa</Etiqueta>}
       </div>
-      <Barra valor={Number(tarjeta.gastadoHoy)} total={limite} tono="aviso" />
+      {/* La barra avisa en naranja cuando la tarjeta ya gastó casi todo su límite del día. */}
+      <Barra valor={Number(tarjeta.gastadoHoy)} total={limite} tono={Number(tarjeta.gastadoHoy) >= limite * 0.8 ? 'aviso' : 'marca'} />
       <p className="cifras text-sm text-suave">Hoy gastó {monto(tarjeta.gastadoHoy)} de {monto(limite)} {moneda}</p>
       <div className="flex items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm">
@@ -284,7 +286,7 @@ function Recargar({ cuenta, alCerrar, alTerminar }: { cuenta: Cuenta; alCerrar: 
               ? `Estás en la red de pruebas de Stellar. La recarga de prueba manda ${monto(info.recargaPrueba)} ${info.moneda} a tu cuenta.`
               : 'Estás en la red de pruebas de Stellar. La primera recarga crea tu cuenta en la red, con saldo de prueba.'}
           </p>
-          <Boton ancho ocupado={ocupado} onClick={recargar}>
+          <Boton ancho variante="rayo" ocupado={ocupado} onClick={recargar}>
             {cuenta.existe ? `Recargar ${monto(info.recargaPrueba)} ${info.moneda} de prueba` : 'Activar mi cuenta'}
           </Boton>
         </div>
@@ -335,7 +337,7 @@ function CambiarTope({ cuenta, alCerrar, alTerminar }: { cuenta: Cuenta; alCerra
   return (
     <Ventana titulo="Tope de gasto" alCerrar={alCerrar}>
       <p className="text-sm text-suave">
-        Con tu firma, Toki puede cobrar de tu cuenta hasta este monto en total, hasta que venza. La plata se queda en tu cuenta
+        Con tu firma, Paizap puede cobrar de tu cuenta hasta este monto en total, hasta que venza. La plata se queda en tu cuenta
         hasta que pagas, y la red de Stellar no deja pasar del tope.
       </p>
       <Campo etiqueta={`Tope (${info?.moneda})`} value={valor} onChange={(e) => setValor(e.target.value)} inputMode="decimal" disabled={Boolean(paso)} />
@@ -351,7 +353,7 @@ function CambiarTope({ cuenta, alCerrar, alTerminar }: { cuenta: Cuenta; alCerra
       </div>
       {error && <Aviso tono="error">{error}</Aviso>}
       {paso && <Aviso>{paso}</Aviso>}
-      <Boton ancho ocupado={Boolean(paso)} onClick={() => firmar(valor)}>Firmar tope</Boton>
+      <Boton ancho variante="rayo" ocupado={Boolean(paso)} onClick={() => firmar(valor)}>Firmar tope</Boton>
       {tienePermiso && (
         <Boton ancho variante="peligro" disabled={Boolean(paso)} onClick={() => firmar('0')}>Quitar el permiso</Boton>
       )}
@@ -456,7 +458,7 @@ function EditarTarjeta({ tarjeta, limitePorDefecto, moneda, alCerrar, alTerminar
   }
   const guardar = () => {
     const numero = Number(limite.replace(',', '.'))
-    if (limite.trim() && !(numero > 0)) return setError('El límite diario es un monto mayor a cero, o vacío para usar el de Toki.')
+    if (limite.trim() && !(numero > 0)) return setError('El límite diario es un monto mayor a cero, o vacío para usar el de Paizap.')
     return hacer(() => pedir('PATCH', `/api/tarjetas/${tarjeta.uid}`, { nombre, limiteDiario: limite.trim() ? numero : null }))
   }
 
@@ -466,7 +468,7 @@ function EditarTarjeta({ tarjeta, limitePorDefecto, moneda, alCerrar, alTerminar
       <Campo etiqueta="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={24} />
       <Campo
         etiqueta={`Límite diario (${moneda})`}
-        ayuda={`Lo máximo que esta tarjeta puede gastar por día. Vacío: ${monto(limitePorDefecto)}, el límite de Toki.`}
+        ayuda={`Lo máximo que esta tarjeta puede gastar por día. Vacío: ${monto(limitePorDefecto)}, el límite de Paizap.`}
         value={limite}
         onChange={(e) => setLimite(e.target.value)}
         inputMode="decimal"

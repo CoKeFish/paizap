@@ -4,7 +4,8 @@ import { Link, useParams } from 'react-router'
 import { CircleCheck, ExternalLink } from 'lucide-react'
 import { leerRecibo, mensajeDe, type Recibo as DatosDelRecibo } from '../lib/api'
 import { cuentaCorta, fechaYHora, monto } from '../lib/formato'
-import { Aviso, Cargando } from '../components/ui'
+import { Franja, Monto } from '../components/marca'
+import { Aviso, Cargando, Cuadro, estiloDeBoton } from '../components/ui'
 
 export function Recibo() {
   const { codigo = '' } = useParams()
@@ -16,37 +17,41 @@ export function Recibo() {
   }, [codigo])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-5 py-10">
-      {error && <Aviso tono="error">{error}</Aviso>}
-      {!recibo && !error && <Cargando />}
-      {recibo && (
-        <section className="rounded-xl border border-borde bg-panel p-6 text-center">
-          <CircleCheck className="mx-auto size-12 text-ok" aria-hidden />
-          <h1 className="mt-3 text-xl font-bold">Pago aprobado</h1>
-          {recibo.monto && (
-            <p className="cifras mt-2 text-4xl font-bold">
-              {monto(recibo.monto)} <span className="text-lg font-semibold text-suave">{recibo.moneda}</span>
-            </p>
-          )}
-          <dl className="mt-5 space-y-2 text-left text-sm">
-            {recibo.concepto && <Linea nombre="Producto" valor={recibo.concepto} />}
-            {recibo.fecha && <Linea nombre="Fecha" valor={fechaYHora(recibo.fecha)} />}
-            <Linea nombre="Comercio" valor={cuentaCorta(recibo.comercio)} />
-            <Linea nombre="Recibo" valor={recibo.codigo} />
-          </dl>
-          <a
-            className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-marca px-4 text-sm font-semibold text-marca-texto"
-            href={recibo.enlace}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Ver la transacción en Stellar <ExternalLink className="size-4" aria-hidden />
-          </a>
-          <p className="mt-3 text-xs text-suave">El pago quedó registrado en la red de Stellar. Cualquiera puede comprobarlo.</p>
-        </section>
-      )}
-      <Link className="text-center text-sm text-acento hover:underline" to="/">Ir a Toki</Link>
-    </main>
+    <>
+      <Franja>
+        {recibo && (
+          <div className="mt-6">
+            <h1 className="flex items-center gap-2 text-rayo">
+              <CircleCheck className="size-8" aria-hidden />
+              <span className="titulo text-4xl">Pago aprobado</span>
+            </h1>
+            {recibo.monto && <Monto valor={monto(recibo.monto)} moneda={recibo.moneda} className="mt-2 text-7xl" />}
+          </div>
+        )}
+      </Franja>
+
+      <main className="mx-auto max-w-md space-y-4 px-4 pt-4 pb-10">
+        {error && <Aviso tono="error">{error}</Aviso>}
+        {!recibo && !error && <Cargando />}
+        {recibo && (
+          <>
+            <Cuadro>
+              <dl className="space-y-2 text-sm">
+                {recibo.concepto && <Linea nombre="Producto" valor={recibo.concepto} />}
+                {recibo.fecha && <Linea nombre="Fecha" valor={fechaYHora(recibo.fecha)} />}
+                <Linea nombre="Comercio" valor={cuentaCorta(recibo.comercio)} />
+                <Linea nombre="Recibo" valor={recibo.codigo} />
+              </dl>
+              <p className="mt-3 text-sm text-suave">El pago quedó registrado en la red de Stellar. Cualquiera puede comprobarlo.</p>
+            </Cuadro>
+            <a className={estiloDeBoton('principal', true)} href={recibo.enlace} target="_blank" rel="noreferrer">
+              Ver la transacción en Stellar <ExternalLink className="size-4" aria-hidden />
+            </a>
+          </>
+        )}
+        <Link className="block text-center text-sm font-semibold text-acento hover:underline" to="/">Ir a Paizap</Link>
+      </main>
+    </>
   )
 }
 

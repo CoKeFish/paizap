@@ -10,7 +10,8 @@ import {
 } from '../lib/api'
 import { monto, motivoDePago } from '../lib/formato'
 import { useSesion, useSondeo } from '../lib/sesion'
-import { Aviso, Boton, Cargando, Etiqueta } from '../components/ui'
+import { Franja, Monto } from '../components/marca'
+import { Aviso, Boton, Cargando, Cuadro, Etiqueta, estiloDeBoton } from '../components/ui'
 
 export function Pagar() {
   const { id = '' } = useParams()
@@ -62,89 +63,90 @@ function PantallaDePago({ id }: { id: string }) {
   }
 
   const elegida = cuenta?.tarjetas.find((t) => t.uid === uid)
+  const puedePagar = esDueno && cuenta !== null && cuenta.tarjetas.length > 0
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-5 py-10">
-      {!pedido && (error ? <Aviso tono="error">{error}</Aviso> : <Cargando />)}
-
-      {pedido && pago && (
-        <section className="rounded-xl border border-borde bg-panel p-6 text-center">
-          <CircleCheck className="mx-auto size-12 text-ok" aria-hidden />
-          <h1 className="mt-3 text-xl font-bold">Pago aprobado</h1>
-          <p className="cifras mt-2 text-4xl font-bold">
-            {monto(pedido.monto)} <span className="text-lg font-semibold text-suave">{pedido.moneda}</span>
-          </p>
-          <p className="mt-1 text-sm text-suave">a {pedido.comercioNombre}</p>
-          {pago.saldoCliente !== null && (
-            <p className="cifras mt-4 text-sm text-suave">Te quedan {monto(pago.saldoCliente)} {pedido.moneda}.</p>
-          )}
-          <Link
-            className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-marca px-4 text-sm font-semibold text-marca-texto"
-            to={`/recibo/${pago.recibo}`}
-          >
-            Ver el recibo
-          </Link>
-        </section>
-      )}
-
-      {pedido && !pago && (
-        <section className="space-y-4 rounded-xl border border-borde bg-panel p-6">
-          <div>
-            <p className="text-sm text-suave">{pedido.concepto || 'Total a pagar'}</p>
-            {pedido.monto !== null && (
-              <p className="cifras text-5xl font-bold">
-                {monto(pedido.monto)} <span className="text-lg font-semibold text-suave">{pedido.moneda}</span>
-              </p>
+    <>
+      {/* Arriba, en la franja: cuánto se paga y a quién. Cuando ya se pagó, la confirmación. */}
+      <Franja>
+        {pedido && (
+          <div className="mt-6">
+            {pago ? (
+              <h1 className="flex items-center gap-2 text-rayo">
+                <CircleCheck className="size-8" aria-hidden />
+                <span className="titulo text-4xl">Pago aprobado</span>
+              </h1>
+            ) : (
+              <p className="text-suave">{pedido.concepto || 'Total a pagar'}</p>
             )}
-            <p className="mt-1 text-sm text-suave">{pedido.comercioNombre}</p>
+            {pedido.monto !== null && <Monto valor={monto(pedido.monto)} moneda={pedido.moneda} className="mt-2 text-7xl" />}
+            <p className="mt-2 text-suave">{pago ? `a ${pedido.comercioNombre}` : pedido.comercioNombre}</p>
           </div>
+        )}
+      </Franja>
 
-          {pedido.estado === 'pagado' && <Aviso tono="ok">Este cobro ya está pagado.</Aviso>}
-          {pedido.estado === 'vencido' && <Aviso>Este cobro ya no está disponible. Pide en la caja que lo generen de nuevo.</Aviso>}
+      <main className="mx-auto max-w-md space-y-4 px-4 pt-4 pb-10">
+        {!pedido && (error ? <Aviso tono="error">{error}</Aviso> : <Cargando />)}
 
-          {pedido.estado === 'pendiente' && (
-            <>
-              {estado === 'cargando' && <Cargando texto="Abriendo tu cuenta…" />}
+        {pedido && pago && (
+          <>
+            {pago.saldoCliente !== null && (
+              <Cuadro>
+                <p className="text-sm text-suave">Te queda en tu cuenta</p>
+                <p className="titulo cifras mt-1 text-4xl">
+                  {monto(pago.saldoCliente)} <span className="text-[0.5em] text-suave">{pedido.moneda}</span>
+                </p>
+              </Cuadro>
+            )}
+            <Link className={estiloDeBoton('principal', true)} to={`/recibo/${pago.recibo}`}>Ver el recibo</Link>
+          </>
+        )}
 
-              {estado === 'error' && (
-                <>
-                  <Aviso tono="error">{errorDeSesion}</Aviso>
-                  <Boton ancho onClick={reintentar}>Reintentar</Boton>
-                </>
-              )}
+        {pedido && !pago && pedido.estado === 'pagado' && <Aviso tono="ok">Este cobro ya está pagado.</Aviso>}
+        {pedido && !pago && pedido.estado === 'vencido' && (
+          <Aviso>Este cobro ya no está disponible. Pide en la caja que lo generen de nuevo.</Aviso>
+        )}
 
-              {(estado === 'sin-cuenta' || estado === 'sin-servidor') && (
-                <>
-                  <Aviso>Para pagar desde aquí hace falta tu cuenta de Toki en este dispositivo.</Aviso>
-                  <Link className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-marca px-4 text-sm font-semibold text-marca-texto" to="/">
-                    Entrar o crear mi cuenta
-                  </Link>
-                </>
-              )}
+        {pedido && !pago && pedido.estado === 'pendiente' && (
+          <>
+            {estado === 'cargando' && <Cargando texto="Abriendo tu cuenta…" />}
 
-              {estado === 'abierta' && rol === 'comercio' && (
-                <Aviso>Entraste con la cuenta del comercio. Este cobro lo paga el cliente, con su tarjeta o con el QR.</Aviso>
-              )}
+            {estado === 'error' && (
+              <>
+                <Aviso tono="error">{errorDeSesion}</Aviso>
+                <Boton ancho onClick={reintentar}>Reintentar</Boton>
+              </>
+            )}
 
-              {esDueno && !cuenta && !error && <Cargando />}
+            {(estado === 'sin-cuenta' || estado === 'sin-servidor') && (
+              <>
+                <Aviso>Para pagar desde aquí hace falta tu cuenta de Paizap en este dispositivo.</Aviso>
+                <Link className={estiloDeBoton('principal', true)} to="/">Entrar o crear mi cuenta</Link>
+              </>
+            )}
 
-              {esDueno && cuenta && cuenta.tarjetas.length === 0 && (
-                <>
-                  <Aviso>Para pagar con el QR hace falta una tarjeta vinculada a tu cuenta: el pago usa su límite diario.</Aviso>
-                  <Link className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-marca px-4 text-sm font-semibold text-marca-texto" to="/">
-                    Vincular una tarjeta
-                  </Link>
-                </>
-              )}
+            {estado === 'abierta' && rol === 'comercio' && (
+              <Aviso>Entraste con la cuenta del comercio. Este cobro lo paga el cliente, con su tarjeta o con el QR.</Aviso>
+            )}
 
-              {esDueno && cuenta && cuenta.tarjetas.length > 0 && (
-                <>
+            {esDueno && !cuenta && !error && <Cargando />}
+
+            {esDueno && cuenta && cuenta.tarjetas.length === 0 && (
+              <>
+                <Aviso>Para pagar con el QR hace falta una tarjeta vinculada a tu cuenta: el pago usa su límite diario.</Aviso>
+                <Link className={estiloDeBoton('principal', true)} to="/">Vincular una tarjeta</Link>
+              </>
+            )}
+
+            {puedePagar && cuenta && (
+              <>
+                <Cuadro>
                   {cuenta.tarjetas.length > 1 ? (
                     <fieldset className="space-y-2">
-                      <legend className="mb-1 text-sm font-medium">Pagar con</legend>
+                      <legend className="mb-2 text-sm font-medium">Pagar con</legend>
                       {cuenta.tarjetas.map((t) => (
-                        <label key={t.uid} className={`flex items-center gap-3 rounded-lg border p-3 ${t.uid === uid ? 'border-acento' : 'border-borde'}`}>
-                          <input type="radio" name="tarjeta" className="size-4 accent-acento" checked={t.uid === uid} onChange={() => setUid(t.uid)} />
+                        <label key={t.uid} className={`flex items-center gap-3 rounded-xl border p-3 ${t.uid === uid ? 'border-texto' : 'border-borde'}`}>
+                          <input type="radio" name="tarjeta" className="size-4 accent-noche" checked={t.uid === uid} onChange={() => setUid(t.uid)} />
                           <span className="min-w-0 flex-1">
                             <span className="block text-sm font-medium">{t.nombre || 'Tarjeta'}</span>
                             <span className="block font-mono text-xs text-suave">{t.uid}</span>
@@ -154,35 +156,35 @@ function PantallaDePago({ id }: { id: string }) {
                       ))}
                     </fieldset>
                   ) : (
-                    <p className="text-sm text-suave">
+                    <p className="text-sm">
                       Se paga con la cuenta de {elegida?.nombre ? `«${elegida.nombre}»` : 'tu tarjeta'}, sin acercarla.
                     </p>
                   )}
-                  <p className="cifras text-sm text-suave">
+                  <p className="cifras mt-3 border-t border-borde pt-3 text-sm text-suave">
                     Saldo {monto(cuenta.saldo)} {pedido.moneda} · tope de gasto {monto(cuenta.permiso.restante)} {pedido.moneda}
                   </p>
-                  {elegida?.bloqueada && <Aviso tono="aviso">Esa tarjeta está bloqueada. Desbloquéala en tu billetera para pagar.</Aviso>}
-                  {error && <Aviso tono="error">{error}</Aviso>}
-                  <Boton ancho ocupado={pagando} disabled={!elegida || elegida.bloqueada} onClick={pagar}>
-                    {pagando ? 'Cobrando en Stellar…' : `Pagar ${monto(pedido.monto)} ${pedido.moneda}`}
-                  </Boton>
-                </>
-              )}
+                </Cuadro>
+                {elegida?.bloqueada && <Aviso tono="aviso">Esa tarjeta está bloqueada. Desbloquéala en tu billetera para pagar.</Aviso>}
+                {error && <Aviso tono="error">{error}</Aviso>}
+                <Boton ancho variante="rayo" className="min-h-14 text-2xl" ocupado={pagando} disabled={!elegida || elegida.bloqueada} onClick={pagar}>
+                  {pagando ? 'Cobrando en Stellar…' : `Pagar ${monto(pedido.monto)} ${pedido.moneda}`}
+                </Boton>
+              </>
+            )}
 
-              {/* En la web, quien no tiene la billetera aquí puede pagar con código de cuenta y PIN. */}
-              {!esNativa && !(esDueno && cuenta && cuenta.tarjetas.length > 0) && estado !== 'cargando' && (
-                <a className="block text-center text-sm text-acento hover:underline" href={`${servidor()}/p/${id}?simple=1`}>
-                  Pagar con código de cuenta y PIN
-                </a>
-              )}
-            </>
-          )}
-        </section>
-      )}
+            {/* En la web, quien no tiene la billetera aquí puede pagar con código de cuenta y PIN. */}
+            {!esNativa && !puedePagar && estado !== 'cargando' && (
+              <a className="block text-center text-sm font-semibold text-acento hover:underline" href={`${servidor()}/p/${id}?simple=1`}>
+                Pagar con código de cuenta y PIN
+              </a>
+            )}
+          </>
+        )}
 
-      <Link className="text-center text-sm text-acento hover:underline" to="/">
-        {esDueno ? 'Ir a mi billetera' : 'Ir a Toki'}
-      </Link>
-    </main>
+        <Link className="block text-center text-sm font-semibold text-acento hover:underline" to="/">
+          {esDueno ? 'Ir a mi billetera' : 'Ir a Paizap'}
+        </Link>
+      </main>
+    </>
   )
 }
