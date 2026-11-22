@@ -44,8 +44,8 @@ transacción, la firma, la envía y después comprueba ella misma que el pago ll
 4. **Dale fondos de prueba.** La primera vez el microcontrolador crea su llave y muestra su cuenta:
 
    ```text
-   Stellar MCU SDK: pay and confirm from the board
-   Board account: GAPFCT7D3MEUDYIM6YE45J5EVGSBRU7FDJZWITBNWDEGPH5O5UELZDWI
+   Stellar MCU SDK: pay and confirm from the device
+   Device account: GAPFCT7D3MEUDYIM6YE45J5EVGSBRU7FDJZWITBNWDEGPH5O5UELZDWI
    Give it test funds: https://friendbot.stellar.org/?addr=GAPFCT7D…ZDWI
    ```
 
@@ -100,7 +100,7 @@ Copia tres carpetas del repositorio y agrégalas a tu compilación:
 </FileTree>
 
 El `platformio.ini` del ejemplo muestra cómo compilarlas desde esas carpetas. Tu programa aporta
-dos funciones, el SHA-256 y la firma, como hace el ejemplo con `board_sha256` y `board_sign`.
+dos funciones, el SHA-256 y la firma, como hace el ejemplo con `mcu_sha256` y `mcu_sign`.
 
 Para un pago común alcanza un búfer de 1 KB; para una llamada a un contrato de token, reserva 2 KB.
 

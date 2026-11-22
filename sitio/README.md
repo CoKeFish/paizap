@@ -92,11 +92,13 @@ Sin navegador, `agentes/demo.mjs` hace el mismo recorrido. Todo está explicado 
 Está en `src/content/docs/sdk/`, en español; el código de los ejemplos va en inglés, como en el
 SDK. Los ejemplos que muestra están en `ejemplos/`:
 
-- `pay_and_confirm/`: copia del ejemplo oficial del SDK.
-- `payment_notifier/`: un avisador de pagos, escrito para esta documentación.
+- `pay_and_confirm/`: copia de `examples/esp32_pay_and_confirm`. La muestra entera el inicio rápido.
+- `standalone_device/`: copia de `examples/esp32_standalone_device`. La guía de confirmar un pago
+  muestra de ahí la función que busca el pago.
 
-`ejemplos/compilar.sh <carpeta de stellar-mcu-sdk>` los compila para ESP32-S3 y ESP32 contra el
-SDK, sin grabar nada en un microcontrolador.
+La documentación solo muestra código que existe en el repositorio del SDK: esas copias no se
+editan a mano. `ejemplos/copiar.sh <carpeta de stellar-mcu-sdk>` las vuelve a traer y dice si
+cambiaron. Los ejemplos se compilan en el repositorio del SDK.
 
 ## La marca
 
