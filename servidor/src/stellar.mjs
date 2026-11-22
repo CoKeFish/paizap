@@ -126,8 +126,11 @@ export async function fondearTestnet(cuenta) {
 }
 
 // ---- Permiso de gasto firmado por el dueño desde la app ----
-// La llave del dueño nunca llega al servidor. El servidor arma el `approve`, la app comprueba qué
-// dice, lo firma en el celular y lo devuelve; el servidor solo lo manda a la red.
+// Por este camino la llave del dueño no llega al servidor: el servidor arma el `approve`, la app
+// comprueba qué dice, lo firma en el celular y lo devuelve; el servidor solo lo manda a la red.
+// El otro camino es el de las tarjetas de prueba que se registran sin cuenta (`registrar` en
+// tarjetas.mjs): ahí el servidor crea la cuenta en testnet, firma el permiso él mismo con
+// `aprobar` y guarda la llave de esa cuenta en el registro de tarjetas.
 
 /** Arma el `approve` del dueño, listo para firmar. Devuelve la transacción en XDR, sin firma. */
 export async function prepararAprobacion(dueno, gastador, monto, vence) {

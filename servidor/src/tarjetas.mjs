@@ -107,6 +107,9 @@ export async function registrar(uid, cuenta, gastador) {
     guardar();
     return { cuenta, nueva: false, ...nuevoPin(clave) };
   }
+  // Tarjeta de prueba sin dueño: el servidor crea la cuenta en testnet, firma el permiso y guarda
+  // la llave de esa cuenta en el registro. Es el único caso en que el servidor guarda la llave de
+  // un cliente; una cuenta creada desde la app firma en el celular y su llave no llega aquí.
   const cliente = Keypair.random();
   await fondearTestnet(cliente.publicKey());
   await aprobar(cliente, gastador, PERMISO, await ledgerEnDias(DIAS));
