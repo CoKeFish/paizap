@@ -40,7 +40,7 @@ export default defineConfig({
             { slug: 'sdk/referencia/nucleo' },
             { slug: 'sdk/referencia/nodo' },
             { slug: 'sdk/referencia/medidas' },
-            { slug: 'sdk/referencia/placas' },
+            { slug: 'sdk/referencia/microcontroladores' },
           ],
         },
         {

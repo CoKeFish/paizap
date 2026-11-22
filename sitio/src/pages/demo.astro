@@ -10,7 +10,7 @@ import { APARATOS, INICIAL, ORDEN } from '../simulador/catalogo.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const docs = `${base}sdk/`;
-// Enlace al video de la demo en una placa real. Vacío: la página no lo menciona.
+// Enlace al video de la demo en un aparato real. Vacío: la página no lo menciona.
 const VIDEO = '';
 ---
 
@@ -50,7 +50,7 @@ const VIDEO = '';
           <p class="sim-aviso">
             <strong>Es un simulador.</strong> Los aparatos, el teléfono y la tarjeta son modelos 3D; la cuenta y los
             pagos son reales, en la red de pruebas de Stellar (testnet).
-            {VIDEO && <a href={VIDEO}>Mira la demo en una placa real.</a>}
+            {VIDEO && <a href={VIDEO}>Mira la demo en un aparato real.</a>}
           </p>
         </div>
 
@@ -156,10 +156,10 @@ const VIDEO = '';
             <summary>Detalles técnicos</summary>
             <div class="plegable-cuerpo">
               <p>
-                Los aparatos de esta página no son placas. Su cobro lo hace el núcleo de
+                Los aparatos de esta página son simulados. Su cobro lo hace el núcleo de
                 <a href={docs}>Stellar MCU SDK</a>, la librería de pagos de Stellar para microcontroladores, compilado para
-                el navegador: arma y firma aquí cada transacción y habla con un nodo de Stellar testnet. En una placa
-                real, el mismo núcleo corre en una ESP32-S3 con lector de tarjetas NFC.
+                el navegador: arma y firma aquí cada transacción y habla con un nodo de Stellar testnet. En un aparato
+                real, el mismo núcleo corre en un microcontrolador: en la demo, un ESP32-S3 con lector de tarjetas NFC.
               </p>
               <p>
                 Tu cuenta se crea de verdad: la llave se genera en este navegador y la red de pruebas abre la cuenta al

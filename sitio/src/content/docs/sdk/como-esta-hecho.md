@@ -1,17 +1,17 @@
 ---
 title: Cómo está hecho
-description: Un núcleo en C que no depende del chip, y lo que aporta cada placa.
+description: Un núcleo en C que no depende del chip, y lo que aporta cada microcontrolador.
 ---
 
-El SDK tiene dos partes: un **núcleo** que es igual en todas las placas y un **adaptador** por
-placa. El núcleo sabe de Stellar; la placa sabe de su red y de su chip.
+El SDK tiene dos partes: un **núcleo** que es igual en todos los microcontroladores y un **adaptador** por
+familia. El núcleo sabe de Stellar; el adaptador sabe de la red y del chip.
 
 ```text
   Tu programa
        │
        ▼
-  Núcleo (C99)                      Lo que aporta la placa
-  ───────────────────────────       ──────────────────────────────
+  Núcleo (C99)                      Lo que aporta el microcontrolador
+  ───────────────────────────       ─────────────────────────────────
   direcciones y montos              SHA-256
   transacciones y firma      ◄────  firma Ed25519
   consultas y eventos               guardar la llave
@@ -47,9 +47,9 @@ Hace cinco cosas:
 Ocupa 3,4 KB de flash y no reserva RAM fija. Todo lo que necesita se lo pasas tú en cada llamada:
 los búferes son tuyos y tienen tamaño fijo. Ver la [referencia del núcleo](../referencia/nucleo/).
 
-## Lo que aporta la placa
+## Lo que aporta el microcontrolador
 
-El núcleo no sabe hacer criptografía ni hablar por la red. La criptografía se la pide a la placa
+El núcleo no sabe hacer criptografía ni hablar por la red. La criptografía se la pide al microcontrolador
 con dos funciones:
 
 ```c
@@ -60,7 +60,7 @@ typedef struct {
 } stl_crypto;
 ```
 
-En la ESP32, el SHA-256 lo da el acelerador del chip (mbedTLS) y la firma Ed25519,
+En el ESP32, el SHA-256 lo da el acelerador del chip (mbedTLS) y la firma Ed25519,
 [Monocypher](https://monocypher.org), que ocupa 18 KB. Un programa que solo lee de la red, como el
 de [confirmar un pago](../guias/confirmar/), no necesita la firma.
 
@@ -84,7 +84,7 @@ Ver la [referencia del cliente del nodo](../referencia/nodo/).
 - **El aparato firma lo que él construyó.** Nunca firma una transacción que le entrega el nodo.
   Hasta la autorización de una llamada a contrato la arma el aparato.
 - **La hora la da la red.** La vigencia de una transacción se calcula con la hora de cierre del
-  último ledger: la placa no necesita reloj ni servidor de hora.
+  último ledger: el microcontrolador no necesita reloj ni servidor de hora.
 - **Vigencia corta y reintento seguro.** Cada transacción vale uno o dos minutos. Reenviar la
   misma no paga dos veces: o entra esa, o vence y no entra nunca.
 - **El contrato del token se calcula en el aparato.** Así los pagos se filtran por la dirección

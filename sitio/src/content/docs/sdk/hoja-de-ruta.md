@@ -5,7 +5,7 @@ description: Qué hace el SDK hoy y qué sigue.
 
 ## Hoy
 
-Probado en una ESP32-S3 contra Stellar testnet:
+Probado en un ESP32-S3 contra Stellar testnet:
 
 - Direcciones (`G…`, `C…`, `S…`) y montos sin coma flotante.
 - Pago de XLM o de un activo emitido, con memo.
@@ -23,10 +23,10 @@ Probado en una ESP32-S3 contra Stellar testnet:
 | Qué | Para qué |
 |---|---|
 | **Un segundo ejemplo: un avisador de pagos** | El punto de partida de una alcancía o un dispensador. |
-| **Una segunda familia de placas** | Mostrar que el núcleo no depende del chip. |
+| **Un segundo microcontrolador, el RP2040** | Mostrar que el núcleo no depende del chip. |
 | **Detección de un pago por su número de pedido** | Cobrar con QR y saber cuál pago es de cuál venta. |
 | **Una entrada única al SDK** | Iniciar, pedir un cobro, vigilarlo y pagar en pocas llamadas, sin armar las consultas a mano. |
-| **La red como parte del adaptador de cada placa** | Que el mismo programa corra en otra placa cambiando solo el adaptador. |
+| **La red como parte del adaptador de cada familia** | Que el mismo programa corra en otro microcontrolador cambiando solo el adaptador. |
 | **Nodo de respaldo** | Seguir cobrando si un proveedor se cae. |
 | **Errores con su causa** | Mostrar «sin saldo» o «vencida» en vez de «falló». |
 | **Estado que sobrevive a un corte de luz** | Saber qué pasó con un pago que quedó a medias. |
@@ -35,7 +35,7 @@ Probado en una ESP32-S3 contra Stellar testnet:
 ## Más adelante
 
 - **STM32 con módulo de red,** y con eso redes 4G.
-- **La llave en un chip seguro,** para que no se pueda leer de la memoria de la placa.
+- **La llave en un chip seguro,** para que no se pueda leer de la memoria del microcontrolador.
 - **Llamadas a cualquier contrato,** con argumentos simples.
 - **Comisión pagada por otra cuenta,** para que el aparato no necesite XLM.
 

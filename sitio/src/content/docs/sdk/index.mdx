@@ -24,7 +24,7 @@ proyectos de Stellar que trabajan con hardware.
 
 ## Cómo se ve
 
-Un pago, de principio a fin, desde la placa:
+Un pago, de principio a fin, desde el microcontrolador:
 
 ```c
 stl_tx t = {0};
@@ -49,7 +49,7 @@ El código y sus comentarios están en inglés; esta documentación, en español
 
 - Lo que arma el núcleo coincide **byte a byte** con el SDK oficial de JavaScript, en 20 de 20
   comparaciones.
-- Una ESP32-S3 **pagó sola en testnet** y después detectó sus pagos en los eventos de la red.
+- Un ESP32-S3 **pagó solo en testnet** y después detectó sus pagos en los eventos de la red.
 - Un terminal con tarjeta NFC **firma sus cobros** con el SDK. Es
   [la demo de Paizap](./demo-terminal/).
 - El núcleo ocupa **3,4 KB** y la firma, **18 KB**. Firmar tarda **7 milisegundos** y un pago queda
@@ -60,7 +60,7 @@ El detalle de cada cifra está en [Medidas](./referencia/medidas/).
 ## Por dónde seguir
 
 <CardGrid>
-  <LinkCard title="Inicio rápido" description="Tu placa hace su primer pago en testnet." href="./inicio-rapido/" />
+  <LinkCard title="Inicio rápido" description="Tu microcontrolador hace su primer pago en testnet." href="./inicio-rapido/" />
   <LinkCard title="Pagar" description="Armar, firmar y enviar un pago desde el aparato." href="./guias/pagar/" />
   <LinkCard title="Confirmar un pago" description="Saber, en el propio aparato, que el pago llegó." href="./guias/confirmar/" />
   <LinkCard title="Referencia del núcleo" description="Cada función, con lo que recibe y lo que devuelve." href="./referencia/nucleo/" />

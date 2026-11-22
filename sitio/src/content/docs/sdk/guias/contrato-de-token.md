@@ -93,7 +93,7 @@ Una llamada a contrato lleva una autorización que dice qué se permite hacer. E
 al simular, pero el aparato **no la usa**: `stl_tx_token_call` arma la suya con la misma llamada
 que va a firmar. Así el nodo no puede agregar llamadas que nadie pidió.
 
-En la prueba, la autorización que armó la placa fue idéntica a la que propuso el nodo.
+En la prueba, la autorización que armó el microcontrolador fue idéntica a la que propuso el nodo.
 
 ## Cobrar en nombre de otra cuenta
 

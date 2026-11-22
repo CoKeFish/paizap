@@ -4,13 +4,13 @@ Un solo sitio estático, hecho con [Astro](https://astro.build) y [Starlight](ht
 
 | Dirección | Qué es |
 |---|---|
-| `/` | La portada de Paizap: pagos dentro de aparatos conectados, la demo en una placa real y el SDK |
+| `/` | La portada de Paizap: pagos dentro de aparatos conectados, la demo en un aparato real y el SDK |
 | `/demo/` | La demo: un torniquete, un dispensador y un terminal de caja que cobran en Stellar testnet |
 | `/sdk/` | La documentación de Stellar MCU SDK |
 | `/llms.txt` | Cómo usar la demo, para agentes |
 
 Paizap pone pagos de Stellar dentro de aparatos conectados. El terminal con tarjeta es una demo
-de eso en una placa real, no un producto: así lo presentan los textos del sitio.
+de eso en un aparato real, no un producto: así lo presentan los textos del sitio.
 
 ## Verlo
 
@@ -24,7 +24,7 @@ Para publicarlo en una subcarpeta, como GitHub Pages, la imagen recibe `SITIO_UR
 
 ## La demo
 
-Los aparatos de `/demo/` no son placas: es un simulador. La cuenta y los pagos sí son reales, en
+Los aparatos de `/demo/` son simulados. La cuenta y los pagos sí son reales, en
 Stellar testnet, y los arma y firma el núcleo de Stellar MCU SDK compilado para el navegador.
 
 Cómo está pensada la página:
@@ -63,7 +63,7 @@ Cómo está pensada la página:
 | `src/simulador/telefono.js` | Lo que muestra el teléfono: cómo se crea la cuenta y la billetera |
 | `src/styles/demo.css` | Los estilos de la demo |
 | `public/modelo/` | La base y la tapa de la carcasa del terminal, exportadas de `hardware/carcasa` |
-| `public/simulador/` | El núcleo del SDK compilado (`stellar_mcu.mjs`) y quien hace de placa (`device.mjs`) |
+| `public/simulador/` | El núcleo del SDK compilado (`stellar_mcu.mjs`) y quien hace de aparato (`device.mjs`) |
 | `public/agentes/demo.mjs` | El mismo cobro sin navegador, con Node |
 | `simulador/adaptacion/` | Las fuentes de esa adaptación y cómo volver a compilarla |
 | `simulador/tapa_demo.scad` | La tapa del terminal de la demo, con la ventana de la pantalla más grande |
@@ -96,7 +96,7 @@ SDK. Los ejemplos que muestra están en `ejemplos/`:
 - `payment_notifier/`: un avisador de pagos, escrito para esta documentación.
 
 `ejemplos/compilar.sh <carpeta de stellar-mcu-sdk>` los compila para ESP32-S3 y ESP32 contra el
-SDK, sin grabar nada en una placa.
+SDK, sin grabar nada en un microcontrolador.
 
 ## La marca
 

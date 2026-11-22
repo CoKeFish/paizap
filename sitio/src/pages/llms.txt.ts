@@ -13,7 +13,7 @@ export const GET: APIRoute = ({ site }) => {
 > Stellar (testnet). La librería con la que cobran es Stellar MCU SDK: pagos de Stellar para
 > microcontroladores.
 
-Es un simulador: no hay placas detrás. Los pagos sí son reales, en testnet, y los arma y firma el
+Es un simulador: no hay aparatos reales detrás. Los pagos sí son reales, en testnet, y los arma y firma el
 núcleo de Stellar MCU SDK. No hace falta iniciar sesión: la demo crea una cuenta de prueba en el
 navegador y le pide fondos de prueba a friendbot.
 
@@ -80,7 +80,7 @@ transacciones. Usa cuentas nuevas con fondos de friendbot: no gasta fondos de na
 - [Demo](${raiz}demo/): los aparatos simulados.
 - [Documentación de Stellar MCU SDK](${raiz}sdk/): inicio rápido, guías, referencia y medidas.
 - [Stellar MCU SDK en GitHub](https://github.com/CoKeFish/stellar-mcu-sdk): la librería, en C, con licencia Apache 2.0.
-- [Paizap en GitHub](https://github.com/CoKeFish/paizap): la demo en una placa real, con su servidor y su app.
+- [Paizap en GitHub](https://github.com/CoKeFish/paizap): la demo en un aparato real, con su servidor y su app.
 `;
 
   return new Response(texto, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });

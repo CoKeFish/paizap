@@ -9,7 +9,7 @@ no reserva memoria: todos los búferes los pasas tú.
 Las direcciones y las llaves se manejan como **32 bytes**; el texto (`G…`, `C…`, `S…`) solo
 aparece al leerlas o mostrarlas.
 
-## Lo que aporta la placa
+## Lo que aporta el microcontrolador
 
 ```c
 typedef struct {

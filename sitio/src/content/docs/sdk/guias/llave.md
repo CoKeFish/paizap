@@ -1,16 +1,16 @@
 ---
 title: La llave del aparato
-description: Crear la llave en la placa, guardarla, conocer su cuenta y darle fondos.
+description: Crear la llave en el microcontrolador, guardarla, conocer su cuenta y darle fondos.
 ---
 
 Un aparato que paga o firma necesita su propia llave. De la llave sale su cuenta de Stellar. La
-llave se queda en la placa: el SDK firma con ella y nunca la manda a ningún lado.
+llave se queda en el microcontrolador: el SDK firma con ella y nunca la manda a ningún lado.
 
 Un aparato que solo [confirma pagos](../confirmar/) no necesita llave.
 
-## Crear la llave en la placa
+## Crear la llave en el microcontrolador
 
-La llave es una semilla de 32 bytes. Lo mejor es que nazca en la placa, con el generador aleatorio
+La llave es una semilla de 32 bytes. Lo mejor es que nazca en el microcontrolador, con el generador aleatorio
 del chip, y que nunca pase por un PC:
 
 ```cpp
@@ -24,7 +24,7 @@ if (store.getBytes("seed", g_seed, 32) != 32) {
 store.end();
 ```
 
-En la ESP32, crea la llave **después de conectar el Wi-Fi**: con el radio encendido el generador
+En el ESP32, crea la llave **después de conectar el Wi-Fi**: con el radio encendido el generador
 del chip entrega aleatoriedad real.
 
 ## De la llave a la cuenta
@@ -70,9 +70,9 @@ común y algo más por una llamada a contrato.
 
 - **Bórrala de la memoria de trabajo** cuando termines de usarla. Monocypher trae `crypto_wipe`
   para eso.
-- **Grabar la placa con una imagen completa borra lo guardado,** y con eso la llave. Para
+- **Grabar el microcontrolador con una imagen completa borra lo guardado,** y con eso la llave. Para
   actualizar el programa sin perderla, graba solo la aplicación.
 - **Pon topes en el aparato:** un monto máximo por pago y un tope de comisión. Acotan lo que se
   puede perder si alguien toma el aparato. Ver [Seguridad](../../seguridad/).
-- **En la ESP32,** el guardado se puede cifrar con una llave grabada en el propio chip
+- **En el ESP32,** el guardado se puede cifrar con una llave grabada en el propio chip
   ([NVS encryption](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/storage/nvs_encryption.html)).

@@ -15,14 +15,14 @@ más que mienta, **no puede**:
 - cambiar el destino o el monto de un pago,
 - reusar una firma en otra red.
 
-En la prueba, lo que firmó la placa coincidió byte a byte con lo que arma el SDK oficial.
+En la prueba, lo que firmó el microcontrolador coincidió byte a byte con lo que arma el SDK oficial.
 
 ## En qué confía el aparato
 
 El aparato confía en dos cosas:
 
 1. **Que habla con el nodo que tiene configurado.** Lo garantiza la conexión segura: el cliente
-   comprueba el certificado del nodo contra una raíz guardada en la placa.
+   comprueba el certificado del nodo contra una raíz guardada en el microcontrolador.
 2. **Que ese nodo dice la verdad** sobre la cuenta, la simulación, el estado de una transacción y
    los eventos.
 
@@ -63,7 +63,7 @@ la red, acotan lo que se puede perder.
 
 ## La llave
 
-La llave vive en la placa. Para cuidarla, ver [La llave del aparato](../guias/llave/#cuidar-la-llave).
+La llave vive en el microcontrolador. Para cuidarla, ver [La llave del aparato](../guias/llave/#cuidar-la-llave).
 
 Una firma Ed25519 no usa números aleatorios: el generador aleatorio solo hace falta una vez, al
 crear la llave.

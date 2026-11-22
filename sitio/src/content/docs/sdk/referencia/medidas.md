@@ -1,14 +1,14 @@
 ---
 title: Medidas
-description: Cuánto ocupa el SDK y cuánto tarda, medido en una ESP32-S3 contra Stellar testnet.
+description: Cuánto ocupa el SDK y cuánto tarda, medido en un ESP32-S3 contra Stellar testnet.
 ---
 
-Todo lo de esta página se midió en la placa del terminal, el 21 de noviembre de 2026.
+Todo lo de esta página se midió en el ESP32-S3 del terminal de la demo, el 21 de noviembre de 2026.
 
 **Condiciones:** ESP32-S3 (N16R8, 240 MHz) con Arduino-ESP32 2.0.17. Wi-Fi de 2,4 GHz con señal de
 −48 a −52 dBm. Nodo `soroban-testnet.stellar.org`. Dos corridas completas.
 
-## Lo que hizo la placa sola
+## Lo que hizo el microcontrolador solo
 
 | Paso | Resultado |
 |---|---|
@@ -17,8 +17,8 @@ Todo lo de esta página se midió en la placa del terminal, el 21 de noviembre d
 | Pago de XLM con memo | Armar y firmar: 7,1 ms. De enviar a confirmado: 6,2 s y 2,8 s |
 | Detectar ese pago con `getEvents` | Una consulta, 0,3 s. Monto y memo correctos |
 | `transfer` en el contrato del token | Simular: 0,3 s y 1,2 s. Armar y firmar: 7,2 ms. De enviar a confirmado: 6,1 s y 3,2 s |
-| Autorización de la llamada | La que armó la placa fue idéntica a la que propuso el nodo |
-| Hora para la vigencia | Tomada del nodo: la placa no usó reloj propio |
+| Autorización de la llamada | La que armó el microcontrolador fue idéntica a la que propuso el nodo |
+| Hora para la vigencia | Tomada del nodo: el microcontrolador no usó reloj propio |
 
 Las transacciones de la prueba, en testnet:
 [pago 1](https://stellar.expert/explorer/testnet/tx/ca284b2c462693e4b2b6cbf0169b1732d9f165d4fdfa5efa0cf512975c0d0569),
@@ -40,7 +40,7 @@ Las transacciones de la prueba, en testnet:
 | · pedido de pago y montos | 423 | |
 | **Firma Ed25519** (Monocypher, con SHA-512) | **18.296 bytes** | 0 |
 
-A eso se suma lo que ya trae cualquier programa con Wi-Fi y HTTPS en esta placa: unos 840 KB de
+A eso se suma lo que ya trae cualquier programa con Wi-Fi y HTTPS en este microcontrolador: unos 840 KB de
 flash y 43 KB de RAM.
 
 ## Criptografía

@@ -38,7 +38,7 @@ letras, según lleve activo y memo.
 
 ## Un memo por cobro
 
-Pon en cada pedido un memo distinto: un contador que se guarda en la placa alcanza. Cuando llega
+Pon en cada pedido un memo distinto: un contador que se guarda en el microcontrolador alcanza. Cuando llega
 un pago con ese memo, es el de esa venta, aunque otro cliente pague el mismo monto en el mismo
 momento. Ver [Confirmar un pago](../confirmar/).
 

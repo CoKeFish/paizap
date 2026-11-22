@@ -62,7 +62,7 @@ Para mainnet hace falta un proveedor de nodos: la lista está en
 
 ## La conexión
 
-| Qué | Medida en una ESP32-S3 |
+| Qué | Medida en un ESP32-S3 |
 |---|---|
 | Abrir la conexión segura | 2,1 a 3,7 segundos |
 | Una consulta con la conexión ya abierta | 0,2 a 0,5 segundos |

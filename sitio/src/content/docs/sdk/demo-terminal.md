@@ -1,5 +1,5 @@
 ---
-title: "Demo: un terminal en una placa real"
+title: "Demo: un terminal en un aparato real"
 description: Un terminal de demostración, hecho con el SDK, lee una tarjeta NFC y firma el cobro él mismo.
 sidebar:
   label: "Demo: el terminal"
@@ -10,11 +10,11 @@ demostración: quien paga acerca una tarjeta NFC y el terminal **firma el cobro 
 envía a Stellar. Ningún servidor firma por él.
 
 Muestra lo que se puede construir con el SDK. En la [demo](../../demo/) hay un simulador para ver
-el mismo cobro en un torniquete, un dispensador y una caja, sin tener la placa.
+el mismo cobro en un torniquete, un dispensador y una caja, sin tener el aparato.
 
 ## Qué es
 
-Una placa ESP32-S3 con un lector NFC, una pantalla, un teclado y un relé.
+Un microcontrolador ESP32-S3 con un lector NFC, una pantalla, un teclado y un relé.
 
 - **En una caja,** el vendedor escribe el monto y el cliente acerca la tarjeta.
 - **En una máquina,** el precio es fijo y, al cobrar, el relé la activa.
