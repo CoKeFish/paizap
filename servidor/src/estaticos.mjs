@@ -1,4 +1,4 @@
-// Sirve la web de Toki (la carpeta `publico`, que es la compilación de `app/`). La misma dirección
+// Sirve la web de Paizap (la carpeta `publico`, que es la compilación de `app/`). La misma dirección
 // atiende al terminal, a la web y a la app del celular.
 import fs from 'node:fs';
 import path from 'node:path';

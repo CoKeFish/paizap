@@ -1,4 +1,4 @@
-# Electrónica del terminal Toki
+# Electrónica del terminal Paizap
 
 Prototipo armado en protoboard con módulos comerciales, sin placa propia. Sirve para los dos modos
 del terminal: **caja** (teclado para el monto) y **autoservicio** (relé que activa la máquina).
@@ -9,7 +9,7 @@ del terminal: **caja** (teclado para el monto) y **autoservicio** (relé que act
   NTAG 424 DNA   └──────────────────────────┘         │
                                                 ┌─────┴───────────────┐
   Pantalla (OLED o LCD) ──────── I2C ───────────┤                     │
-  Teclado 4x4 ─────────────── 8 pines ──────────┤   ESP32-S3          │── Wi-Fi ──► Servidor Toki ──► Stellar
+  Teclado 4x4 ─────────────── 8 pines ──────────┤   ESP32-S3          │── Wi-Fi ──► Servidor Paizap ──► Stellar
   Buzzer ─────────────────────── GPIO ──────────┤   o ESP32 clásico   │
   LED verde / LED rojo ──────── GPIO ───────────┤                     │
   Relé 1 canal ──────────────── GPIO ───────────┤                     │
@@ -209,7 +209,9 @@ Cada tecla del teclado se anuncia como `Tecla: X`, para comprobar su cableado.
 ### Variables al compilar
 
 La red y el servidor se pasan al compilar con variables de entorno (el equipo las tiene en
-Doppler). Sin servidor, el terminal queda en modo prueba: recorre el flujo sin cobrar.
+Doppler). Sin servidor, el terminal queda en modo prueba: recorre el flujo sin cobrar. Las
+variables, las imágenes de Docker y el proyecto de Doppler llevan `toki`, el nombre interno del
+proyecto.
 
 | Variable | Para |
 |---|---|
@@ -245,7 +247,7 @@ python -m esptool --chip esp32s3 --port COM10 --before no_reset write_flash 0x0 
 
 - El puerto sale en el Administrador de dispositivos («USB Serial Device (COMx)»). Para un ESP32
   clásico: `--chip esp32` y `.pio/build/esp32/firmware.merged.bin`, sin `--before no_reset`.
-- **ESP32-S3 por su USB nativo:** con el firmware de Toki ya grabado, `esptool` reinicia la placa
+- **ESP32-S3 por su USB nativo:** con el firmware de Paizap ya grabado, `esptool` reinicia la placa
   solo y no hace falta `--before no_reset` ni tocar botones. La primera vez (o si la placa trae
   otro programa) hay que ponerla en modo de grabación a mano: mantén **BOOT**, aprieta y suelta
   **RST**, suelta BOOT; después de grabar, aprieta **RST** una vez para que arranque.

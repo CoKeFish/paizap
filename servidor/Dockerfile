@@ -1,4 +1,4 @@
-# Servidor de Toki con la web adentro: la misma dirección atiende al terminal, a la web y a la app.
+# Servidor de Paizap con la web adentro: la misma dirección atiende al terminal, a la web y a la app.
 # El contexto de build es la raíz del repo (lo pone compose.yaml):
 #   docker build -t toki-servidor -f servidor/Dockerfile .
 

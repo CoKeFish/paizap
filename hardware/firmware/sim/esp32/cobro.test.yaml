@@ -1,10 +1,10 @@
 # Prueba de punta a punta: el terminal simulado cobra 2.50 en Stellar testnet a través del
-# servidor de Toki (que debe estar corriendo con su túnel; ver servidor/README.md).
+# servidor de Paizap (que debe estar corriendo con su túnel; ver servidor/README.md).
 # Compilar con la URL del servidor y correr (desde hardware/firmware):
 #   doppler run --project toki --config dev -- docker run --rm -e WOKWI_CLI_TOKEN -v "$PWD":/work #     --entrypoint wokwi-cli toki-pio sim/esp32 --scenario cobro.test.yaml --timeout 90000
 name: 'Cobro con tarjeta en Stellar testnet'
 version: 1
-author: 'Toki'
+author: 'Paizap'
 
 steps:
   - wait-serial: 'Listo.'

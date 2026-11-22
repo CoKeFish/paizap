@@ -94,7 +94,7 @@ export async function simbolo(fuente) {
 export const aprobar = (dueno, gastador, monto, vence) =>
   invocar(dueno, 'approve', direccion(dueno.publicKey()), direccion(gastador), i128(aUnidades(monto)), u32(vence));
 
-/** Toki mueve `monto` de la cuenta del cliente a la del comercio usando el permiso de gasto. */
+/** Paizap mueve `monto` de la cuenta del cliente a la del comercio usando el permiso de gasto. */
 export const cobrar = (toki, cliente, comercio, monto) =>
   invocar(toki, 'transfer_from', direccion(toki.publicKey()), direccion(cliente), direccion(comercio), i128(aUnidades(monto)));
 
@@ -154,7 +154,7 @@ export function leerAprobacion(xdrFirmado) {
 }
 
 /**
- * Manda a la red una transacción ya firmada por su dueño. Con `patrocinador`, Toki paga la
+ * Manda a la red una transacción ya firmada por su dueño. Con `patrocinador`, Paizap paga la
  * comisión (fee bump): el dueño no necesita XLM para firmar su permiso.
  */
 export async function enviarFirmada(tx, patrocinador) {

@@ -1,8 +1,10 @@
-# Servidor de Toki (MVP)
+# Servidor de Paizap (MVP)
 
 Recibe el toque de la tarjeta desde el terminal y cobra en Stellar con el **permiso de gasto**
-(`approve` / `transfer_from`) del contrato del token. Toki firma, pero la red no le deja pasar del
+(`approve` / `transfer_from`) del contrato del token. Paizap firma, pero la red no le deja pasar del
 tope que autorizó el dueño de la cuenta.
+
+En el código, las variables y los comandos aparece `toki`: es el nombre interno del proyecto.
 
 ```
 Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(toki, cliente, comercio, monto)──► Stellar
@@ -23,7 +25,7 @@ de [`app/`](../app/README.md), que va dentro de la imagen del servidor.
   cuando se cayó la conexión y no le llegó la respuesta, y para enterarse de un pago con QR.
 - `POST /pedidos {id, monto, concepto}` y `POST /pedidos/<id>/cancelar`: deja un cobro listo para
   pagar con el QR de la pantalla, o lo retira. Ver «Pago con QR».
-- `GET /r/<recibo>`: el enlace corto que el terminal muestra en el QR. Lleva al recibo de Toki
+- `GET /r/<recibo>`: el enlace corto que el terminal muestra en el QR. Lleva al recibo de Paizap
   (monto, producto, fecha y enlace a la transacción en el explorador de Stellar).
 - `GET /salud`: red, token y comercio.
 
@@ -42,7 +44,7 @@ la tarjeta o escaneando el QR, se cobra una sola vez, y el terminal se entera pr
 Quien escanea el QR paga con la cuenta de una tarjeta suya, con su mismo permiso de gasto, su
 bloqueo y su límite diario:
 
-- **Con la billetera de Toki** (`POST /api/pedidos/<id>/pagar {uid}`, con sesión): la firma de la
+- **Con la billetera de Paizap** (`POST /api/pedidos/<id>/pagar {uid}`, con sesión): la firma de la
   cuenta ya prueba quién paga, así que no hace falta PIN. La página `/p/<id>` pasa sola a la
   billetera si está en ese navegador, y en Android ofrece abrir la app (`toki://pagar/<id>`).
 - **Sin la billetera** (`POST /p/<id>/pagar {codigo, pin}`): la página `/p/<id>` es liviana, no
@@ -63,7 +65,7 @@ llega al servidor.
 
 | Ruta | Para |
 |---|---|
-| `GET /api/info` | Red, moneda y cuentas de Toki y del comercio |
+| `GET /api/info` | Red, moneda y cuentas de Paizap y del comercio |
 | `GET /api/sesion/reto?cuenta=G…` · `POST /api/sesion {reto}` | Abrir sesión firmando el reto |
 | `GET /api/cuenta` | Saldo, permiso de gasto con su vencimiento, tarjetas y movimientos |
 | `POST /api/cuenta/recarga` | Recarga de prueba (solo testnet); la primera crea la cuenta |
@@ -81,7 +83,7 @@ llega al servidor.
 
 **El permiso de gasto lo firma el dueño.** El servidor arma el `approve`, la app comprueba que
 diga lo que el dueño pidió, lo firma en el dispositivo y lo devuelve. El servidor solo manda a la
-red lo que es exactamente un `approve` de este token, de la cuenta de la sesión para Toki, y paga
+red lo que es exactamente un `approve` de este token, de la cuenta de la sesión para Paizap, y paga
 su comisión (*fee bump*): el dueño no necesita XLM para firmar.
 
 **Bloqueo y límite diario.** El dueño bloquea una tarjeta o le fija un límite diario desde la app.

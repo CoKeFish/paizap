@@ -1,4 +1,4 @@
-# Servidor de Toki (con la web adentro) + túnel público, para que el terminal, la web y la app del
+# Servidor de Paizap (con la web adentro) + túnel público, para que el terminal, la web y la app del
 # celular lo alcancen desde cualquier red.
 # Los secretos vienen de Doppler:
 #   doppler run --project toki --config dev -- docker compose up -d --build

@@ -2,7 +2,7 @@
   "name": "toki-app",
   "private": true,
   "version": "0.1.0",
-  "description": "App de Toki: billetera del dueño de la tarjeta y panel del comercio. La misma base sale como web y como app de Android.",
+  "description": "App de Paizap: billetera del dueño de la tarjeta y panel del comercio. La misma base sale como web y como app de Android.",
   "type": "module",
   "scripts": {
     "dev": "vite",

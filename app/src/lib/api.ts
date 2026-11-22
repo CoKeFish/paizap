@@ -1,4 +1,4 @@
-// Conexión con el servidor de Toki.
+// Conexión con el servidor de Paizap.
 //
 // En la web, el servidor es el mismo que entrega la página. En la app de Android no hay «mismo
 // origen»: la dirección sale de VITE_SERVIDOR_URL al compilar y se puede cambiar en Ajustes

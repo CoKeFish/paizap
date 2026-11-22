@@ -2,7 +2,7 @@
   "name": "toki-servidor",
   "version": "0.1.0",
   "private": true,
-  "description": "Servidor de Toki: recibe el toque de la tarjeta y cobra en Stellar con el permiso de gasto",
+  "description": "Servidor de Paizap: recibe el toque de la tarjeta y cobra en Stellar con el permiso de gasto",
   "type": "module",
   "scripts": {
     "start": "node src/servidor.mjs",

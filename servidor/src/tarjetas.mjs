@@ -6,7 +6,7 @@
 // la tarjeta, desde el celular, escaneando el QR del terminal. Del PIN solo se guarda su hash.
 //
 // MVP de testnet: si al registrar no se da una cuenta, se crea un cliente nuevo, se fondea con
-// friendbot y firma el permiso de gasto para Toki. Con la app, el dueño vincula la tarjeta a su
+// friendbot y firma el permiso de gasto para Paizap. Con la app, el dueño vincula la tarjeta a su
 // propia cuenta y firma el permiso en su celular.
 import crypto from 'node:crypto';
 import fs from 'node:fs';

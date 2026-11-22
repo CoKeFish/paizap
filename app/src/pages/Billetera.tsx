@@ -1,4 +1,4 @@
-// Billetera del dueño de la cuenta: saldo, tope de gasto (el permiso que firma para Toki),
+// Billetera del dueño de la cuenta: saldo, tope de gasto (el permiso que firma para Paizap),
 // tarjetas y movimientos.
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'

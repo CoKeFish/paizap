@@ -1,11 +1,12 @@
 # App de Paizap (web y Android)
 
-**Paizap** es la marca con la que sale la app (nombre, logo, colores y letra). En el código, en
-las variables y en el servidor sigue el nombre interno del proyecto, Toki.
+**Paizap** es el nombre del producto y la marca con la que sale la app (nombre, logo, colores y
+letra). En las carpetas, las variables y los identificadores del código sigue el nombre interno del
+proyecto, `toki`.
 
 Una sola base de código (React + Tailwind) que sale de dos formas:
 
-- **Web:** la entrega el [servidor de Toki](../servidor/README.md) en su misma dirección.
+- **Web:** la entrega el [servidor de Paizap](../servidor/README.md) en su misma dirección.
 - **App de Android:** la misma web dentro de una app nativa (Capacitor), que se compila como APK.
 
 Según la cuenta con la que se entra, muestra una de dos cosas:
@@ -27,7 +28,7 @@ bloqueo y mismo límite diario):
 | Desde | Cómo |
 |---|---|
 | **El navegador donde está la billetera** | La página del QR pasa sola a la billetera: un botón «Pagar», sin PIN |
-| **Un celular con la app de Android** | En la página del QR, «Abrir en la app de Toki» (`toki://pagar/<id>`) y «Pagar» |
+| **Un celular con la app de Android** | En la página del QR, «Abrir en la app de Paizap y pagar sin PIN» (`toki://pagar/<id>`) y «Pagar» |
 | **Cualquier otro celular** | La página del QR pide el código de cuenta (6 dígitos) y un PIN (4 dígitos) |
 
 El código de cuenta y el PIN se crean en la billetera, en la tarjeta: «Nombre, límite y PIN». El
@@ -41,8 +42,8 @@ PIN se muestra una sola vez; el servidor guarda solo su hash.
 - **Recargar.** Muestra la dirección y el QR de la cuenta para recibir desde otra billetera. En
   testnet hay una recarga de prueba: la primera crea la cuenta en la red.
 - **Tope de gasto.** Es el permiso de gasto (`approve`) del contrato del token: el dueño elige un
-  monto y un vencimiento, y lo firma en su dispositivo. Toki puede cobrar hasta ese monto y la
-  red no deja pasar de ahí. Toki paga la comisión de esa firma, así que el dueño no necesita XLM.
+  monto y un vencimiento, y lo firma en su dispositivo. Paizap puede cobrar hasta ese monto y la
+  red no deja pasar de ahí. Paizap paga la comisión de esa firma, así que el dueño no necesita XLM.
 - **Tarjetas.** Vincular una tarjeta nueva (la app ofrece las que el terminal acaba de ver, o se
   escribe su UID), ponerle nombre, bloquearla, fijarle un límite diario y crear su PIN para pagar
   con el QR.
@@ -64,7 +65,7 @@ La llave firma dos cosas, y la app lee lo que le mandó el servidor antes de fir
 1. **El inicio de sesión** (SEP-10). Solo firma si es un reto: secuencia 0 y nada más que
    operaciones de datos, o sea, algo que no se puede mandar a la red.
 2. **El permiso de gasto.** Solo firma si es una única operación `approve` en el contrato del
-   token, de su cuenta para la cuenta de Toki y por el monto que el dueño escribió.
+   token, de su cuenta para la cuenta de Paizap y por el monto que el dueño escribió.
 
 ## Correr
 

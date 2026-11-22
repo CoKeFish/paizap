@@ -74,7 +74,7 @@ comprobar('la cuenta abre sesión firmando el reto', sesion.estado === 200 && se
   const enLaRed = await permiso(dueno.publicKey(), info.toki);
   comprobar('el permiso firmado queda en la red', enviado === 200 && enLaRed === aUnidades('25'), resultado.hash ?? resultado.motivo);
   const saldoDespues = await saldo(dueno.publicKey(), info.toki);
-  comprobar('Toki paga la comisión del permiso', saldoDespues === saldoAntes, `saldo del dueño ${deUnidades(saldoDespues)}`);
+  comprobar('Paizap paga la comisión del permiso', saldoDespues === saldoAntes, `saldo del dueño ${deUnidades(saldoDespues)}`);
   const [, cuenta] = await pedir('GET', '/api/cuenta', sesion);
   comprobar('la app ve el permiso y su vencimiento', cuenta.permiso.restante === '25' && cuenta.permiso.firmado === '25' && Boolean(cuenta.permiso.vence?.fecha),
     `vence ${cuenta.permiso.vence?.fecha}`);

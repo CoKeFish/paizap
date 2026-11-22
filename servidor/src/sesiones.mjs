@@ -9,8 +9,8 @@ const DOMINIO = process.env.DOMINIO ?? 'toki.local';
 const DURACION_RETO = 300; // segundos
 const DURACION_SESION = 12 * 60 * 60 * 1000;
 
-let servidor; // Keypair de Toki: firma los retos
-let llave; // clave de las sesiones, derivada de la llave de Toki
+let servidor; // Keypair de Paizap: firma los retos
+let llave; // clave de las sesiones, derivada de la llave de Paizap
 
 export function iniciar(toki) {
   servidor = toki;

@@ -1,4 +1,4 @@
-// Servidor de Toki (MVP). Atiende a tres clientes en la misma dirección:
+// Servidor de Paizap (MVP). Atiende a tres clientes en la misma dirección:
 //
 // El terminal (cabecera X-Terminal-Token): manda el toque de la tarjeta y el monto; el servidor
 // busca la cuenta de la tarjeta, revisa el bloqueo y el límite diario y cobra en Stellar con el
@@ -14,7 +14,7 @@
 //   POST /p/<id>/pagar { codigo, pin }       paga con el código de cuenta y el PIN
 //
 // La app, web y celular (sesión abierta con la cuenta Stellar, ver sesiones.mjs):
-//   GET  /api/info                           red, moneda y cuentas de Toki y del comercio
+//   GET  /api/info                           red, moneda y cuentas de Paizap y del comercio
 //   GET  /api/sesion/reto?cuenta=G...        reto para firmar
 //   POST /api/sesion { reto }                reto firmado -> sesión
 //   GET  /api/recibos/<código>               datos de un recibo
@@ -85,7 +85,7 @@ async function leerMoneda() {
 }
 leerMoneda();
 
-// Las transacciones de Toki salen de una sola cuenta: se hacen de a una para no chocar en la
+// Las transacciones de Paizap salen de una sola cuenta: se hacen de a una para no chocar en la
 // secuencia. El límite diario se revisa dentro de la cola, así dos cobros seguidos de la misma
 // tarjeta no pasan los dos por debajo del límite.
 let cola = Promise.resolve();
@@ -349,7 +349,7 @@ function datosDelPanel() {
   };
 }
 
-// Recarga de prueba: en testnet no hay dónde comprar, así que Toki manda un monto fijo de su
+// Recarga de prueba: en testnet no hay dónde comprar, así que Paizap manda un monto fijo de su
 // cuenta. Una cuenta nueva primero se crea con friendbot.
 const ultimaRecarga = new Map();
 async function recargaDePrueba(cuenta) {
@@ -390,13 +390,13 @@ async function enviarPermiso(cuenta, { xdr }) {
   } catch {
     aprobacion = null;
   }
-  // Solo se manda lo que es, exactamente, el permiso de gasto de esta cuenta para Toki.
+  // Solo se manda lo que es, exactamente, el permiso de gasto de esta cuenta para Paizap.
   if (!aprobacion || aprobacion.dueno !== cuenta || aprobacion.gastador !== toki.publicKey()) {
     return [400, { ok: false, motivo: 'eso no es un permiso de gasto de esta cuenta' }];
   }
   let hash;
   try {
-    hash = await enviarFirmada(aprobacion.tx, toki); // Toki paga la comisión
+    hash = await enviarFirmada(aprobacion.tx, toki); // Paizap paga la comisión
   } catch (error) {
     console.error('permiso rechazado:', error.message);
     return [402, { ok: false, motivo: 'la red rechazo el permiso' }];
@@ -573,7 +573,7 @@ http.createServer(async (req, res) => {
       const codigo = recibo[1].toLowerCase();
       const hash = recibos[codigo];
       if (!hash) return responder(res, 404, { ok: false, motivo: 'recibo no encontrado' });
-      // Con la web instalada, el QR abre el recibo de Toki (monto, producto y enlace a la red);
+      // Con la web instalada, el QR abre el recibo de Paizap (monto, producto y enlace a la red);
       // sin ella, va directo a la transacción en el explorador.
       res.writeHead(302, { location: estaticos.hayWeb() ? `/#/recibo/${codigo}` : enlaceExplorador(hash) });
       return res.end();
@@ -611,7 +611,7 @@ http.createServer(async (req, res) => {
     }
 
     // La página que abre el QR en el celular del cliente. Es liviana y no depende de la web: pide
-    // el código de cuenta y el PIN. Si en ese navegador está la billetera de Toki, la página pasa
+    // el código de cuenta y el PIN. Si en ese navegador está la billetera de Paizap, la página pasa
     // a ella (#/pagar/<id>) y se paga sin PIN.
     const pagina = req.method === 'GET' && ruta.match(/^\/p\/([\w-]{3,64})$/);
     if (pagina) {
@@ -705,5 +705,5 @@ http.createServer(async (req, res) => {
     if (!res.headersSent) responder(res, error.estado ?? 500, { ok: false, motivo: error.estado ? error.message : 'error del servidor' });
   }
 }).listen(PUERTO, () => {
-  console.log(`Toki escuchando en :${PUERTO} · red ${RED} · token ${TOKEN} · comercio ${COMERCIO} · ${tarjetas.cantidad()} tarjetas · web ${estaticos.hayWeb() ? 'sí' : 'no'}`);
+  console.log(`Paizap escuchando en :${PUERTO} · red ${RED} · token ${TOKEN} · comercio ${COMERCIO} · ${tarjetas.cantidad()} tarjetas · web ${estaticos.hayWeb() ? 'sí' : 'no'}`);
 });

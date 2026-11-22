@@ -2,7 +2,7 @@
 #
 #   npm run apk
 #
-# La app trae de fábrica la dirección del servidor de Toki (después se puede cambiar dentro de la
+# La app trae de fábrica la dirección del servidor de Paizap (después se puede cambiar dentro de la
 # app, en «Mi cuenta»). Por defecto es el túnel de pruebas; para otra:
 #
 #   $env:VITE_SERVIDOR_URL = 'http://192.168.1.6:8090'; npm run apk

@@ -64,7 +64,7 @@ let acceso;
   comprobar('consultar un cobro hecho devuelve su resultado sin cobrar', consulta.status === 200 && hecho.hash === c1.hash && despuesConsulta === despues);
   comprobar('consultar un cobro que nunca llegó responde 404', inexistente.status === 404);
 
-  // 3c. El enlace corto del QR lleva al recibo: con la web instalada, al recibo de Toki; sin
+  // 3c. El enlace corto del QR lleva al recibo: con la web instalada, al recibo de Paizap; sin
   //     ella, a la transacción en el explorador.
   const recibo = await fetch(`${URL_SERVIDOR}/r/${c1.recibo}`, { redirect: 'manual' });
   const destino = recibo.headers.get('location') ?? '';

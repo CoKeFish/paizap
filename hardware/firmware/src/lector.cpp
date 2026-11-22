@@ -54,7 +54,7 @@ bool lector::leer(Tarjeta &t) {
   }
   static uint32_t contador = 1;
   char url[96];
-  snprintf(url, sizeof url, "toki.app/t?p=SIMULADA%08lX&c=%08lX", (unsigned long)contador,
+  snprintf(url, sizeof url, "paizap.example/t?p=SIMULADA%08lX&c=%08lX", (unsigned long)contador,
            (unsigned long)(contador * 2654435761UL));
   contador++;
   t.uid = uidPendiente.isEmpty() ? "04:A1:B2:C3:D4:E5:F6" : uidPendiente;

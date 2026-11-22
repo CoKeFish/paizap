@@ -1,5 +1,5 @@
 // La llave de la cuenta vive solo en este dispositivo. Con ella la app abre sesión y firma el
-// permiso de gasto; el servidor de Toki nunca la ve. Antes de firmar, la app lee lo que le
+// permiso de gasto; el servidor de Paizap nunca la ve. Antes de firmar, la app lee lo que le
 // mandaron y comprueba que sea exactamente lo que el dueño pidió.
 import { Address, Keypair, Networks, StrKey, TransactionBuilder, scValToNative } from '@stellar/stellar-sdk'
 
@@ -47,7 +47,7 @@ export function firmarReto(reto: string, red: string, llave: Keypair): string {
 
 export interface PermisoEsperado {
   token: string    // contrato del token
-  gastador: string // cuenta de Toki
+  gastador: string // cuenta de Paizap
   monto: string    // tope pedido, "25" o "25.5"
 }
 
@@ -59,7 +59,7 @@ function aUnidades(valor: string): bigint {
 
 /**
  * Firma el permiso de gasto que armó el servidor, después de comprobar que dice lo que el dueño
- * pidió: una sola operación, `approve` en el contrato del token, de esta cuenta para Toki y por
+ * pidió: una sola operación, `approve` en el contrato del token, de esta cuenta para Paizap y por
  * ese monto. Cualquier otra cosa no se firma.
  */
 export function firmarPermiso(xdr: string, red: string, llave: Keypair, esperado: PermisoEsperado): string {

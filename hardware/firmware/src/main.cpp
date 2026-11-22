@@ -1,7 +1,7 @@
-// Toki: firmware del terminal.
+// Paizap: firmware del terminal.
 //
 // Flujo (modo caja): escribe el monto, # para cobrar, acerca la tarjeta. El terminal lee la
-// tarjeta y le pide el cobro al servidor de Toki, que cobra en Stellar con el permiso de gasto;
+// tarjeta y le pide el cobro al servidor de Paizap, que cobra en Stellar con el permiso de gasto;
 // según la respuesta muestra el pago, pita y activa el relé (modo autoservicio).
 // Sin servidor configurado queda en modo prueba: recorre el mismo flujo sin cobrar, para probar
 // cada pieza (pantalla, teclado, buzzer, LEDs, relé y lector).
@@ -88,7 +88,7 @@ void rele(bool encendido) {
 }
 
 void pantallaMonto() {
-  pantalla::mostrar("Toki | Monto (USDC)", monto.isEmpty() ? "0" : monto, "# cobrar  * borrar");
+  pantalla::mostrar("Paizap: Monto (USDC)", monto.isEmpty() ? "0" : monto, "# cobrar  * borrar");
 }
 
 // Pantalla de reposo: en modo caja, el monto; en modo productos, la lista con sus precios.
@@ -104,7 +104,7 @@ void pantallaReposo() {
     snprintf(renglon, sizeof renglon, "%d %-13.13s %5s", i + 1, productos[i].nombre, productos[i].precio);
     renglones[i] = renglon;
   }
-  pantalla::lista("Toki | Elija producto", renglones, cantidad);
+  pantalla::lista("Paizap: Productos", renglones, cantidad);
 }
 
 // Vuelve al reposo: en modo caja, a escribir el monto; en modo productos, a la lista; en
@@ -114,7 +114,7 @@ void volverAlInicio() {
   if (AUTOSERVICIO) {
     monto = PRECIO_FIJO;
     estado = Estado::EsperandoTarjeta;
-    pantalla::mostrar("Toki | Autoservicio", monto, "Acerque la tarjeta");
+    pantalla::mostrar("Paizap: Autoservicio", monto, "Acerque la tarjeta");
     Serial.printf("Autoservicio: %s USDC, acerque la tarjeta\n", monto.c_str());
   } else {
     monto = "";
@@ -127,7 +127,7 @@ void volverAlInicio() {
 // apoyada en el lector no debe pagar dos veces.
 void esperarRetiro() {
   if (!AUTOSERVICIO) return;
-  pantalla::mostrar("Toki | Listo", "Retire", "la tarjeta");
+  pantalla::mostrar("Paizap: Listo", "Retire", "la tarjeta");
   uint32_t ultimaVez = millis();
   Tarjeta t;
   while (millis() - ultimaVez < 1200) {
@@ -165,7 +165,7 @@ void conectarWifi() {
     Serial.println("Sin servidor configurado: modo prueba, no cobra");
     return;
   }
-  pantalla::mostrar("Toki | Wi-Fi", "...", ssid);
+  pantalla::mostrar("Paizap: Wi-Fi", "...", ssid);
   Serial.printf("Conectando a %s", ssid);
   // Si la conexión se cae, queda anotado el motivo en el monitor serie.
   WiFi.onEvent([](WiFiEvent_t evento, WiFiEventInfo_t info) {
@@ -217,7 +217,7 @@ struct Resultado {
   String recibo;   // código corto del recibo, para el QR
 };
 
-// Una petición al servidor de Toki. Con cuerpo es un POST; sin cuerpo, un GET.
+// Una petición al servidor de Paizap. Con cuerpo es un POST; sin cuerpo, un GET.
 // Devuelve el código HTTP (<= 0 si no hubo respuesta).
 int pedirHttp(const String &ruta, const String &cuerpo, String &respuesta, uint16_t esperaMs) {
   String url = String(SERVIDOR_URL) + ruta;
@@ -268,7 +268,7 @@ void comprobarServidor() {
     Serial.println("Servidor OK");
   } else {
     Serial.printf("ERROR: el servidor no responde en %s (codigo %d). ¿Está en la misma red?\n", SERVIDOR_URL, codigo);
-    pantalla::mostrar("Toki | Error", "Servidor?", "No responde");
+    pantalla::mostrar("Paizap: Error", "Servidor?", "No responde");
     pitido(false);
     delay(3000);
   }
@@ -280,7 +280,7 @@ void vigilarWifi() {
   if (strlen(SERVIDOR_URL) == 0 || WiFi.status() == WL_CONNECTED || millis() - ultimo < 15000) return;
   ultimo = millis();
   Serial.println("Wi-Fi caido: buscando red...");
-  pantalla::mostrar("Toki | Sin Wi-Fi", "...", "Buscando red");
+  pantalla::mostrar("Paizap: Sin Wi-Fi", "...", "Buscando red");
   if (esperarWifi(8000)) {
     Serial.printf("Wi-Fi de vuelta: red [%s], IP %s\n", WiFi.SSID().c_str(), WiFi.localIP().toString().c_str());
     comprobarServidor();  // puede ser otra red: ¿desde aquí se alcanza el servidor?
@@ -296,7 +296,7 @@ struct {
   String id, monto, concepto;
 } pendiente;
 
-// Pide el cobro al servidor de Toki, que cobra en Stellar con el permiso de gasto.
+// Pide el cobro al servidor de Paizap, que cobra en Stellar con el permiso de gasto.
 // Cada cobro lleva un id fijo. Si la respuesta se pierde, el terminal no sabe si se cobró:
 // reintenta con el mismo id, esperando a que vuelva el Wi-Fi, y el servidor devuelve el mismo
 // resultado sin cobrar dos veces.
@@ -313,7 +313,7 @@ Resultado pedirCobro(const Tarjeta &t) {
     if (intento > 1) {
       Serial.printf("Sin respuesta (error %d, Wi-Fi %s): reintento %d del cobro %s\n", codigo,
                     WiFi.status() == WL_CONNECTED ? "conectado" : "caido", intento, id.c_str());
-      pantalla::mostrar("Toki | Sin conexion", "...", "Confirmando el cobro");
+      pantalla::mostrar("Paizap: Sin conexion", "...", "Confirmando el cobro");
       esperarWifi(10000);
       delay(1000);
     }
@@ -363,7 +363,7 @@ void cobrar(const Tarjeta &t) {
   Serial.printf("UID:   %s\n", t.uid.c_str());
   Serial.printf("SUN:   %s\n", t.url.isEmpty() ? "(sin URL: no es NTAG 424 DNA o no está configurada)" : t.url.c_str());
 
-  pantalla::mostrar("Toki | Cobrando " + monto, "...", "Procesando en Stellar");
+  pantalla::mostrar("Paizap: Cobro " + monto, "...", "Procesando en Stellar");
   Resultado r = pedirCobro(t);
   if (r.ok) {
     pagoAprobado(r);
@@ -376,10 +376,10 @@ void cobrar(const Tarjeta &t) {
   if (sinConfirmar) {
     Serial.printf("Pago SIN CONFIRMAR (cobro %s): no llegó la respuesta; el terminal sigue preguntando\n",
                   pendiente.id.c_str());
-    pantalla::mostrar("Toki | Sin confirmar", "?", "Espere, reintentando");
+    pantalla::mostrar("Paizap: Sin confirmar", "?", "Espere, reintentando");
   } else {
     Serial.printf("Pago rechazado: %s\n", r.detalle.c_str());
-    pantalla::mostrar(noRegistrada ? "Toki | No registrada" : "Toki | Rechazado", "NO",
+    pantalla::mostrar(noRegistrada ? "Paizap: No registrada" : "Paizap: Rechazado", "NO",
                       noRegistrada ? "UID " + t.uid : r.detalle.substring(0, 21));
   }
   pitido(false);
@@ -417,7 +417,7 @@ void resolverPendiente() {
 void pagoAprobado(const Resultado &r) {
   Serial.printf("Pago aprobado: %s\n", r.detalle.c_str());
   digitalWrite(PIN_LED_OK, HIGH);
-  pantalla::mostrar(concepto.isEmpty() ? String("Toki | Pago") : "Toki | " + concepto, "OK " + monto,
+  pantalla::mostrar(concepto.isEmpty() ? String("Paizap: Pago") : "Paizap: " + concepto.substring(0, 13), "OK " + monto,
                     "tx " + r.detalle.substring(0, 18));
   pitido(true);
 
@@ -452,7 +452,7 @@ void setup() {
   Wire.begin(PIN_SDA, PIN_SCL);
   escanearI2C();
   if (!pantalla::iniciar()) Serial.println("ERROR: no encuentro la pantalla (revisa SDA, SCL, VCC, GND)");
-  pantalla::mostrar("Toki | Prueba", "Hola", "Probando piezas...");
+  pantalla::mostrar("Paizap: Prueba", "Hola", "Probando piezas...");
   pitido(true);
 
   Serial.printf("Lector: %s\n", lector::nombre());
@@ -462,7 +462,7 @@ void setup() {
   } else {
     Serial.println("ERROR: no encuentro el lector (revisa cables y que el PN532 esté en modo SPI)");
     digitalWrite(PIN_LED_ERROR, HIGH);
-    pantalla::mostrar("Toki | Error", "Lector?", "Revisa cables/SPI");
+    pantalla::mostrar("Paizap: Error", "Lector?", "Revisa cables/SPI");
     pitido(false);
     delay(3000);
     digitalWrite(PIN_LED_ERROR, LOW);
@@ -505,7 +505,7 @@ bool leerLineaSerie(String &linea) {
 void pedirTarjeta() {
   if (monto.endsWith(".")) monto.remove(monto.length() - 1);
   estado = Estado::EsperandoTarjeta;
-  pantalla::mostrar("Toki | Cobrar " + monto, "Acerque", "la tarjeta");
+  pantalla::mostrar("Paizap: Cobrar " + monto, "Acerque", "la tarjeta");
   Serial.printf("Cobrar %s USDC: acerque la tarjeta\n", monto.c_str());
 }
 
@@ -518,7 +518,7 @@ void elegirProducto(uint8_t i) {
   concepto = productos[i].nombre;
   monto = productos[i].precio;
   estado = Estado::EsperandoTarjeta;
-  pantalla::mostrar("Toki | " + concepto, monto, "Acerque la tarjeta");
+  pantalla::mostrar("Paizap: " + concepto.substring(0, 13), monto, "Acerque la tarjeta");
   Serial.printf("Producto %d (%s): cobrar %s USDC, acerque la tarjeta\n", i + 1, concepto.c_str(), monto.c_str());
 }
 
@@ -596,7 +596,7 @@ void loop() {
     } else if (linea.startsWith("q ") || linea.startsWith("Q ")) {
       // Dibuja un QR de prueba con ese texto: "q https://stellar.org"
       String texto = linea.substring(2);
-      bool dibujado = pantalla::qr(texto, "Toki", "QR de", "prueba");
+      bool dibujado = pantalla::qr(texto, "Paizap", "QR de", "prueba");
       Serial.printf("QR %s: %s\n", dibujado ? "en pantalla" : "NO cabe (o no hay pantalla)", texto.c_str());
     } else if (linea.startsWith("k ") || linea.startsWith("K ")) {
       // Teclas por el monitor serie, para probar sin teclado: "k B", "k 2", "k 1D50#".
