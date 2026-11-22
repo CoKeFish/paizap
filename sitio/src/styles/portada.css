@@ -388,3 +388,10 @@ h3 {
   color: var(--suave);
   font-size: 0.9rem;
 }
+
+/* La frase que acompaña a la tabla de medidas. */
+.nota-hoja {
+  max-width: 44rem;
+  margin-top: -1rem;
+  color: var(--suave);
+}

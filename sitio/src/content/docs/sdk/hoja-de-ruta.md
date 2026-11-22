@@ -15,26 +15,33 @@ Probado en un ESP32-S3 contra Stellar testnet:
 - Detección de pagos por eventos, con monto y memo.
 - Pedido de pago SEP-7.
 - Cliente del nodo para ESP32: conexión segura con certificado comprobado y conexión reutilizada.
-- Comparación contra el SDK oficial de JavaScript: 20 de 20 iguales, byte a byte.
-- Un terminal con tarjeta NFC, el de Paizap, que firma sus cobros con el SDK.
+- 23 de 23 comprobaciones en el PC; 16 comparan byte a byte con el SDK oficial de JavaScript.
+- Dos ejemplos: un pago con su confirmación, y un aparato autónomo que cobra, ve llegar el pago y
+  paga.
+- Un terminal con tarjeta NFC, la demo de Paizap, que firma sus cobros con el SDK.
 
 ## Lo que sigue
 
-| Qué | Para qué |
-|---|---|
-| **Un segundo ejemplo: un avisador de pagos** | El punto de partida de una alcancía o un dispensador. |
-| **Un segundo microcontrolador, el RP2040** | Mostrar que el núcleo no depende del chip. |
-| **Detección de un pago por su número de pedido** | Cobrar con QR y saber cuál pago es de cuál venta. |
-| **Una entrada única al SDK** | Iniciar, pedir un cobro, vigilarlo y pagar en pocas llamadas, sin armar las consultas a mano. |
-| **La red como parte del adaptador de cada familia** | Que el mismo programa corra en otro microcontrolador cambiando solo el adaptador. |
-| **Nodo de respaldo** | Seguir cobrando si un proveedor se cae. |
-| **Errores con su causa** | Mostrar «sin saldo» o «vencida» en vez de «falló». |
-| **Estado que sobrevive a un corte de luz** | Saber qué pasó con un pago que quedó a medias. |
-| **QR como módulo opcional** | Mostrar el pedido sin buscar otra librería. |
+Del 23 de noviembre al 22 de diciembre de 2026:
+
+| Semana | Qué | Meta |
+|---|---|---|
+| 1 (23 al 29 nov) | Dejar la librería lista para un tercero: guía de inicio y los dos ejemplos. | Una persona ajena al equipo compila un ejemplo y paga en testnet siguiendo solo la guía. |
+| 2 (30 nov al 6 dic) | Llevar el mismo núcleo a un segundo microcontrolador, el RP2040 con su chip de Wi-Fi. Empezar la postulación a Stellar Instawards. | El mismo ejemplo de pago corre en 2 microcontroladores. |
+| 3 (7 al 13 dic) | Una característica nueva: el cobro con número de pedido. El aparato espera el pago de otra persona y lo reconoce por su memo. | Ejemplo publicado y probado en testnet. |
+| 4 (14 al 22 dic) | Enviar la postulación a Stellar Instawards y compartir la librería con desarrolladores de Stellar. | Postulación enviada; 3 desarrolladores externos la compilan y dejan sus comentarios en el repositorio. |
 
 ## Más adelante
 
+- **Una entrada única al SDK:** iniciar, pedir un cobro, vigilarlo y pagar en pocas llamadas, sin
+  armar las consultas a mano.
+- **La red como parte del adaptador de cada familia,** para que el mismo programa corra en otro
+  microcontrolador cambiando solo el adaptador.
 - **STM32 con módulo de red,** y con eso redes 4G.
+- **Nodo de respaldo,** para seguir cobrando si un proveedor se cae.
+- **Errores con su causa:** mostrar «sin saldo» o «vencida» en vez de «falló».
+- **Estado que sobrevive a un corte de luz,** para saber qué pasó con un pago que quedó a medias.
+- **QR como módulo opcional,** para mostrar el pedido sin buscar otra librería.
 - **La llave en un chip seguro,** para que no se pueda leer de la memoria del microcontrolador.
 - **Llamadas a cualquier contrato,** con argumentos simples.
 - **Comisión pagada por otra cuenta,** para que el aparato no necesite XLM.
