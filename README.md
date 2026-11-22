@@ -152,8 +152,8 @@ Un equipo que une electrónica y negocios.
 
 | Quién | Rol | Qué aporta |
 |---|---|---|
-| **Rodion Romanovich** ([rodion.com.co](https://rodion.com.co), [@CoKeFish](https://github.com/CoKeFish)) | Hardware y Stellar | Ingeniero electrónico: ingeniería electrónica e integración blockchain para microcontroladores. Su proyecto anterior sobre Stellar es [Kiba](https://github.com/CoKeFish/kiba), pagos por llamada en USDC, hecho para el Stellar PULSO Hackathon. Antes hizo [Mesura](https://github.com/CoKeFish/mesura-firmware), sensores IoT sobre Arduino, ESP32 y Raspberry Pi |
-| **Clyn Roje Quispe Villegas** | Negocio y producto | Desarrollo de negocio y enfoque de producto |
+| **Rodion Romanovich** ([rodion.com.co](https://rodion.com.co), [@CoKeFish](https://github.com/CoKeFish)) | Hardware y Stellar | Ingeniero electrónico. Responsable del diseño electrónico, del firmware y del desarrollo de Stellar MCU SDK |
+| **Clyn Roje Quispe Villegas** | Negocio y producto | Responsable del desarrollo de negocio y del enfoque de producto. A cargo de la presentación del proyecto, la identidad de marca y la producción audiovisual |
 
 Paizap mantiene Stellar MCU SDK, que es abierto, y hace la integración en el aparato de cada
 cliente: diseña la placa del aparato cuando hace falta, o adapta la electrónica que el aparato
