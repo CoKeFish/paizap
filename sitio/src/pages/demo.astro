@@ -26,7 +26,7 @@ const VIDEO = '';
     <title>Demo: aparatos que cobran en Stellar</title>
     <meta
       name="description"
-      content="Un torniquete, un dispensador y un terminal de caja simulados que cobran con dinero de prueba en la red de pruebas de Stellar (testnet). Creas tu cuenta y pagas con una tarjeta, sin gastar dinero real."
+      content="Un torniquete, un dispensador y un terminal de caja simulados. Los pagos se hacen en Stellar testnet, con dinero de prueba: creas tu cuenta y pagas con una tarjeta, sin gastar dinero real."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="alternate" type="text/plain" href={`${base}llms.txt`} title="Cómo usar la demo, para agentes" />
@@ -51,9 +51,9 @@ const VIDEO = '';
             Stellar. Elige un aparato, crea tu cuenta en el teléfono y paga con tu tarjeta.
           </p>
           <p class="sim-aviso">
-            <strong>Es un simulador y usa dinero de prueba: nadie gasta dinero real.</strong> Los aparatos, el
-            teléfono y la tarjeta son modelos 3D. La cuenta y los pagos usan XLM de prueba, que no tienen valor, en la
-            red de pruebas de Stellar (testnet); cada pago queda registrado ahí y se puede comprobar.
+            <strong>Es un simulador con pagos en Stellar testnet: usa dinero de prueba y nadie gasta dinero real.</strong>
+            Los aparatos, el teléfono y la tarjeta son modelos 3D. Cada pago es una transacción en la red de pruebas de
+            Stellar (testnet), hecha con XLM de prueba, que no tienen valor: queda registrada ahí y se puede comprobar.
             {VIDEO && <a href={VIDEO}>Mira la demo en un aparato real.</a>}
           </p>
         </div>
@@ -108,7 +108,7 @@ const VIDEO = '';
             <div class="etapa" id="etapa-pagar" hidden>
               <button type="button" id="sim-tarjeta" class="boton rayo" disabled>Pagar con la tarjeta</button>
               <button type="button" id="sim-cancelar" class="boton-texto" disabled>Cancelar el cobro</button>
-              <p class="nota" id="sim-pagar-nota">Pagas con dinero de prueba: no se gasta dinero real.</p>
+              <p class="nota" id="sim-pagar-nota">Es un pago en Stellar testnet, con dinero de prueba: no se gasta dinero real.</p>
               <details class="qr" id="sim-qr-caja" hidden>
                 <summary>¿Tienes una billetera de testnet? Paga con el QR</summary>
                 <div class="qr-cuerpo">
@@ -185,8 +185,9 @@ const VIDEO = '';
             <summary>Para agentes</summary>
             <div class="plegable-cuerpo">
               <p>
-                La demo usa dinero de prueba, en la red de pruebas de Stellar (testnet): pagar aquí no gasta dinero real ni
-                usa datos de pago de nadie. Se puede usar sin mirar el modelo 3D: todo pasa también en texto.
+                Los pagos de la demo son transacciones en Stellar testnet, hechas con dinero de prueba: pagar aquí no
+                gasta dinero real ni usa datos de pago de nadie. Se puede usar sin mirar el modelo 3D: todo pasa también en
+                texto.
               </p>
               <h3>Con un navegador</h3>
               <ol class="lista">

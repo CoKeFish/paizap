@@ -357,7 +357,7 @@ export function crearSimulador({ urlAdaptacion, alCambiar, alRegistrar, alConsul
     const cobro = estado.cobro;
     if (estado.fase !== 'esperando' || !cobro || estado.tarjetaPagando) return;
     tarjetaLeidaEn = Date.now();
-    avisar({ tarjetaPagando: true, mensaje: 'Tarjeta leída. El pago viaja por la red de pruebas de Stellar…' });
+    avisar({ tarjetaPagando: true, mensaje: 'Tarjeta leída. El pago viaja por Stellar testnet…' });
     registrar(`Tu tarjeta paga ${cobro.monto} XLM al cobro n.º ${cobro.numero}, desde tu cuenta.`);
     pagoDeLaTarjeta = tarjeta.pay({ destination: aparato.account, amount: cobro.monto, order: cobro.numero });
     try {

@@ -10,17 +10,17 @@ export const GET: APIRoute = ({ site }) => {
   const texto = `# Paizap
 
 > Paizap lleva pagos de Stellar a dispositivos IoT: torniquetes, dispensadores, cajas.
-> Este sitio trae un simulador con tres aparatos que cobran con dinero de prueba en la red de
-> pruebas de Stellar (testnet): nadie gasta dinero real. La librería con la que cobran es Stellar
-> MCU SDK: una librería de pagos de Stellar para microcontroladores, no para un chip. El núcleo es
-> C99 portable.
+> Este sitio trae un simulador con tres aparatos que cobran en Stellar testnet, la red de pruebas
+> de Stellar. Los pagos son transacciones de testnet hechas con dinero de prueba: nadie gasta dinero
+> real. La librería con la que cobran es Stellar MCU SDK: una librería de pagos de Stellar para
+> microcontroladores, no para un chip. El núcleo es C99 portable.
 
-Es un simulador y usa dinero de prueba:
+Es un simulador con pagos en Stellar testnet:
 
+- Cada pago es una transacción en Stellar testnet, hecha con XLM de prueba, que no tienen valor.
+  Queda registrada en esa red y se puede comprobar ahí.
 - No hay aparatos reales detrás y nadie gasta dinero real. Pagar aquí no usa tarjetas, cuentas
   bancarias ni datos de pago de nadie.
-- Los pagos se hacen con XLM de testnet, que no tienen valor. Cada pago es una transacción que
-  queda registrada en la red de pruebas de Stellar y se puede comprobar ahí.
 - Las transacciones las arma y firma el núcleo de Stellar MCU SDK.
 - No hace falta iniciar sesión: la demo crea una cuenta de prueba en el navegador y le pide fondos
   de prueba a friendbot, el servicio de la red de pruebas que los regala.
