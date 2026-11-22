@@ -14,9 +14,6 @@ const $ = (id) => document.getElementById(id);
 const sim = $('simulador');
 const panel = $('sim-panel');
 
-// El comando para agentes lleva la dirección real del sitio.
-$('agentes-comando').textContent = $('agentes-comando').textContent.replaceAll('SITIO/', aqui);
-
 let escena = null;
 let modelo = 'cargando'; // cargando | listo | sin3d
 let hayRegistro = false;
@@ -230,10 +227,18 @@ function pintarCobros(cobros) {
   );
 }
 
+// La fase que se publica, en data-fase y en el JSON. Además de las del simulador, dice si el
+// aparato todavía arma el cobro, si el pago va en camino y si el aparato está devolviendo: con
+// «esperando» ya se puede pagar.
+function fasePublica(estado) {
+  if (estado.fase === 'esperando') return estado.tarjetaPagando ? 'pagando' : estado.cobro ? 'esperando' : 'cobrando';
+  if (estado.fase === 'aprobado' && estado.devolviendo) return 'devolviendo';
+  return estado.fase;
+}
+
 let solicitudDibujada = '';
 function pintar(estado) {
   const aparato = APARATOS[estado.aparato];
-  sim.dataset.fase = estado.fase;
   sim.dataset.aparato = estado.aparato;
   $('sim-estado').textContent = estado.mensaje;
   const etapa = ETAPA[estado.fase];
@@ -267,15 +272,27 @@ function pintar(estado) {
   // Empezar de cero solo tiene sentido cuando ya hay una cuenta y nada está a medias.
   $('sim-reiniciar').hidden = !['listo', 'esperando', 'aprobado'].includes(estado.fase) || estado.tarjetaPagando || estado.devolviendo;
 
+  // Lo que leen los agentes se escribe al final, con los botones ya puestos: cuando data-fase dice
+  // «esperando», el botón de pagar ya se puede pulsar. data-pago es el identificador del último
+  // pago aprobado: cambia con cada cobro.
+  const fase = fasePublica(estado);
+  const fijo = aparato.modo === 'autoservicio';
+  sim.dataset.cobro = estado.cobro ? String(estado.cobro.numero) : '';
+  sim.dataset.pago = estado.ultimoPago?.hash ?? '';
+  sim.dataset.devolucion = estado.ultimoPago?.devolucion?.hash ?? '';
+  sim.dataset.fase = fase;
+
   // El mismo estado, en JSON, para quien lo quiera leer sin interpretar la página.
   $('sim-datos').textContent = JSON.stringify({
-    fase: estado.fase,
+    fase,
     mensaje: estado.mensaje,
     red: 'Stellar testnet',
     aparato: estado.aparato,
     cuenta: { direccion: estado.cuentaTarjeta, ...estado.cuenta },
     cuentaComercio: estado.cuentaAparato,
-    monto: estado.monto,
+    // Lo que cobra el aparato: su precio fijo o, en la caja, el monto que se está escribiendo.
+    precio: fijo ? aparato.precio : null,
+    monto: fijo ? aparato.precio : estado.monto,
     cobro: estado.cobro,
     ultimoPago: estado.ultimoPago,
     cobros: estado.cobros,

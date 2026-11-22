@@ -84,7 +84,8 @@ cp simulador/adaptacion/stellar_mcu.mjs public/simulador/
 Para agentes: los botones tienen identificadores fijos (`sim-aparato-torniquete`,
 `sim-aparato-dispensador`, `sim-aparato-caja`, `sim-crear`, `sim-cobrar`, `sim-tarjeta`,
 `sim-devolver`, `sim-otro`, `sim-reintentar` y `sim-reiniciar`), el aparato y la fase están en
-`data-aparato` y `data-fase` de `#simulador`, y el estado completo, en JSON, en `#sim-datos`.
+`data-aparato` y `data-fase` de `#simulador`, el identificador del último pago en `data-pago`, y el
+estado completo, en JSON, en `#sim-datos`.
 Sin navegador, `agentes/demo.mjs` hace el mismo recorrido. Todo está explicado en `/llms.txt`.
 
 ## La documentación

@@ -10,6 +10,9 @@ import { APARATOS, INICIAL, ORDEN } from '../simulador/catalogo.js';
 
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 const docs = `${base}sdk/`;
+// La dirección pública del sitio: el comando para agentes la lleva escrita, sin esperar a JavaScript.
+const sitio = new URL(base, Astro.site).href;
+const comandoAgentes = `curl -sO ${sitio}simulador/device.mjs -O ${sitio}simulador/stellar_mcu.mjs -O ${sitio}agentes/demo.mjs\nnode demo.mjs`;
 // Enlace al video de la demo en un aparato real. Vacío: la página no lo menciona.
 const VIDEO = '';
 ---
@@ -190,20 +193,28 @@ const VIDEO = '';
                   <code>#sim-crear</code> y espera a que deje de ser <code>creando</code>.
                 </li>
                 <li>
-                  El torniquete y el dispensador tienen precio fijo y cobran solos: la fase pasa a <code>esperando</code>.
-                  En la caja, escribe un monto en <code>#sim-monto</code> y pulsa <code>#sim-cobrar</code>.
+                  El torniquete ({APARATOS.torniquete.precio} XLM) y el dispensador ({APARATOS.dispensador.precio} XLM) tienen
+                  precio fijo y cobran solos: la fase pasa por <code>cobrando</code> y queda en <code>esperando</code>. En
+                  la caja, escribe un monto en <code>#sim-monto</code> y pulsa <code>#sim-cobrar</code>.
                 </li>
-                <li>Pulsa <code>#sim-tarjeta</code> y espera a que la fase sea <code>aprobado</code>. Se queda así hasta el siguiente cobro.</li>
                 <li>
-                  Lee el resultado en <code>#sim-datos</code>: es el estado en JSON, y <code>ultimoPago.enlace</code> lleva a
-                  la transacción.
+                  Cuando la fase sea <code>esperando</code>, pulsa <code>#sim-tarjeta</code>. La fase pasa a
+                  <code>pagando</code> y después a <code>aprobado</code>, y se queda así hasta el siguiente cobro.
                 </li>
-                <li>Si quieres, <code>#sim-devolver</code> hace que el aparato firme una devolución y <code>#sim-otro</code> empieza otro cobro.</li>
+                <li>
+                  El atributo <code>data-pago</code> de <code>#simulador</code> trae el identificador de la transacción
+                  del último pago: cambia con cada cobro. El estado completo está en JSON en <code>#sim-datos</code>, y
+                  <code>ultimoPago.enlace</code> lleva a la transacción.
+                </li>
+                <li>
+                  Si quieres, <code>#sim-devolver</code> hace que el aparato firme una devolución (fase
+                  <code>devolviendo</code>; al terminar, <code>data-devolucion</code> trae su identificador) y
+                  <code>#sim-otro</code> empieza otro cobro.
+                </li>
               </ol>
               <h3>Sin navegador</h3>
               <p>El mismo cobro corre con Node 18 o más nuevo. Baja tres archivos y ejecútalo:</p>
-              <pre class="monitor" id="agentes-comando">curl -sO SITIO/simulador/device.mjs -O SITIO/simulador/stellar_mcu.mjs -O SITIO/agentes/demo.mjs
-node demo.mjs</pre>
+              <pre class="monitor" id="agentes-comando">{comandoAgentes}</pre>
               <p>Responde en texto y termina con una línea en JSON. Las instrucciones completas están en <a href={`${base}llms.txt`}>llms.txt</a>.</p>
             </div>
           </details>
@@ -218,6 +229,7 @@ node demo.mjs</pre>
           <li><a href={base}>Qué es Paizap</a></li>
           <li><a href={docs}>Documentación del SDK</a></li>
           <li><a href="https://github.com/CoKeFish/stellar-mcu-sdk">Stellar MCU SDK en GitHub</a></li>
+          <li><a href={`${base}llms.txt`}>Para agentes</a></li>
         </ul>
       </div>
     </footer>
