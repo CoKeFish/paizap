@@ -36,16 +36,21 @@ una comisión de pagos del 2,62 % sobre lo que procesa.
 Esos dispositivos corren sobre microcontroladores. Stellar tiene SDK para la web, el celular y los
 servidores; falta el que corre dentro del dispositivo.
 
-- **Hoy un dispositivo no puede cobrar en Stellar por sí mismo.** La documentación oficial lista
-  SDK para JavaScript, Python, Rust, Java, Go y otros lenguajes de aplicaciones, y ninguno para
+- **Stellar no tiene un SDK para microcontroladores.** La documentación oficial lista SDK para
+  JavaScript, Python, Rust, Java, Go y otros lenguajes de aplicaciones, y ninguno para
   microcontroladores ([Stellar Docs](https://developers.stellar.org/docs/tools/sdks/client-sdks)).
-- **Quien arma un aparato pone un servidor en el medio.** En 2026, en
-  [SkyPort](https://github.com/SkyPort-Labs2/skyport-soroban), un ESP32 firma un recibo y un
-  servidor en Node.js envía la transacción. El autor de un dispensador de dulces con ESP8266 cuenta
-  que no conoce ningún SDK de Stellar para Arduino
-  ([stellar-candyman](https://github.com/sui77/stellar-candyman)), y la máquina de dulces de
-  SatoshiPay corre Node.js en una Raspberry Pi
-  ([GitHub](https://github.com/satoshipay/stellar-candy-dispenser)).
+- **Hoy hay dos salidas: escribir el protocolo a mano o poner un servidor en el medio.** Así
+  resuelven hoy el camino a la red los proyectos públicos que arman aparatos sobre Stellar:
+
+  | Proyecto | Aparato | Cómo llega a Stellar |
+  |---|---|---|
+  | [stellar-candyman](https://github.com/sui77/stellar-candyman) | Dispensador de dulces con microcontrolador | Protocolo escrito a mano; su autor cuenta que no conoce ningún SDK de Stellar para Arduino |
+  | [SkyPort](https://github.com/SkyPort-Labs2/skyport-soroban) (2026) | Plataforma de aterrizaje con microcontrolador | El microcontrolador firma un recibo y un servidor en Node.js envía la transacción |
+  | [OffGate](https://github.com/hyrlhc/offgate) (2026) | Torniquete con microcontrolador | Verifica sin conexión; la llave del operador vive en un servidor |
+  | [Alerta médica](https://github.com/arantxaamr/alerta-medica-esp32-stellar) (2026) | Botón de alerta con microcontrolador | El firmware quedó en pausa; funciona con el teléfono y un servidor |
+  | [SatoshiPay](https://github.com/satoshipay/stellar-candy-dispenser) | Máquina de dulces | Node.js en una Raspberry Pi, que es un computador |
+  | [soroban-pumpit](https://github.com/tupui/soroban-pumpit) (2024) | Bomba con sensores | Python en una Raspberry Pi |
+
 - **Las librerías en C que existen son para billeteras físicas:**
   [libstellar](https://github.com/overcat/libstellar), cuyo README avisa que lleva tiempo sin
   actualizarse, y su [sucesora](https://github.com/lightsail-network/libstellar).
@@ -84,6 +89,7 @@ En testnet, sobre el primer microcontrolador, un ESP32-S3:
 |---|---|
 | Núcleo del SDK | 3,4 KB de flash |
 | Firma Ed25519 | 18 KB de flash |
+| En el terminal de demostración, activar el cobro firmado | Suma 23,5 KB al firmware: el núcleo, la firma, el cliente del nodo con su certificado y la lógica del cobro |
 | Armar y firmar un pago | 7 milisegundos |
 | De enviar un pago a verlo confirmado | 3 a 6 segundos |
 | Una consulta al nodo, con la conexión abierta | 0,3 segundos |
