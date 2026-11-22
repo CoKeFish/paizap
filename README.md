@@ -110,9 +110,8 @@ En testnet, sobre el primer microcontrolador, un ESP32-S3:
 ## La demo en un aparato real
 
 Para probar el SDK en un aparato de verdad armamos un terminal de cobro con tarjeta NFC: un
-ESP32-S3 con lector NFC, pantalla y teclado. Es una demostración de lo que se puede hacer con el
-SDK. La demo suma un servidor propio para la app y el registro de tarjetas; la librería no lo
-necesita.
+ESP32-S3 con lector NFC, pantalla y teclado. Es una demo: está hecha para mostrar lo que el SDK
+puede hacer.
 
 <p align="center">
   <img src="hardware/img/terminal-demo.jpg" alt="El terminal de demostración sobre una mesa: una mano acerca una tarjeta a la zona de lectura; arriba, la pantalla encendida, y abajo, el teclado" width="620">
