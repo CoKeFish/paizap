@@ -12,7 +12,7 @@ Todo lo de esta página se midió en el ESP32-S3 del terminal de la demo, el 21 
 
 | Paso | Resultado |
 |---|---|
-| Comparación con el SDK oficial de JavaScript 17.4.0 | 18 de 18 iguales, byte a byte. Las pruebas del PC hacen hoy 23 comprobaciones, las 23 correctas; 16 comparan byte a byte |
+| Comparación con el SDK oficial de JavaScript 17.4.0 | 23 comprobaciones en el PC, todas correctas; 16 comparan byte a byte con el SDK oficial de JavaScript |
 | Crear su llave y guardarla | Con el generador aleatorio del chip |
 | Pago de XLM con memo | Armar y firmar: 7,1 ms. De enviar a confirmado: 6,2 s y 2,8 s |
 | Detectar ese pago con `getEvents` | Una consulta, 0,3 s. Monto y memo correctos |
