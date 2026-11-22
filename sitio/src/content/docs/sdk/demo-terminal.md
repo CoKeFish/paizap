@@ -53,9 +53,8 @@ Cobro confirmado por la red en 7350 ms
 La transacción está en la red:
 [9a0b9c10…f325285a](https://stellar.expert/explorer/testnet/tx/9a0b9c10a2e2bf430e0782f347be0da91bca52d1b5ba5c85b4d80a04f325285a).
 
-Fue el primero de ocho cobros firmados por el terminal en testnet, cuatro de ellos con tarjeta
-física. El último con tarjeta es
-[dab4fb6b…1b2cd09b](https://stellar.expert/explorer/testnet/tx/dab4fb6bd5882fc1ebc62faf4d17848e1db2ba4c8905a9ebdfbb8fab1b2cd09b).
+El terminal ya cobró con tarjeta física en testnet:
+[esta transacción](https://stellar.expert/explorer/testnet/tx/dab4fb6bd5882fc1ebc62faf4d17848e1db2ba4c8905a9ebdfbb8fab1b2cd09b) es uno de esos cobros, y la única firma es la del aparato.
 
 ## Lo que se midió
 

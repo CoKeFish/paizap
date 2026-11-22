@@ -96,11 +96,18 @@ El valor llega en dos formatos según el pago, y la función lee los dos:
 Dos clientes pueden pagar casi a la vez. Para no confundirlos:
 
 - **Un número de pedido por cobro.** Cada cobro lleva un número distinto en el memo del
-  [pedido de pago](../cobrar/), y `stl_event_amount` lo devuelve: el pago que llega con ese
-  número es el de esa venta. El ejemplo `esp32_pay_and_confirm` paga con el pedido 4242 y lo
-  vuelve a leer en el evento.
-- **Sin memo,** se compara el monto y que el evento sea posterior al cobro. Es lo que hace el
-  aparato autónomo: da por pagado el primer evento nuevo que alcance el monto.
+  [pedido de pago](../cobrar/), y `stl_event_amount` lo devuelve. El aparato autónomo le pone un
+  número a cada cobro y, si el pago trae un número, lo cuenta solo cuando es el suyo:
+
+  ```cpp
+  if (has_memo && memo != order) {
+    Serial.printf("A payment for order %llu arrived: it is not this charge\n", (unsigned long long)memo);
+    continue;
+  }
+  ```
+
+- **Sin memo,** se compara el monto y que el evento sea posterior al cobro: el aparato autónomo
+  da por pagado el primer evento nuevo que alcance el monto.
 
 ## 5. No contar dos veces
 
