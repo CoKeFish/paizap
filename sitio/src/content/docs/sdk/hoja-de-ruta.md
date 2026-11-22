@@ -5,7 +5,7 @@ description: Qué hace el SDK hoy y qué sigue.
 
 ## Hoy
 
-Probado en el primer microcontrolador con adaptador, un ESP32-S3, contra Stellar testnet:
+Probado en el primer microcontrolador, un ESP32-S3, contra Stellar testnet:
 
 - Direcciones (`G…`, `C…`, `S…`) y montos sin coma flotante.
 - Pago de XLM, con memo.
@@ -13,8 +13,8 @@ Probado en el primer microcontrolador con adaptador, un ESP32-S3, contra Stellar
 - La autorización de la llamada, armada por el aparato.
 - La dirección del contrato del token, calculada en el aparato.
 - Detección de pagos por eventos, con monto y memo.
-- El primer adaptador, para ESP32: cliente del nodo con conexión segura, certificado comprobado y
-  conexión reutilizada.
+- Cliente del nodo para el primer microcontrolador, el ESP32: conexión segura con certificado
+  comprobado y conexión reutilizada.
 - Dos ejemplos: un pago con su confirmación, y un aparato autónomo que cobra, ve llegar el pago y
   paga.
 - Un terminal con tarjeta NFC, la demo de Paizap, que firma sus cobros con el SDK.
@@ -46,8 +46,8 @@ Del 23 de noviembre al 22 de diciembre de 2026:
 
 - **Una entrada única al SDK:** iniciar, pedir un cobro, vigilarlo y pagar en pocas llamadas, sin
   armar las consultas a mano.
-- **La red como parte del adaptador de cada familia,** para que el mismo programa corra en otro
-  microcontrolador cambiando solo el adaptador.
+- **La red como parte de lo que aporta cada familia,** para que el mismo programa corra en otro
+  microcontrolador cambiando solo esa parte.
 - **STM32 con módulo de red,** y con eso redes 4G.
 - **Nodo de respaldo,** para seguir cobrando si un proveedor se cae.
 - **Errores con su causa:** mostrar «sin saldo» o «vencida» en vez de «falló».

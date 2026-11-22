@@ -1,13 +1,14 @@
 ---
 title: Microcontroladores
-description: El SDK es para cualquier microcontrolador. Qué familias tienen adaptador hoy y qué aporta cada una.
+description: Una librería para microcontroladores. La familia ESP32 es la primera; qué aporta cada familia.
 ---
 
-La librería es para microcontroladores en general. El núcleo no depende de ningún chip; cada
-familia suma un adaptador pequeño: la red, el guardado de la llave y la firma. La familia ESP32 es
+Es una librería para microcontroladores. El núcleo no depende de ningún chip. La familia ESP32 es
 la primera.
 
-## Con adaptador hoy
+Cada familia aporta la red, el guardado de la llave y la firma.
+
+## Hoy
 
 | Microcontrolador | Estado |
 |---|---|
@@ -36,8 +37,8 @@ El ejemplo compila para los dos con PlatformIO (`espressif32@6.9.0`, Arduino).
 
 El núcleo no incluye ningún archivo del chip. Para un microcontrolador nuevo hacen falta tres cosas:
 
-1. **SHA-256 y firma Ed25519,** para llenar el `stl_crypto`. Monocypher compila en cualquier
-   microcontrolador; el SHA-256 puede venir del chip o de una librería.
+1. **SHA-256 y firma Ed25519,** para llenar el `stl_crypto`. Monocypher está escrita en C
+   portable; el SHA-256 puede venir del chip o de una librería.
 2. **Una consulta HTTPS** al nodo que deje la respuesta en un búfer: lo que hace `stellar_rpc.cpp`
    en el ESP32.
 3. **Dónde guardar la llave** y un generador aleatorio para crearla.
