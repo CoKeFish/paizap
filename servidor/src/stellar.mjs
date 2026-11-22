@@ -154,6 +154,30 @@ export function leerAprobacion(xdrFirmado) {
 }
 
 /**
+ * Comprueba en la red un cobro que firmó el terminal con su propia llave: la transacción `hash`
+ * terminó bien y es exactamente transfer_from(gastador, cliente, comercio, monto) de este token.
+ * Si no lo es, lanza un error y el cobro no se anota.
+ */
+export async function verificarCobro(hash, { gastador, cliente, comercio, monto }) {
+  if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error('hash inválido');
+  const resultado = await rpcServer.pollTransaction(hash, { attempts: 10 });
+  if (resultado.status !== 'SUCCESS') throw new Error(`la transacción ${hash} terminó en ${resultado.status}`);
+  const tx = TransactionBuilder.fromXDR(resultado.envelopeXdr, PASSPHRASE);
+  const operacion = !tx.innerTransaction && tx.operations.length === 1 ? tx.operations[0] : null;
+  const llamada = operacion?.type === 'invokeHostFunction' && operacion.func.type === 'hostFunctionTypeInvokeContract'
+    ? operacion.func.invokeContract
+    : null;
+  if (!llamada || Address.fromScAddress(llamada.contractAddress).toString() !== TOKEN
+      || llamada.functionName.toString() !== 'transfer_from' || llamada.args.length !== 4) {
+    throw new Error(`la transacción ${hash} no es un cobro de este token`);
+  }
+  const [quienGasta, de, para, unidades] = llamada.args.map((valor) => scValToNative(valor));
+  if (quienGasta !== gastador || de !== cliente || para !== comercio || BigInt(unidades) !== aUnidades(monto)) {
+    throw new Error(`la transacción ${hash} no es el cobro esperado`);
+  }
+}
+
+/**
  * Manda a la red una transacción ya firmada por su dueño. Con `patrocinador`, Paizap paga la
  * comisión (fee bump): el dueño no necesita XLM para firmar su permiso.
  */

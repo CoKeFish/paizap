@@ -47,6 +47,7 @@ import * as sesiones from './sesiones.mjs';
 import {
   Keypair, RED, TOKEN, aUnidades, cobrar, cuentaExiste, deUnidades, enviarFirmada, fondearTestnet,
   ledgerEnDias, leerAprobacion, permiso, prepararAprobacion, saldo, simbolo, transferir, vencimientoPermiso,
+  verificarCobro,
 } from './stellar.mjs';
 import * as tarjetas from './tarjetas.mjs';
 
@@ -138,8 +139,18 @@ function leerSaldoComercio(forzar = false) {
   return saldoComercio.valor;
 }
 
+// Cobros que un terminal está firmando él mismo en este momento (id -> momento): entre que los
+// prepara y los registra, ese cobro no se puede pagar también con el QR.
+const enTerminal = new Map();
+const EN_TERMINAL_MS = 3 * 60 * 1000;
+const cobrandoEnTerminal = (id) => enTerminal.has(id) && Date.now() - enTerminal.get(id) < EN_TERMINAL_MS;
+
 // `medio` dice cómo se pagó: acercando la tarjeta ("tarjeta") o escaneando el QR ("qr").
-async function procesarCobro({ id, uid, monto, concepto, medio }) {
+// Cuando el terminal firma el cobro con su propia llave, pasa dos veces por aquí:
+//   soloValidar       revisa la tarjeta, el bloqueo y el límite y devuelve la cuenta, sin cobrar;
+//   hashDelTerminal   el cobro ya está en la red: se comprueba ahí y se anota igual que los demás;
+//   rechazoDelTerminal  la red no dejó pasar el cobro del terminal: solo se anota el rechazo.
+async function procesarCobro({ id, uid, monto, concepto, medio, soloValidar, hashDelTerminal, rechazoDelTerminal }) {
   uid = tarjetas.normalizar(uid);
   monto = String(monto ?? '');
   concepto = String(concepto ?? '').slice(0, 40);
@@ -163,14 +174,26 @@ async function procesarCobro({ id, uid, monto, concepto, medio }) {
   const [estado, cuerpo] = await enCola(async () => {
     const tarjeta = tarjetas.buscar(uid);
     if (!tarjeta) return rechazar(404, 'tarjeta no registrada', undefined, { uid });
-    if (tarjeta.bloqueada) return rechazar(403, 'tarjeta bloqueada', tarjeta.cuenta);
+    if (rechazoDelTerminal) return rechazar(402, rechazoDelTerminal, tarjeta.cuenta);
     const limite = tarjeta.limiteDiario ?? LIMITE_DIARIO;
-    if (historial.gastadoHoy(uid) + aUnidades(monto) > aUnidades(limite)) {
-      return rechazar(402, `supera el limite diario (${limite})`, tarjeta.cuenta);
+    // Un cobro que el terminal ya hizo solo se anota: el bloqueo y el límite se revisaron al prepararlo.
+    if (!hashDelTerminal) {
+      if (tarjeta.bloqueada) return rechazar(403, 'tarjeta bloqueada', tarjeta.cuenta);
+      if (historial.gastadoHoy(uid) + aUnidades(monto) > aUnidades(limite)) {
+        return rechazar(402, `supera el limite diario (${limite})`, tarjeta.cuenta);
+      }
+    }
+    if (soloValidar) {
+      return [200, { ok: true, cuenta: tarjeta.cuenta, comercio: COMERCIO, gastador: toki.publicKey(), token: TOKEN }];
     }
     let hash;
     try {
-      hash = await cobrar(toki, tarjeta.cuenta, COMERCIO, monto);
+      if (hashDelTerminal) {
+        await verificarCobro(hashDelTerminal, { gastador: toki.publicKey(), cliente: tarjeta.cuenta, comercio: COMERCIO, monto });
+        hash = hashDelTerminal;
+      } else {
+        hash = await cobrar(toki, tarjeta.cuenta, COMERCIO, monto);
+      }
     } catch (error) {
       // Sin permiso suficiente, permiso vencido o sin saldo: la red no deja pasar el cobro.
       console.error('cobro rechazado:', error.message);
@@ -180,7 +203,7 @@ async function procesarCobro({ id, uid, monto, concepto, medio }) {
     historial.anotar({ id, uid, cuenta: tarjeta.cuenta, monto, concepto, medio, ok: true, hash, recibo });
     return [200, { ok: true, hash, recibo, monto, cuenta: tarjeta.cuenta, limite }];
   });
-  if (estado !== 200) return [estado, cuerpo];
+  if (estado !== 200 || soloValidar) return [estado, cuerpo];
 
   // El cobro ya está hecho: si estas lecturas fallan, el terminal igual recibe su «aprobado».
   leerSaldoComercio(true);
@@ -274,6 +297,8 @@ async function pagarPedido(id, uid) {
   if ((cobrosHechos[id] || cobrosPorId.has(id)) && pedido.pagadoPor !== uid) {
     return [409, { ok: false, motivo: 'este cobro ya se esta pagando' }];
   }
+  // Alguien acercó la tarjeta y el terminal está firmando ese cobro: no se cobra otra vez por aquí.
+  if (cobrandoEnTerminal(id)) return [409, { ok: false, motivo: 'este cobro ya se esta pagando' }];
   pedido.pagadoPor = uid;
   const inicio = Date.now();
   const [estado, cuerpo] = await cobroUnaVez({ id, uid, monto: pedido.monto, concepto: pedido.concepto, medio: 'qr' });
@@ -654,6 +679,51 @@ http.createServer(async (req, res) => {
         return responder(res, estado, cuerpo);
       }
       return responder(res, 404, { ok: false, motivo: 'ese cobro no llego al servidor' });
+    }
+
+    // Terminal que firma el cobro con su propia llave (SDK), paso 1: el servidor revisa la tarjeta,
+    // el bloqueo y el límite y le dice de qué cuenta cobrar. No cobra.
+    if (req.method === 'POST' && ruta === '/cobros/preparar') {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const pedido = await leerJson(req);
+      const id = String(pedido.id ?? '');
+      if (id && cobrosHechos[id]) return responder(res, 200, cobrosHechos[id]);  // ya lo pagaron (con el QR, o es un reintento)
+      if (id && cobrosPorId.has(id)) {
+        const [estado, cuerpo] = await cobrosPorId.get(id);  // lo están pagando con el QR: espera el resultado
+        return responder(res, estado, cuerpo);
+      }
+      const [estado, cuerpo] = await procesarCobro({ ...pedido, medio: 'tarjeta', soloValidar: true }).catch((error) => {
+        console.error(error);
+        return [500, { ok: false, motivo: 'error del servidor' }];
+      });
+      if (estado === 200 && id) enTerminal.set(id, Date.now());
+      console.log(`${new Date().toISOString()} cobro ${id || '-'} ${pedido.uid} ${pedido.monto} lo firma el terminal -> ${estado} ${cuerpo.motivo ?? 'preparado'}`);
+      return responder(res, estado, cuerpo);
+    }
+
+    // Paso 2: el terminal ya cobró en la red y manda el hash. El servidor lo comprueba en la red y
+    // lo anota (historial, límite diario y recibo), igual que un cobro hecho por él. Si la red
+    // rechazó el cobro, el terminal manda el motivo y solo se anota el rechazo.
+    if (req.method === 'POST' && ruta === '/cobros/registrar') {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const pedido = await leerJson(req);
+      const id = String(pedido.id ?? '');
+      const hash = String(pedido.hash ?? '').toLowerCase();
+      const inicio = Date.now();
+      let estado, cuerpo;
+      if (!hash) {
+        const motivo = String(pedido.motivo ?? '').slice(0, 60) || 'la red rechazo el cobro (saldo o permiso)';
+        [estado, cuerpo] = await procesarCobro({ ...pedido, medio: 'tarjeta', rechazoDelTerminal: motivo });
+      } else {
+        [estado, cuerpo] = await cobroUnaVez({ ...pedido, medio: 'tarjeta', hashDelTerminal: hash });
+      }
+      enTerminal.delete(id);
+      console.log(`${new Date().toISOString()} cobro ${id || '-'} ${pedido.uid} ${pedido.monto} firmado por el terminal -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
+      return responder(res, estado, cuerpo);
     }
 
     if (req.method === 'POST' && ruta === '/cobros') {
