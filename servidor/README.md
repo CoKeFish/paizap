@@ -29,6 +29,39 @@ de [`app/`](../app/README.md), que va dentro de la imagen del servidor.
   (monto, producto, fecha y enlace a la transacción en el explorador de Stellar).
 - `GET /salud`: red, token y comercio.
 
+Un terminal que firma el cobro con su propia llave (ver «Cobro firmado por el terminal» en
+[`hardware/`](../hardware/README.md)) usa dos pasos en vez de `POST /cobros`:
+
+- `POST /cobros/preparar {id, uid, monto, sun, concepto}`: revisa la tarjeta, el bloqueo y el
+  límite diario y responde `{ok, cuenta, comercio, gastador, token}`. No cobra.
+- `POST /cobros/registrar {id, uid, monto, concepto, hash}`: el terminal ya cobró. El servidor
+  comprueba en la red que esa transacción terminó bien y que es exactamente ese cobro, y lo anota
+  como los demás (historial, límite diario y recibo). Con `motivo` en vez de `hash` anota un
+  rechazo de la red.
+
+Para que la red acepte los cobros de un terminal, su llave se autoriza una vez:
+
+```bash
+doppler run --project toki --config dev -- node src/autorizar-terminal.mjs <cuenta G del terminal>
+doppler run --project toki --config dev -- node src/autorizar-terminal.mjs <cuenta G del terminal> quitar
+```
+
+Eso agrega la llave del terminal como firmante de la cuenta de Paizap con peso 1, y deja la llave
+de Paizap con peso 2. Los umbrales bajo y medio quedan en 1 y el alto en 2, así que el terminal
+cobra con los permisos de gasto que ya existen y no puede cambiar los firmantes.
+
+**Lo que esa llave puede hacer de más.** Para la red, la firma del terminal vale para cualquier
+pago o llamada a un contrato en nombre de la cuenta de Paizap, no solo para el cobro que arma el
+firmware: puede usar el permiso de gasto de cualquier cliente hacia cualquier destino y mover el
+saldo de la cuenta. El comercio fijo lo revisa el firmware y el límite diario lo revisa
+`POST /cobros/preparar`; la red no impone ninguno de los dos, y quien saque la llave de un
+terminal se los salta. Lo que lo acota es el monto y el vencimiento de cada permiso de gasto, y
+que a un terminal perdido se le quita la firma con `quitar`. Sirve para un prototipo con un
+terminal a la vista. Para un producto, el permiso de gasto debe estar a nombre de un contrato que
+fije el comercio y los límites de cada terminal, y el terminal firma la llamada a ese contrato.
+
+Mientras un terminal firma un cobro, ese cobro no se puede pagar también con el QR.
+
 Cada cobro lleva un `id`: si el terminal reintenta porque no le llegó la respuesta, recibe la
 misma y no se cobra dos veces. Los cobros hechos y los recibos se guardan en el volumen `datos`,
 así que eso vale aunque el servidor se reinicie. Una tarjeta no registrada se rechaza con su UID,

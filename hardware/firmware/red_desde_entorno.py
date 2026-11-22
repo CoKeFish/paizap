@@ -25,6 +25,11 @@ contenido = (
     "#define SERVIDOR_URL " + cadena_c("TOKI_SERVIDOR_URL") + "\n"
     "#define TERMINAL_TOKEN " + cadena_c("TERMINAL_TOKEN") + "\n"
     "#define PRECIO_FIJO " + cadena_c("TOKI_PRECIO_FIJO") + "\n"
+    # Cobro firmado por el terminal (SDK): ver firma.h
+    "#define FIRMA_TERMINAL " + ("1" if os.environ.get("TOKI_FIRMA_TERMINAL") == "1" else "0") + "\n"
+    "#define COMERCIO_CUENTA " + cadena_c("TOKI_COMERCIO") + "\n"
+    "#define TOKEN_CONTRATO " + cadena_c("TOKI_TOKEN") + "\n"
+    "#define TERMINAL_SEMILLA " + cadena_c("TOKI_TERMINAL_SECRET") + "\n"
 )
 
 ruta = os.path.join(gen, "toki_red.h")
@@ -39,3 +44,4 @@ print("Red: %s · servidor: %s · modo: %s" % (
     os.environ.get("TOKI_SERVIDOR_URL") or "(sin servidor: modo prueba)",
     ("autoservicio a " + os.environ["TOKI_PRECIO_FIJO"]) if os.environ.get("TOKI_PRECIO_FIJO") else "caja",
 ))
+print("Cobro: lo firma " + ("el terminal (SDK)" if os.environ.get("TOKI_FIRMA_TERMINAL") == "1" else "el servidor"))

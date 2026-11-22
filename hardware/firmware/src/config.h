@@ -76,6 +76,38 @@
 #define TERMINAL_TOKEN ""
 #endif
 
+// ---- Cobro firmado por el terminal (SDK) ----
+// Con TOKI_FIRMA_TERMINAL=1 al compilar, el terminal firma y envía él mismo el cobro a Stellar
+// (ver firma.h). Sin eso, el cobro lo firma el servidor, como antes.
+#ifndef FIRMA_TERMINAL
+#define FIRMA_TERMINAL 0
+#endif
+// Nodo RPC de Stellar al que habla el terminal y la red en la que firma.
+#ifndef STELLAR_RPC_HOST
+#define STELLAR_RPC_HOST "soroban-testnet.stellar.org"
+#endif
+#ifndef RED_STELLAR
+#define RED_STELLAR "Test SDF Network ; September 2015"
+#endif
+// Cuenta del comercio de este terminal (TOKI_COMERCIO). Si está, el terminal solo cobra para
+// esa cuenta, diga lo que diga el servidor.
+#ifndef COMERCIO_CUENTA
+#define COMERCIO_CUENTA ""
+#endif
+// Contrato del token con el que cobra (TOKI_TOKEN, una dirección C...). Vacío = XLM de la red.
+#ifndef TOKEN_CONTRATO
+#define TOKEN_CONTRATO ""
+#endif
+// Llave del terminal (TOKI_TERMINAL_SECRET, una S...). Vacía = el terminal crea la suya la
+// primera vez y la guarda en la placa.
+#ifndef TERMINAL_SEMILLA
+#define TERMINAL_SEMILLA ""
+#endif
+// Lo máximo que el terminal acepta pagar de comisión por un cobro, en stroops (0.1 XLM).
+#ifndef COMISION_MAXIMA
+#define COMISION_MAXIMA 1000000
+#endif
+
 // ---- Modo del terminal ----
 // Con precio fijo (variable TOKI_PRECIO_FIJO al compilar, por ejemplo 1.50) el terminal trabaja
 // en autoservicio: sin teclado, cobra ese monto a cada tarjeta que se acerca y activa el relé.

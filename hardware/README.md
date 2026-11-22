@@ -46,8 +46,11 @@ cambia una línea en `firmware/src/config.h`.
 documentación. El RC522 es más barato y está en todas partes, pero solo acepta 3.3 V: conectarlo
 a 5 V lo daña.
 
-**Para después, no para el prototipo:** módulo 4G (SIM7600 o A7670) donde no hay Wi-Fi, carcasa
-impresa en 3D y una placa propia (PCB) que reemplace la protoboard.
+**Carcasa:** el modelo para imprimir en 3D, con sus medidas y el armado, está en
+[`carcasa/`](carcasa/README.md).
+
+**Para después, no para el prototipo:** módulo 4G (SIM7600 o A7670) donde no hay Wi-Fi y una
+placa propia (PCB) que reemplace la protoboard.
 
 ## Configurar el firmware según las piezas
 
@@ -142,7 +145,8 @@ la verificación SUN.
 `firmware/` tiene el programa del terminal. Lee la tarjeta, le pide el cobro al
 [servidor](../servidor/README.md) por Wi-Fi y, si se aprueba, muestra el pago, pita, enciende el
 LED verde, activa el relé un segundo y deja en pantalla un **QR de recibo** que abre la
-transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo.
+transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo. El mismo cobro
+también se puede **pagar con QR** desde el celular, sin la tarjeta.
 
 ### Modos
 
@@ -158,6 +162,20 @@ transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo.
 - El precio fijo se activa al compilar con la variable `TOKI_PRECIO_FIJO` (por ejemplo `1.50`).
   En ese modo, después de cada pago el terminal espera a que retiren la tarjeta, para no cobrarla
   dos veces.
+
+### Pagar con QR
+
+Mientras espera la tarjeta, la pantalla muestra el monto junto a un QR. El cliente elige: acerca
+la tarjeta o escanea el QR con la cámara del celular.
+
+- El QR abre una página del servidor con el monto. Ahí el cliente escribe el código de su cuenta
+  y su PIN, y paga de la misma cuenta de su tarjeta.
+- El terminal consulta al servidor cada 2 segundos. Cuando el pago entra, hace lo mismo que con
+  la tarjeta: aviso, relé y recibo.
+- El cobro tiene un solo identificador para los dos caminos, así que no se puede pagar dos veces.
+- Al cancelar (`A` o `*`), el terminal le avisa al servidor y ese QR deja de servir. Si nadie paga
+  en 4 minutos, el terminal cancela solo; en precio fijo saca un QR nuevo.
+- Si el servidor no responde al preparar el cobro, la pantalla pide solo la tarjeta.
 
 ### Recibo con QR
 
@@ -176,6 +194,8 @@ servidor alcanzó a cobrar. Por eso:
 - Si aun así no hay respuesta, la pantalla dice «Sin confirmar», no «Rechazado», y el terminal
   sigue consultando ese cobro. Si se había cobrado, termina el pago: aviso, relé y recibo.
 - Se pueden configurar dos redes Wi-Fi: el terminal usa la que esté disponible.
+- Al encender, el terminal intenta conectarse hasta tres veces, porque el primer escaneo de redes
+  a veces no encuentra ninguna.
 
 ### Consumo
 
@@ -220,6 +240,48 @@ proyecto.
 | `TOKI_SERVIDOR_URL` | Dirección del servidor, por ejemplo `http://bore.pub:<puerto>` |
 | `TERMINAL_TOKEN` | Clave del terminal ante el servidor |
 | `TOKI_PRECIO_FIJO` | Activa el modo de precio fijo con ese monto |
+| `TOKI_FIRMA_TERMINAL` | Con `1`, el terminal firma el cobro él mismo (ver «Cobro firmado por el terminal») |
+| `TOKI_COMERCIO` | Cuenta del comercio de este terminal; con ella, solo cobra para esa cuenta |
+| `TOKI_TERMINAL_SECRET` | Llave del terminal (`S...`). Vacía: el terminal crea la suya y la guarda |
+| `TOKI_TOKEN` | Contrato del token con el que cobra (`C...`). Vacío: XLM de la red |
+
+### Cobro firmado por el terminal (SDK)
+
+Con `TOKI_FIRMA_TERMINAL=1` el servidor deja de firmar el cobro con tarjeta. El terminal guarda
+una llave, arma el `transfer_from` del permiso de gasto, lo firma y lo manda directo a un nodo de
+Stellar. Para quien usa el terminal todo se ve igual: monto, tarjeta, aviso, relé y recibo.
+
+| Paso | Quién |
+|---|---|
+| Decir de qué cuenta es la tarjeta, y revisar bloqueo y límite diario | Servidor (`POST /cobros/preparar`) |
+| Pedirle a la red la hora, la secuencia y los recursos del cobro | Terminal, al nodo |
+| Armar la transacción y su autorización, firmarla y enviarla | Terminal |
+| Esperar a que la red la confirme | Terminal, al nodo |
+| Comprobar ese cobro en la red, anotarlo y dar el recibo | Servidor (`POST /cobros/registrar`) |
+
+- **El código** está en `firmware/src/sdk/` (núcleo en C sin nada del chip, y el cliente del nodo)
+  y en `firmware/src/firma.cpp`. La firma Ed25519 es de Monocypher (`firmware/lib/monocypher`).
+- **La llave del terminal** tiene que estar autorizada en la red: se agrega como firmante de la
+  cuenta que tiene los permisos de gasto, con `servidor/src/autorizar-terminal.mjs`. Sin esa
+  autorización la red rechaza el cobro. No puede cambiar los firmantes de esa cuenta, pero para
+  la red su firma vale para cualquier pago o llamada a un contrato en nombre de ella, no solo
+  para este cobro: ver «Lo que esa llave puede hacer de más» en
+  [`servidor/`](../servidor/README.md).
+- **La cuenta del terminal** paga la comisión de cada cobro (unos 9 000 stroops en testnet). El
+  terminal la dice al arrancar y con la orden `c` del monitor serie.
+- **Límites que pone el terminal:** solo cobra para `TOKI_COMERCIO`, solo con su token, y no firma
+  si la comisión pasa de 0.1 XLM (`COMISION_MAXIMA` en `config.h`). Son límites del firmware: la
+  red no los impone, así que protegen de un error o de un servidor que pida otra cosa, no de
+  quien saque la llave del terminal.
+- **Si no llega la confirmación**, el terminal dice «Sin confirmar» y sigue preguntándole a la
+  red. La transacción vale 90 segundos: o entra en ese plazo, o no entra nunca.
+- **El pago con QR** no cambia: lo sigue cobrando el servidor.
+- **El nodo** es `soroban-testnet.stellar.org` (`STELLAR_RPC_HOST` en `config.h`). El terminal
+  comprueba su certificado contra la raíz de `firmware/src/sdk/root_ca.h`; otro proveedor puede
+  necesitar otra raíz.
+
+Medido en la ESP32-S3: el SDK suma 23,5 KB de flash; abrir la conexión con el nodo tarda unos 2 s
+la primera vez; de la tarjeta al «aprobado» pasan de 7 a 10 s.
 
 | Entorno | Para |
 |---|---|
