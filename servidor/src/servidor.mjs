@@ -3,6 +3,11 @@
 //
 //   POST /cobros    { id, uid, monto, sun }  cabecera X-Terminal-Token
 //   GET  /cobros/<id>                        consulta un cobro sin cobrar (cabecera X-Terminal-Token)
+//   POST /pedidos   { id, monto, concepto }  deja un cobro listo para pagar con el QR (X-Terminal-Token)
+//   POST /pedidos/<id>/cancelar              lo cancela (X-Terminal-Token)
+//   GET  /p/<id>                             página de pago que abre el QR en el celular
+//   POST /p/<id>/pagar { codigo, pin }       paga desde esa página
+//   POST /tarjetas/pin { uid }               PIN nuevo para pagar desde el celular (X-Admin-Token)
 //   GET  /r/<código>                         recibo: redirige a la transacción en el explorador
 //   POST /tarjetas  { uid, cuenta? }         cabecera X-Admin-Token  (sin cuenta: crea un cliente de testnet)
 //   GET  /tarjetas                           cabecera X-Admin-Token
@@ -11,6 +16,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import { Keypair, RED, TOKEN, cobrar, deUnidades, permiso, saldo } from './stellar.mjs';
 import * as tarjetas from './tarjetas.mjs';
+import { paginaPago } from './pagina-pago.mjs';
 
 function requerida(nombre) {
   if (!process.env[nombre]) {
@@ -66,6 +72,25 @@ function guardarRecibo(hash) {
 }
 const enlaceExplorador = (hash) =>
   `https://stellar.expert/explorer/${RED === 'mainnet' ? 'public' : 'testnet'}/tx/${hash}`;
+
+// Pedidos: cobros que el terminal deja listos para pagar también con el QR. El id del pedido es
+// el mismo id del cobro, así que se pague con la tarjeta o con el QR se cobra una sola vez.
+const pedidos = new Map(); // id -> { monto, concepto, creado, cancelado, pagadoPor }
+const PEDIDO_VIGENCIA_MS = 5 * 60 * 1000;
+const MONEDA = process.env.MONEDA ?? 'XLM de testnet';
+const NOMBRE_COMERCIO = process.env.COMERCIO_NOMBRE ?? 'Comercio de prueba';
+function pedidoVigente(id) {
+  const pedido = pedidos.get(id);
+  if (!pedido || pedido.cancelado || Date.now() - pedido.creado > PEDIDO_VIGENCIA_MS) return null;
+  return pedido;
+}
+// Los motivos del cobro van sin tildes para la pantalla del terminal; en la página se dicen bien.
+function motivoParaPagina(motivo = '') {
+  if (motivo.startsWith('supera el limite diario')) return 'Con este pago superas tu límite diario.';
+  if (motivo.startsWith('la red rechazo')) return 'No hay saldo o permiso suficiente en tu cuenta.';
+  if (motivo.startsWith('monto mayor')) return 'El monto supera el máximo por pago.';
+  return motivo || 'No se pudo cobrar.';
+}
 
 async function procesarCobro({ uid, monto }) {
   uid = tarjetas.normalizar(uid);
@@ -166,6 +191,75 @@ http.createServer(async (req, res) => {
       return res.end();
     }
 
+    // ---- Pago con QR ----
+    // El terminal registra el cobro pendiente para que se pueda pagar desde el celular.
+    if (req.method === 'POST' && req.url === '/pedidos') {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const { id, monto, concepto } = await leerJson(req);
+      if (!/^[\w-]{3,64}$/.test(String(id)) || !/^\d+(\.\d{1,7})?$/.test(String(monto)) || !(Number(monto) > 0)) {
+        return responder(res, 400, { ok: false, motivo: 'datos incompletos' });
+      }
+      for (const [otro, pedido] of pedidos) {
+        if (Date.now() - pedido.creado > PEDIDO_VIGENCIA_MS) pedidos.delete(otro);
+      }
+      pedidos.set(id, { monto: String(monto), concepto: String(concepto ?? '').slice(0, 40), creado: Date.now() });
+      return responder(res, 200, { ok: true, vigenciaSegundos: PEDIDO_VIGENCIA_MS / 1000 });
+    }
+
+    // El terminal cancela el pedido (el comercio canceló o se venció la espera).
+    const cancelacion = req.method === 'POST' && req.url.match(/^\/pedidos\/([\w-]{3,64})\/cancelar$/);
+    if (cancelacion) {
+      if (!autorizado(req, 'x-terminal-token', TERMINAL_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'terminal no autorizado' });
+      }
+      const id = cancelacion[1];
+      if (cobrosHechos[id] || cobrosPorId.has(id)) {
+        return responder(res, 409, { ok: false, motivo: 'ya se esta pagando' });
+      }
+      if (pedidos.has(id)) pedidos.get(id).cancelado = true;
+      return responder(res, 200, { ok: true });
+    }
+
+    // La página que abre el QR en el celular del cliente.
+    const pagina = req.method === 'GET' && req.url.match(/^\/p\/([\w-]{3,64})$/);
+    if (pagina) {
+      const id = pagina[1];
+      const pedido = pedidoVigente(id);
+      const aviso = cobrosHechos[id]
+        ? 'Este cobro ya está pagado.'
+        : pedido ? '' : 'Este cobro ya no está disponible. Pide en la caja que lo generen de nuevo.';
+      res.writeHead(aviso ? 410 : 200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+      return res.end(paginaPago({ id, ...pedido, moneda: MONEDA, comercio: NOMBRE_COMERCIO, aviso }));
+    }
+
+    // El cliente paga desde la página: código de cuenta y PIN. Se cobra de la misma cuenta que su
+    // tarjeta, con el mismo permiso de gasto y el mismo límite diario.
+    const pagoQr = req.method === 'POST' && req.url.match(/^\/p\/([\w-]{3,64})\/pagar$/);
+    if (pagoQr) {
+      const id = pagoQr[1];
+      const pedido = pedidoVigente(id);
+      if (!pedido) {
+        const motivo = cobrosHechos[id] ? 'Este cobro ya está pagado.' : 'Este cobro ya no está disponible.';
+        return responder(res, 410, { ok: false, motivo });
+      }
+      const { codigo, pin } = await leerJson(req);
+      const acceso = tarjetas.entrar(codigo, pin);
+      if (acceso.error) return responder(res, 401, { ok: false, motivo: acceso.error });
+      // Si otra persona ya lo está pagando (con su tarjeta o desde otro celular), no se le muestra
+      // a esta el resultado de aquella.
+      if ((cobrosHechos[id] || cobrosPorId.has(id)) && pedido.pagadoPor !== acceso.uid) {
+        return responder(res, 409, { ok: false, motivo: 'Este cobro ya se está pagando.' });
+      }
+      pedido.pagadoPor = acceso.uid;
+      const inicio = Date.now();
+      const [estado, cuerpo] = await cobroUnaVez({ id, uid: acceso.uid, monto: pedido.monto, concepto: pedido.concepto });
+      if (estado !== 200) pedido.pagadoPor = undefined;
+      console.log(`${new Date().toISOString()} cobro por QR ${id} ${acceso.uid} ${pedido.monto}${pedido.concepto ? ` [${pedido.concepto}]` : ''} -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
+      return responder(res, estado, estado === 200 ? cuerpo : { ok: false, motivo: motivoParaPagina(cuerpo.motivo) });
+    }
+
     // Consulta de un cobro por su id, sin cobrar: la usa el terminal cuando no le llegó la respuesta.
     const consulta = req.method === 'GET' && req.url.match(/^\/cobros\/([\w-]{3,64})$/);
     if (consulta) {
@@ -191,6 +285,17 @@ http.createServer(async (req, res) => {
       const concepto = pedido.concepto ? ` [${String(pedido.concepto).slice(0, 40)}]` : '';
       console.log(`${new Date().toISOString()} cobro ${pedido.id ?? '-'} ${pedido.uid} ${pedido.monto}${concepto} -> ${estado} ${cuerpo.hash ?? cuerpo.motivo} (${Date.now() - inicio} ms)`);
       return responder(res, estado, cuerpo);
+    }
+
+    // PIN nuevo para pagar desde el celular. El PIN se devuelve una sola vez.
+    if (req.method === 'POST' && req.url === '/tarjetas/pin') {
+      if (!ADMIN_TOKEN || !autorizado(req, 'x-admin-token', ADMIN_TOKEN)) {
+        return responder(res, 401, { ok: false, motivo: 'no autorizado' });
+      }
+      const { uid } = await leerJson(req);
+      const acceso = tarjetas.nuevoPin(uid);
+      if (!acceso) return responder(res, 404, { ok: false, motivo: 'tarjeta no registrada' });
+      return responder(res, 200, { ok: true, ...acceso });
     }
 
     if (req.url === '/tarjetas') {

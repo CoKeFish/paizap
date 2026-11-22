@@ -15,9 +15,15 @@ Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(t
   cuando se cayó la conexión y no le llegó la respuesta.
 - `GET /r/<recibo>`: redirige a la transacción en el explorador de Stellar. Es el enlace corto
   que el terminal muestra en el QR del recibo.
+- `POST /pedidos {id, monto, concepto}` con la cabecera `X-Terminal-Token`: deja un cobro listo
+  para pagarlo también con el QR. `POST /pedidos/<id>/cancelar` lo cancela.
+- `GET /p/<id>`: la página de pago que abre el QR del terminal en el celular.
+  `POST /p/<id>/pagar {codigo, pin}` paga desde esa página.
 - `POST /tarjetas {uid, cuenta?}` con la cabecera `X-Admin-Token`: registra una tarjeta. Sin
   cuenta, crea un cliente de testnet con su permiso de gasto (en producción lo firma el dueño
-  desde la app). Las tarjetas se guardan en el volumen `datos`.
+  desde la app). Responde con el código de cuenta y el PIN para pagar con QR. Las tarjetas se
+  guardan en el volumen `datos`.
+- `POST /tarjetas/pin {uid}` con la cabecera `X-Admin-Token`: le pone un PIN nuevo a una tarjeta.
 - `GET /salud`: red, token y comercio.
 
 Cada cobro lleva un `id`: si el terminal reintenta porque no le llegó la respuesta, recibe la
@@ -28,6 +34,28 @@ que el terminal muestra en pantalla.
 Hoy cobra en **XLM de testnet** (su contrato SAC). Para cobrar en USDC basta con poner su
 contrato en `TOKEN_CONTRACT`. La tarjeta se identifica por su UID; la verificación de la
 NTAG 424 DNA (SUN) viene después.
+
+## Pagar con QR
+
+El cliente también puede pagar sin la tarjeta, desde el celular:
+
+```
+Terminal ──POST /pedidos {id, monto}──► Servidor          (el terminal muestra el QR de /p/<id>)
+Celular  ──GET /p/<id>───────────────► página de pago
+Celular  ──POST /p/<id>/pagar {codigo, pin}──► Servidor ──transfer_from──► Stellar
+Terminal ──GET /cobros/<id>──────────► resultado          (lo consulta cada 2 segundos)
+```
+
+- Se paga con el **código de cuenta** (6 dígitos) y el **PIN** (4 dígitos) de la tarjeta. Sale de
+  la misma cuenta, con el mismo permiso de gasto y el mismo límite diario.
+- El pedido usa el mismo `id` que el cobro: se pague con la tarjeta o con el QR, se cobra una sola
+  vez, y al terminal le llega el mismo resultado por cualquiera de los dos caminos.
+- Un pedido vale 5 minutos. Si el terminal lo cancela, vence o ya se pagó, la página lo dice y no
+  deja pagar.
+- Del PIN solo se guarda su hash (scrypt). Tras 5 intentos fallidos seguidos, la cuenta queda
+  bloqueada 10 minutos.
+- La página muestra el nombre del comercio (`COMERCIO_NOMBRE`) y la moneda (`MONEDA`), y recuerda
+  el código de cuenta en ese celular para pedir solo el PIN la próxima vez.
 
 ## Correr
 
@@ -56,10 +84,14 @@ Acerca la tarjeta: el terminal muestra «No registrada» y su UID. Luego:
 doppler run --project toki --config dev -- docker run --rm --network host -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/registrar-tarjeta.mjs 04:11:22:33:44:55:66
 ```
 
+La respuesta trae el código de cuenta y el PIN para pagar con QR. El PIN solo se muestra esa vez;
+si se pierde, `POST /tarjetas/pin` da uno nuevo.
+
 ## Pruebas contra testnet
 
-Tarjeta desconocida, registro, cobro, reintento sin doble cobro y límite diario, comprobados en la
-red:
+Tarjeta desconocida, registro, cobro, reintento sin doble cobro, recibo, pago con QR (PIN
+incorrecto, pago, sin doble cobro entre QR y tarjeta, pedido cancelado) y límite diario,
+comprobados en la red:
 
 ```bash
 doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC -e TERMINAL_TOKEN -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas.mjs
@@ -85,7 +117,9 @@ Si el terminal y este PC están en la misma red, también sirve `http://<IP de e
 ## Pendiente
 
 - Verificar la NTAG 424 DNA (SUN) en vez de confiar en el UID.
-- HTTPS entre el terminal y el servidor (hoy el túnel de pruebas es HTTP sin cifrar).
+- HTTPS entre el terminal, el celular y el servidor (hoy el túnel de pruebas es HTTP sin cifrar,
+  y el PIN de la página de pago viaja así).
+- Guardar los pedidos fuera de la memoria (hoy se pierden si el servidor se reinicia).
 - Guardar los límites diarios en una base de datos (hoy viven en memoria).
 - Devolver el dinero cuando un cobro se hizo pero el terminal nunca llegó a entregar.
 - USDC en vez de XLM.
