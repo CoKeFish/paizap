@@ -26,23 +26,29 @@ testnet, y los arma y firma el núcleo de Stellar MCU SDK compilado para el nave
 
 Cómo está pensada la página:
 
-- **Un momento a la vez.** El panel muestra solo lo que toca: encender, cobrar, pagar o el
-  resultado, con una frase que dice qué pasa y un botón principal.
+- **Primero, la cuenta.** El visitante crea su cuenta en el teléfono del modelo, y se crea de
+  verdad: la llave se genera en el navegador y la red de pruebas abre la cuenta con fondos de
+  prueba. Después el teléfono muestra el saldo y lo último que pasó. Quien ya la creó en ese
+  navegador arranca directo en «cobrar».
+- **Un momento a la vez.** El panel muestra solo lo que toca: crear la cuenta, cobrar, pagar o
+  el resultado, con una frase que dice qué pasa y un botón principal.
 - **El resultado se queda.** El pago aprobado sigue a la vista, con su enlace a la transacción,
   hasta el siguiente cobro. Debajo queda la lista de cobros hechos, con su estado.
-- **El modelo muestra lo mismo y se puede tocar.** Las teclas y la tarjeta responden; el monto
-  es uno solo para el teclado y el campo de la página. El modelo tiene alto propio, siempre
-  encuadra el aparato y la tarjeta enteros, se gira un poco y vuelve solo a su lugar.
+- **El modelo muestra lo mismo y se puede tocar.** El teléfono, las teclas y la tarjeta
+  responden; el monto es uno solo para el teclado y el campo de la página. El modelo tiene alto
+  propio, siempre encuadra el teléfono, el terminal y la tarjeta enteros, se gira un poco y
+  vuelve solo a su lugar.
 - **Lo técnico va plegado:** el registro de lo que hizo el aparato, las cuentas, las consultas
   al nodo y las instrucciones para agentes.
 
 | Carpeta | Qué hay |
 |---|---|
 | `src/pages/demo.astro` | La página de la demo |
-| `src/simulador/aparato.js` | Lo que hace el aparato: cobrar, vigilar la red, aprobar y devolver |
+| `src/simulador/aparato.js` | Lo que pasa: crear la cuenta, cobrar, vigilar la red, aprobar y devolver |
 | `src/simulador/pagina.js` | Une el aparato con el panel, la lista de cobros y el registro |
-| `src/simulador/pantalla.js` | Lo que muestra la pantalla del aparato |
-| `src/simulador/escena.js` | El modelo 3D: la carcasa, el teclado y la tarjeta de prueba |
+| `src/simulador/pantalla.js` | Lo que muestra la pantalla del terminal |
+| `src/simulador/telefono.js` | Lo que muestra el teléfono: cómo se crea la cuenta y la billetera |
+| `src/simulador/escena.js` | El modelo 3D: el terminal, el teléfono y la tarjeta |
 | `src/styles/demo.css` | Los estilos de la demo |
 | `public/modelo/` | La base y la tapa de la carcasa, exportadas de `hardware/carcasa` |
 | `public/simulador/` | El núcleo del SDK compilado (`stellar_mcu.mjs`) y quien hace de placa (`device.mjs`) |
@@ -62,8 +68,8 @@ SDK_DIR=/ruta/a/stellar-mcu-sdk sh simulador/adaptacion/build.sh
 cp simulador/adaptacion/stellar_mcu.mjs public/simulador/
 ```
 
-Para agentes: los botones tienen identificadores fijos (`sim-encender`, `sim-cobrar`,
-`sim-tarjeta`, `sim-devolver`, `sim-otro`), la fase está en `data-fase` de `#simulador` y el
+Para agentes: los botones tienen identificadores fijos (`sim-crear`, `sim-cobrar`,
+`sim-tarjeta`, `sim-devolver`, `sim-otro`, `sim-reintentar` y `sim-reiniciar`), la fase está en `data-fase` de `#simulador` y el
 estado completo, en JSON, en `#sim-datos`. Sin navegador, `agentes/demo.mjs` hace el mismo
 recorrido. Todo está explicado en `/llms.txt`.
 

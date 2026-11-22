@@ -1,4 +1,4 @@
-// Saca el retrato del aparato para la portada: abre la demo, enciende, cobra 2.50 y captura solo
+// Saca el retrato para la portada: abre la demo, crea la cuenta, cobra 2.50 y captura solo
 // el modelo 3D, con el fondo transparente. Deja /out/aparato-crudo.png, que después se recorta.
 //
 //   docker run --rm --ipc=host -v <carpeta de salida>:/out -v <esta carpeta>:/src:ro //     mcr.microsoft.com/playwright:v1.49.0-jammy sh -c //     'mkdir /w && cd /w && npm init -y && npm i playwright@1.49.0 && cp /src/retrato.mjs . && node retrato.mjs'
@@ -21,9 +21,11 @@ await pagina.addStyleTag({
 });
 await pagina.waitForFunction(() => !document.getElementById('sim-pista').textContent.startsWith('Cargando'), null, { timeout: 60000 });
 console.log('modelo listo');
-await pagina.click('#sim-encender');
+// En un navegador nuevo todavía no hay cuenta: se crea, como haría un visitante.
+await pagina.waitForSelector('#simulador:not([data-fase="preparando"])', { timeout: 60000 });
+if (await pagina.getAttribute('#simulador', 'data-fase') === 'sin-cuenta') await pagina.click('#sim-crear');
 await pagina.waitForSelector('#simulador[data-fase="listo"]', { timeout: 120000 });
-console.log('aparato encendido');
+console.log('cuenta lista');
 await pagina.fill('#sim-monto', '2.50');
 await pagina.click('#sim-cobrar');
 await pagina.waitForSelector('#sim-tarjeta:not([disabled])', { timeout: 30000 });

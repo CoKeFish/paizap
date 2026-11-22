@@ -21,26 +21,30 @@ prueba a friendbot.
 
 Página: ${raiz}demo/
 
-El panel muestra un solo momento a la vez: encender, cobrar, pagar y el resultado. La fase está en
-el atributo \`data-fase\` de \`#simulador\`: apagado, encendiendo, listo, esperando, aprobado o
-error. Espera las fases, no los textos.
+El panel muestra un solo momento a la vez: crear la cuenta, cobrar, pagar y el resultado. La fase
+está en el atributo \`data-fase\` de \`#simulador\`: preparando, sin-cuenta, creando, listo,
+esperando, aprobado o error. Espera las fases, no los textos.
 
-1. Pulsa el botón \`#sim-encender\` («Encender el aparato») y espera \`data-fase="listo"\`. Tarda
-   de 3 a 20 segundos.
+1. Espera a que la fase deje de ser \`preparando\`. Si es \`sin-cuenta\`, pulsa \`#sim-crear\`
+   («Crear mi cuenta») y espera \`data-fase="listo"\`: se crea de verdad la cuenta de quien paga, con
+   fondos de prueba. Tarda de 4 a 20 segundos. Si ya es \`listo\`, la cuenta estaba creada en este
+   navegador. Si queda en \`error\`, pulsa \`#sim-reintentar\` («Volver a intentar»).
 2. Escribe un monto en XLM en el campo \`#sim-monto\` (de 0.01 a 100) y pulsa \`#sim-cobrar\`
    («Cobrar»). La fase pasa a \`esperando\`: el aparato arma el cobro y vigila la red.
-3. Pulsa \`#sim-tarjeta\` («Pagar con la tarjeta de prueba») y espera \`data-fase="aprobado"\`.
+3. Pulsa \`#sim-tarjeta\` («Pagar con la tarjeta») y espera \`data-fase="aprobado"\`.
    Tarda de 3 a 15 segundos. La fase se queda en \`aprobado\` hasta el siguiente cobro.
-4. Opcional: pulsa \`#sim-devolver\` («Devolver este pago») para que el aparato firme y envíe él
+4. Opcional: pulsa \`#sim-devolver\` («Devolver este pago») para que el terminal firme y envíe él
    mismo un pago. Termina cuando \`ultimoPago.devolucion\` deja de ser nulo.
 5. Para cobrar de nuevo, pulsa \`#sim-otro\` («Cobrar otra vez») y vuelve al paso 2.
+6. Para volver a ver cómo se crea la cuenta, pulsa \`#sim-reiniciar\` («Empezar de cero, con una
+   cuenta nueva»): la página se recarga y vuelve a la fase \`sin-cuenta\`.
 
 Dónde leer el resultado:
 
-- \`#sim-datos\`: el estado en JSON. Trae \`fase\`, las cuentas, \`cobro\` (el cobro en espera),
+- \`#sim-datos\`: el estado en JSON. Trae \`fase\`, \`cuenta\` (la de quien paga, con su saldo), \`cobro\` (el cobro en espera),
   \`ultimoPago\` (con su \`hash\`, su \`enlace\` y su \`devolucion\`) y \`cobros\` (los cobros hechos).
 - \`#sim-estado\`: una frase con lo que pasa ahora.
-- \`#sim-registro\`: la lista de lo que hizo el aparato, con un enlace a cada transacción en
+- \`#sim-registro\`: la lista de lo que pasó, con un enlace a cada cuenta y transacción en
   stellar.expert.
 
 ## Usar el simulador sin navegador

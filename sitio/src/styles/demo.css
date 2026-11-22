@@ -183,6 +183,7 @@
 
 .etapa {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* la columna no se ensancha por lo que lleva dentro */
   gap: 0.75rem;
 }
 .etapa[hidden] {
@@ -237,6 +238,63 @@
 .boton-texto:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Cómo se crea la cuenta: dos pasos, cada uno con su marca. */
+.alta {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.alta li {
+  position: relative;
+  padding-left: 2rem;
+  color: var(--noche-suave);
+  font-size: 0.95rem;
+}
+.alta li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid var(--noche-linea);
+  border-radius: 50%;
+}
+.alta li[data-estado='en-curso'] {
+  color: #fff;
+}
+.alta li[data-estado='en-curso']::before {
+  border-color: var(--rayo);
+  border-top-color: transparent;
+  animation: girar 0.9s linear infinite;
+}
+.alta li[data-estado='hecho'] {
+  color: #c5ffe0;
+}
+.alta li[data-estado='hecho']::before {
+  content: '✓';
+  display: grid;
+  place-items: center;
+  border-color: #3dff9a;
+  background: #3dff9a;
+  color: var(--noche);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+@keyframes girar {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .alta li[data-estado='en-curso']::before {
+    border-top-color: var(--rayo);
+    animation: none;
+  }
 }
 
 /* El QR va plegado: es el camino de quien tiene una billetera de testnet. */
@@ -300,7 +358,11 @@
 .sim-abajo {
   display: grid;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+}
+.reiniciar {
+  justify-self: end;
+  font-size: 0.9rem;
 }
 .cobros {
   margin-bottom: 0.5rem;

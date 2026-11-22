@@ -53,22 +53,18 @@ export function dibujarPantalla(ctx, estado) {
   ctx.fillStyle = '#02040a';
   ctx.fillRect(0, 0, ANCHO, ALTO);
 
-  if (estado.fase === 'apagado') {
-    texto(ctx, 'Apagado', 128, 54, 14, { alinear: 'center', color: '#3a5566' });
-    return;
-  }
-
-  if (estado.fase === 'encendiendo') {
-    cabecera(ctx, 'iniciando');
-    texto(ctx, 'Creando la llave', 6, 36, 16, { grueso: true });
-    texto(ctx, 'y pidiendo fondos de prueba...', 6, 62, 11, { color: TENUE });
+  // Antes de que exista la cuenta de quien paga, el terminal espera encendido.
+  if (estado.fase === 'preparando' || estado.fase === 'sin-cuenta' || estado.fase === 'creando') {
+    cabecera(ctx, 'en espera');
+    texto(ctx, 'Terminal listo', 6, 36, 22, { grueso: true });
+    texto(ctx, estado.fase === 'preparando' ? 'Preparando...' : 'Falta la cuenta de quien paga', 6, 76, 11, { color: TENUE });
     return;
   }
 
   if (estado.fase === 'error') {
     cabecera(ctx, 'error');
     texto(ctx, 'Sin conexion', 6, 40, 20, { grueso: true });
-    texto(ctx, 'Vuelva a encender el aparato', 6, 76, 11, { color: TENUE });
+    texto(ctx, 'Vuelva a intentar', 6, 76, 11, { color: TENUE });
     return;
   }
 
