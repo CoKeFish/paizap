@@ -1,0 +1,89 @@
+/*
+ * La documentación con la identidad de Paizap. Starlight se pinta con sus propias variables
+ * (--sl-*): aquí se les dan los colores y la letra de marca.css.
+ */
+
+/* Tema oscuro: azul noche de fondo, amarillo para lo que se toca. */
+:root {
+  --sl-font: var(--letra);
+  --sl-font-mono: var(--letra-codigo);
+
+  --sl-color-accent-low: #3d3200;
+  --sl-color-accent: #ffcd00;
+  --sl-color-accent-high: #ffe680;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #eef1f8;
+  --sl-color-gray-2: #c3cbe0;
+  --sl-color-gray-3: #a7b2cf;
+  --sl-color-gray-4: #5f6d94;
+  --sl-color-gray-5: #26355f;
+  --sl-color-gray-6: #0d1a3d;
+  --sl-color-black: #000b25;
+
+  --sl-color-text-accent: #ffcd00;
+}
+
+/* Tema claro: fondo claro, azul para los enlaces. El amarillo no va como texto sobre claro. */
+:root[data-theme='light'] {
+  --sl-color-accent-low: #dfe6fb;
+  --sl-color-accent: #2447c6;
+  --sl-color-accent-high: #0f2470;
+  --sl-color-white: #000b25;
+  --sl-color-gray-1: #111c3c;
+  --sl-color-gray-2: #2b3657;
+  --sl-color-gray-3: #56617b;
+  --sl-color-gray-4: #8892ab;
+  --sl-color-gray-5: #c5ccdc;
+  --sl-color-gray-6: #e7ebf3;
+  --sl-color-gray-7: #f1f3f8;
+  --sl-color-black: #ffffff;
+
+  --sl-color-text-accent: #2447c6;
+}
+
+/* La barra de arriba es la franja azul noche, en los dos temas: ahí vive el logo. */
+header.header {
+  background: var(--noche);
+  border-bottom: 1px solid var(--noche-linea);
+  color: #fff;
+}
+/* El nombre del SDK, en la letra de marca. */
+header.header .site-title {
+  font: italic 800 1.6rem/1 var(--letra-marca);
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+:root[data-theme='light'] header.header {
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #eef1f8;
+  --sl-color-gray-2: #c3cbe0;
+  --sl-color-gray-3: #a7b2cf;
+  --sl-color-gray-4: #5f6d94;
+  --sl-color-gray-5: #26355f;
+  --sl-color-gray-6: #0d1a3d;
+  --sl-color-black: #000b25;
+  --sl-color-text-accent: #ffcd00;
+  --sl-color-accent: #ffcd00;
+  --sl-color-accent-high: #ffe680;
+}
+
+/* Títulos de página en la letra de marca. Los demás títulos, en Barlow gruesa. */
+.sl-markdown-content h1,
+h1#_top {
+  font-family: var(--letra-marca);
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  line-height: 0.98;
+  letter-spacing: 0.005em;
+}
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4 {
+  font-weight: 700;
+}
+
+/* Las tablas de medidas se leen como una hoja de datos: cifras alineadas. */
+.sl-markdown-content table {
+  font-variant-numeric: tabular-nums;
+}

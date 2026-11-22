@@ -1,0 +1,147 @@
+---
+title: Pagar
+description: Armar, firmar y enviar un pago desde el aparato, y saber si entró.
+---
+
+El aparato arma el pago, lo firma con su llave y lo envía a la red. Son cuatro pasos: saber dos
+cosas de la red, armar y firmar, enviar, y esperar la confirmación.
+
+Los fragmentos salen del ejemplo `examples/esp32_pay_and_confirm`, que está completo en el
+[inicio rápido](../../inicio-rapido/#el-programa).
+
+## 1. Lo que hay que saber de la red
+
+Una transacción lleva la **secuencia** de la cuenta que paga (la que tiene ahora, más uno) y una
+**vigencia**. Las dos salen de dos consultas al nodo:
+
+```cpp
+// Balance and sequence number of an account. false if the account does not exist on the network yet.
+static bool read_account(const uint8_t account[32], int64_t *balance, int64_t *sequence) {
+  uint8_t key[40], entry[200];
+  char key_b64[64];
+  stl_account_key(key, account);
+  stl_b64_encode(key, 40, key_b64, sizeof key_b64);
+  snprintf(stellar_rpc::params(), stellar_rpc::paramsCap(), "{\"keys\":[\"%s\"]}", key_b64);
+  if (!stellar_rpc::call("getLedgerEntries", stellar_rpc::params())) return false;
+  size_t n = 0;
+  const char *xdr = stl_json_string(stellar_rpc::body(), "xdr", &n);
+  if (!xdr) return false;
+  int bytes = stl_b64_decode(xdr, n, entry, sizeof entry);
+  return bytes > 0 && stl_account_parse(entry, (size_t)bytes, balance, sequence);
+}
+
+// Latest ledger and its close time: that time sets the validity window, with no clock on board.
+static bool network_status(int64_t *ledger, int64_t *close_time) {
+  return stellar_rpc::call("getHealth", nullptr) && stl_json_int(stellar_rpc::body(), "latestLedger", ledger) &&
+         stl_json_int(stellar_rpc::body(), "latestLedgerCloseTime", close_time);
+}
+```
+
+Si la cuenta no existe en la red, la respuesta no trae `xdr`: hay que cargarle fondos primero.
+
+:::caution[No uses getLatestLedger]
+Su respuesta pesa unos 600 KB: no cabe en un microcontrolador. `getHealth` da el último ledger y
+su hora de cierre en 205 bytes.
+:::
+
+## 2. Armar y firmar
+
+Los datos del pago van en un `stl_tx`. El pago se escribe sobre un búfer tuyo:
+
+```cpp
+stl_tx t;
+memset(&t, 0, sizeof t);
+memcpy(t.source, g_public, 32);                     // the account that pays
+t.fee = 100;                                        // in stroops: the network minimum for a payment
+t.sequence = sequence + 1;
+t.valid_until = (uint64_t)close_time + VALIDITY_S;  // the time comes from the node
+t.has_memo = true;
+t.memo = ORDER_NUMBER;
+
+stl_xdr x;
+uint8_t hash[32];
+stl_tx_begin(&x, g_envelope, sizeof g_envelope, g_network_id);
+stl_tx_payment(&x, &t, g_destination, NULL, AMOUNT);  // NULL = XLM
+stl_tx_sign(&x, &CRYPTO, g_seed, g_public, hash);     // hash = the transaction id
+```
+
+Un pago firmado ocupa 224 bytes. Armarlo y firmarlo tarda 7 milisegundos en una ESP32-S3.
+
+### El monto
+
+Los montos van en unidades mínimas: 1 XLM son 10.000.000. Para no usar coma flotante, pasa el
+texto con `stl_amount_parse`:
+
+```cpp
+int64_t units;
+stl_amount_parse("1.5", &units);  // 15000000
+```
+
+### Otro activo
+
+Para pagar en un activo emitido, como USDC, pasa un `stl_asset` con su código y su emisor en lugar
+de `NULL`. La cuenta que recibe necesita tener habilitado ese activo.
+
+```cpp
+stl_asset usdc = {false, "USDC", {0}};
+stl_addr_decode("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",  // issuer on testnet
+                STL_ADDR_ACCOUNT, usdc.issuer);
+stl_tx_payment(&x, &t, g_destination, &usdc, units);
+```
+
+### El memo
+
+El memo es un número que viaja con el pago: el número de pedido. Sirve para que quien recibe sepa
+a qué venta corresponde: [al confirmar](../confirmar/), llega junto al monto.
+
+### La red
+
+`g_network_id` es el SHA-256 del nombre de la red. La firma lo cubre, así que una transacción
+firmada para testnet no vale en mainnet.
+
+| Red | Nombre |
+|---|---|
+| Testnet | `Test SDF Network ; September 2015` |
+| Mainnet | `Public Global Stellar Network ; September 2015` |
+
+## 3. Enviar
+
+El sobre firmado se manda en base64 con `sendTransaction`:
+
+```cpp
+if (x->overflow || !stl_b64_encode(stl_tx_envelope(x), stl_tx_envelope_len(x), g_b64, sizeof g_b64)) return false;
+snprintf(stellar_rpc::params(), stellar_rpc::paramsCap(), "{\"transaction\":\"%s\"}", g_b64);
+if (!stellar_rpc::call("sendTransaction", stellar_rpc::params())) return false;
+```
+
+Antes de enviar se comprueba `overflow`: queda en `true` si la transacción no cupo en el búfer.
+
+**Reenviar la misma transacción es seguro.** Si no llegó respuesta, vuelve a enviarla: la red la
+acepta una sola vez. Lo que no hay que hacer es armar otra distinta mientras la primera siga
+vigente.
+
+## 4. Esperar la confirmación
+
+Con el identificador de la transacción se pregunta por su estado, una vez por segundo:
+
+```cpp
+snprintf(stellar_rpc::params(), stellar_rpc::paramsCap(), "{\"hash\":\"%s\"}", hash_hex);
+if (!stellar_rpc::call("getTransaction", stellar_rpc::params())) continue;
+status = stl_json_string(stellar_rpc::body(), "status", &n);
+if (status && !strncmp(status, "SUCCESS", 7)) return true;
+if (status && !strncmp(status, "FAILED", 6)) return false;
+```
+
+| `status` | Qué significa |
+|---|---|
+| `SUCCESS` | El pago entró. |
+| `FAILED` | La red lo rechazó. |
+| `NOT_FOUND` | Todavía no está. Si ya pasó la vigencia, no va a entrar nunca. |
+
+De enviar a confirmado pasan entre 3 y 6 segundos.
+
+:::tip[Cuando no llega la respuesta]
+Un pago sin confirmar no es un pago fallido. Guarda el identificador y la hora de vencimiento y
+vuelve a preguntar. Cuando la hora de la red pasa del vencimiento y la transacción sigue sin
+estar, es seguro darla por no hecha.
+:::

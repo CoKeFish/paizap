@@ -1,0 +1,43 @@
+/*
+ * La identidad de Paizap para el sitio: los mismos colores y la misma letra que la app
+ * (app/src/index.css). La usan la portada y la documentación.
+ */
+
+@font-face { font-family: "Barlow"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fuentes/barlow-400.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fuentes/barlow-500.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fuentes/barlow-600.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fuentes/barlow-700.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 800; font-style: italic; font-display: swap; src: url("/fuentes/barlow-condensada-800-cursiva.woff2") format("woff2"); }
+
+:root {
+  /* Del logo */
+  --noche: #000b25;        /* azul noche: el fondo del logo */
+  --rayo: #ffcd00;         /* amarillo: «ZAP» y los arcos */
+  --rayo-fuerte: #ecbb00;
+
+  /* Sobre el azul noche */
+  --noche-alta: #0d1a3d;   /* cuadros sobre el azul */
+  --noche-linea: #26355f;  /* bordes y líneas */
+  --noche-suave: #a7b2cf;  /* texto secundario */
+
+  /* Sobre fondo claro */
+  --fondo: #f1f3f8;
+  --panel: #ffffff;
+  --borde: #dce1ec;
+  --texto: #000b25;
+  --suave: #56617b;
+  --acento: #2447c6;       /* enlaces y foco */
+
+  --letra: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --letra-marca: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  --letra-codigo: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* La letra de marca: gruesa, angosta e inclinada, como el logo. Para títulos y cifras. */
+.titulo-marca {
+  font-family: var(--letra-marca);
+  font-weight: 800;
+  font-style: italic;
+  line-height: 0.95;
+  letter-spacing: 0.005em;
+}

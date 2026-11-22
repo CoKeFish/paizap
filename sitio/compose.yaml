@@ -1,0 +1,8 @@
+# El sitio de Paizap y la documentación del SDK, en http://localhost:8093
+#   docker compose up -d --build
+services:
+  sitio:
+    build: .
+    ports:
+      - "${PUERTO_SITIO:-8093}:80"
+    restart: unless-stopped

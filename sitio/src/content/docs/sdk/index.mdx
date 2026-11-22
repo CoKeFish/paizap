@@ -1,0 +1,70 @@
+---
+title: Stellar MCU SDK
+description: Librería abierta para que un microcontrolador cobre, confirme y firme pagos en Stellar, sin un servidor en el medio.
+sidebar:
+  label: Qué es
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+**Pagos de Stellar en cualquier aparato.** Stellar MCU SDK es una librería abierta para que un
+microcontrolador cobre, confirme y firme pagos en [Stellar](https://stellar.org), sin un servidor
+en el medio. Está hecha por [Paizap](../).
+
+Es para quienes construyen aparatos que cobran: integradores y fabricantes de máquinas, y los
+proyectos de Stellar que trabajan con hardware.
+
+## Qué hace
+
+| | Qué hace el aparato |
+|---|---|
+| **Cobrar** | Arma el pedido de pago (SEP-7) para mostrarlo como QR. |
+| **Confirmar** | Le pregunta a un nodo de Stellar RPC y comprueba él mismo que el pago llegó, con su monto y su número de pedido. |
+| **Pagar** | Guarda su llave, arma la transacción, la firma y la envía: un pago común o una llamada a un contrato de token (`transfer`, `transfer_from`). |
+
+## Cómo se ve
+
+Un pago, de principio a fin, desde la placa:
+
+```c
+stl_tx t = {0};
+memcpy(t.source, public_key, 32);
+t.fee = 100;
+t.sequence = sequence + 1;              // leída del nodo con getLedgerEntries
+t.valid_until = close_time + 120;       // la hora la da el nodo: no hace falta reloj propio
+t.has_memo = true;
+t.memo = 4242;                          // el número de pedido
+
+stl_xdr x;
+uint8_t hash[32];
+stl_tx_begin(&x, envelope, sizeof envelope, network_id);
+stl_tx_payment(&x, &t, destination, NULL, 10000000);   // 1 XLM
+stl_tx_sign(&x, &CRYPTO, seed, public_key, hash);      // firma en el aparato
+// ...y el sobre va en base64 a sendTransaction
+```
+
+El código y sus comentarios están en inglés; esta documentación, en español.
+
+## Qué está comprobado
+
+- Lo que arma el núcleo coincide **byte a byte** con el SDK oficial de JavaScript, en 20 de 20
+  comparaciones.
+- Una ESP32-S3 **pagó sola en testnet** y después detectó sus pagos en los eventos de la red.
+- Un terminal con tarjeta NFC **firma sus cobros** con el SDK. Es
+  [la demo de Paizap](./demo-terminal/).
+- El núcleo ocupa **3,4 KB** y la firma, **18 KB**. Firmar tarda **7 milisegundos** y un pago queda
+  confirmado en **3 a 6 segundos**.
+
+El detalle de cada cifra está en [Medidas](./referencia/medidas/).
+
+## Por dónde seguir
+
+<CardGrid>
+  <LinkCard title="Inicio rápido" description="Tu placa hace su primer pago en testnet." href="./inicio-rapido/" />
+  <LinkCard title="Pagar" description="Armar, firmar y enviar un pago desde el aparato." href="./guias/pagar/" />
+  <LinkCard title="Confirmar un pago" description="Saber, en el propio aparato, que el pago llegó." href="./guias/confirmar/" />
+  <LinkCard title="Referencia del núcleo" description="Cada función, con lo que recibe y lo que devuelve." href="./referencia/nucleo/" />
+</CardGrid>
+
+El código está en [github.com/CoKeFish/stellar-mcu-sdk](https://github.com/CoKeFish/stellar-mcu-sdk),
+con licencia Apache 2.0.

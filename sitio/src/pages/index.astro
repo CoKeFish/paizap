@@ -1,0 +1,421 @@
+---
+// Página de Paizap. Arriba, el terminal simulado: cobra de verdad en Stellar testnet y se maneja
+// con el modelo 3D o con los botones (pensados también para agentes que usan el navegador).
+// Debajo, qué es Paizap, el terminal real y el SDK con el que está hecho.
+import '../styles/marca.css';
+import '../styles/portada.css';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const docs = `${base}sdk/`;
+const REPO_PAIZAP = 'https://github.com/CoKeFish/paizap';
+const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
+// Enlace al video del aparato real. Vacío: la página no lo menciona.
+const VIDEO = '';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000b25" />
+    <title>Paizap: aparatos que cobran en Stellar</title>
+    <meta
+      name="description"
+      content="Paizap construye aparatos que cobran en Stellar. Prueba su terminal en un simulador que paga de verdad en la red de pruebas."
+    />
+    <link rel="icon" type="image/png" href={`${base}favicon.png`} />
+    <link rel="apple-touch-icon" href={`${base}icono.png`} />
+    <link rel="alternate" type="text/plain" href={`${base}llms.txt`} title="Paizap para agentes" />
+  </head>
+  <body data-base={base}>
+    <header class="noche portada">
+      <nav class="ancho barra" aria-label="Principal">
+        <a href={base} class="marca"><img src={`${base}logo-franja.png`} alt="Paizap" width="76" height="56" /></a>
+        <ul>
+          <li><a href="#simulador">Simulador</a></li>
+          <li><a href="#terminal">El terminal</a></li>
+          <li><a href="#sdk">El SDK</a></li>
+          <li><a href={docs}>Documentación</a></li>
+        </ul>
+      </nav>
+
+      <div class="ancho titular">
+        <h1 class="titulo-marca">Aparatos que cobran en Stellar.</h1>
+        <p class="entrada">
+          Paizap construye aparatos que cobran en Stellar. El primero es un terminal que cobra con un toque de tarjeta
+          y firma él mismo cada cobro. Pruébalo aquí abajo.
+        </p>
+      </div>
+
+      <section id="simulador" class="ancho sim" aria-labelledby="sim-titulo" data-fase="apagado">
+        <div class="sim-cabecera">
+          <h2 id="sim-titulo" class="titulo-marca">Prueba el terminal</h2>
+          <p class="sello">Simulador · Stellar testnet</p>
+        </div>
+        <p class="sim-aviso">
+          <strong>Esto es un simulador:</strong> no hay una placa detrás. Los pagos sí son reales, en la red de pruebas
+          de Stellar, y los arma y firma el mismo núcleo que corre en el terminal.
+          {VIDEO && <a href={VIDEO}>Mira el aparato real en el video.</a>}
+        </p>
+
+        <div class="sim-cuerpo">
+          <div class="sim-3d">
+            <canvas id="sim-lienzo" aria-label="Modelo 3D del terminal de Paizap. Los botones de la derecha hacen lo mismo."></canvas>
+            <p class="sim-pista" id="sim-pista">Cargando el modelo…</p>
+          </div>
+
+          <div class="sim-panel">
+            <figure class="sim-pantalla">
+              <canvas id="sim-pantalla" width="512" height="256" aria-hidden="true"></canvas>
+              <figcaption>La pantalla del aparato</figcaption>
+            </figure>
+            <p id="sim-estado" class="sim-estado" role="status" aria-live="polite">El aparato está apagado.</p>
+
+            <ol class="pasos">
+              <li>
+                <h3>Enciende el aparato</h3>
+                <p>Crea su llave y pide fondos de prueba. Tarda unos segundos.</p>
+                <button type="button" id="sim-encender" class="boton rayo">Encender el aparato</button>
+              </li>
+              <li>
+                <h3>Cobra</h3>
+                <p>Escribe el monto aquí, o en el teclado del aparato y pulsa <kbd>#</kbd>.</p>
+                <div class="fila">
+                  <label for="sim-monto">Monto en XLM</label>
+                  <input id="sim-monto" name="monto" inputmode="decimal" autocomplete="off" value="1.50" disabled />
+                  <button type="button" id="sim-cobrar" class="boton rayo" disabled>Cobrar</button>
+                </div>
+              </li>
+              <li>
+                <h3>Paga</h3>
+                <p>Acerca la tarjeta de prueba, o paga el QR desde una billetera de testnet.</p>
+                <div class="fila">
+                  <button type="button" id="sim-tarjeta" class="boton rayo" disabled>Acercar la tarjeta de prueba</button>
+                  <button type="button" id="sim-cancelar" class="boton linea" disabled>Cancelar el cobro</button>
+                </div>
+                <figure id="sim-pedido" class="pedido" hidden>
+                  <img id="sim-qr" alt="Código QR del pedido de pago" width="148" height="148" />
+                  <figcaption>
+                    Pedido <span id="sim-pedido-numero"></span>. El aparato vigila la red hasta ver este pago.
+                    <code id="sim-solicitud"></code>
+                  </figcaption>
+                </figure>
+              </li>
+              <li>
+                <h3>Devuelve el pago</h3>
+                <p>Ahora firma el aparato: arma la devolución, la firma con su llave y la envía.</p>
+                <button type="button" id="sim-devolver" class="boton linea" disabled>Devolver el último pago</button>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="sim-resultados">
+          <div>
+            <h3>Qué pasó</h3>
+            <ol id="sim-registro" class="registro" aria-live="polite">
+              <li class="vacio">Todavía nada. Enciende el aparato.</li>
+            </ol>
+          </div>
+          <div>
+            <h3>Datos</h3>
+            <dl class="datos">
+              <div><dt>Cuenta del aparato</dt><dd id="sim-cuenta-aparato">—</dd></div>
+              <div><dt>Cuenta de la tarjeta de prueba</dt><dd id="sim-cuenta-tarjeta">—</dd></div>
+              <div><dt>Último cobro</dt><dd id="sim-ultimo">—</dd></div>
+              <div><dt>Última devolución</dt><dd id="sim-devolucion">—</dd></div>
+              <div><dt>Cobros aprobados</dt><dd id="sim-ventas">0</dd></div>
+            </dl>
+            <h3>Consultas al nodo</h3>
+            <pre id="sim-monitor" class="monitor" aria-label="Consultas que el aparato le hace al nodo de Stellar">—</pre>
+          </div>
+        </div>
+        <script type="application/json" id="sim-datos">{"fase":"apagado"}</script>
+      </section>
+    </header>
+
+    <main>
+      <section class="ancho bloque" aria-labelledby="pasa-titulo">
+        <h2 id="pasa-titulo" class="titulo-marca">Qué hace el aparato en cada paso</h2>
+        <div class="tres">
+          <article>
+            <h3>Cobra</h3>
+            <p>
+              Arma un pedido de pago con el monto y un número de pedido, y lo muestra como QR. Es el formato que leen
+              las billeteras de Stellar.
+            </p>
+          </article>
+          <article>
+            <h3>Confirma</h3>
+            <p>
+              Le pregunta a un nodo de Stellar y comprueba él mismo que el pago llegó, con su monto y su número de
+              pedido. No le cree a un servidor: mira la red.
+            </p>
+          </article>
+          <article>
+            <h3>Paga</h3>
+            <p>
+              Guarda su propia llave. Cuando devuelve un pago arma la transacción, la firma y la envía, sin que nadie
+              firme por él.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="terminal" class="bloque franja-clara" aria-labelledby="terminal-titulo">
+        <div class="ancho dos">
+          <div>
+            <h2 id="terminal-titulo" class="titulo-marca">El terminal de verdad</h2>
+            <p class="entrada">
+              Una tarjeta NFC y un terminal de bajo costo que cobran en dólares digitales. Quien paga acerca la
+              tarjeta y el comercio o la máquina cobra en segundos, sin celular, sin efectivo y sin cambio.
+            </p>
+            <ul class="lista">
+              <li>
+                <strong>El dueño de la cuenta pone un tope de gasto</strong> y la red lo hace cumplir: el terminal
+                nunca puede cobrar más de lo autorizado.
+              </li>
+              <li>
+                <strong>El terminal firma cada cobro.</strong> De la tarjeta al «aprobado» pasan de 7 a 9 segundos,
+                con la confirmación de la red incluida.
+              </li>
+              <li>
+                <strong>Dos modos.</strong> En una caja, el vendedor escribe el monto. En una máquina, el precio es
+                fijo y al cobrar un relé la activa: expendedora, dispensador de agua, lavandería, torniquete.
+              </li>
+              <li>
+                <strong>Componentes por menos de USD 40:</strong> una placa ESP32-S3, un lector NFC, una pantalla, un
+                teclado y un relé.
+              </li>
+            </ul>
+            <p>
+              <a class="boton noche-boton" href={`${docs}demo-terminal/`}>Cómo cobra el terminal</a>
+              <a class="enlace" href={REPO_PAIZAP}>El código, en GitHub</a>
+            </p>
+          </div>
+          <figure class="capturas">
+            <img src={`${base}demo/billetera.png`} alt="La billetera del dueño de la tarjeta: saldo, tope de gasto, tarjetas y pagos" width="485" height="1562" loading="lazy" />
+            <img src={`${base}demo/pagar.png`} alt="La pantalla para pagar un cobro del terminal desde el celular" width="500" height="900" loading="lazy" />
+            <figcaption>Con el terminal van una billetera para el dueño de la tarjeta y un panel de ventas para el comercio.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="sdk" class="ancho bloque" aria-labelledby="sdk-titulo">
+        <h2 id="sdk-titulo" class="titulo-marca">Hecho con Stellar MCU SDK</h2>
+        <p class="entrada">
+          Para que el terminal firmara sus propios cobros, Paizap escribió una librería: pagos de Stellar para
+          microcontroladores. Es abierta, para que el siguiente aparato lo pueda construir cualquiera.
+        </p>
+        <table class="hoja">
+          <caption>Medido en una ESP32-S3, contra Stellar testnet</caption>
+          <thead>
+            <tr><th scope="col">Qué</th><th scope="col">Medida</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Núcleo del SDK</th><td>3,4 KB de flash, sin memoria fija</td></tr>
+            <tr><th scope="row">Firma Ed25519</th><td>18 KB de flash</td></tr>
+            <tr><th scope="row">Armar y firmar un pago</th><td>7 milisegundos</td></tr>
+            <tr><th scope="row">De enviar un pago a verlo confirmado</th><td>3 a 6 segundos</td></tr>
+            <tr><th scope="row">Igual al SDK oficial de JavaScript</th><td>20 de 20 comparaciones, byte a byte</td></tr>
+          </tbody>
+        </table>
+        <p>
+          <a class="boton rayo" href={docs}>Leer la documentación</a>
+          <a class="enlace" href={REPO_SDK}>Stellar MCU SDK, en GitHub</a>
+        </p>
+      </section>
+
+      <section id="agentes" class="bloque franja-clara" aria-labelledby="agentes-titulo">
+        <div class="ancho">
+          <h2 id="agentes-titulo" class="titulo-marca">Si eres un agente</h2>
+          <p class="entrada">El simulador se puede usar sin mirar el modelo 3D. Todo pasa también en texto.</p>
+          <div class="dos">
+            <div>
+              <h3>Con un navegador</h3>
+              <ol class="lista">
+                <li>Pulsa el botón <code>#sim-encender</code> y espera a que <code>#sim-estado</code> diga «Aparato listo».</li>
+                <li>Escribe un monto en <code>#sim-monto</code> y pulsa <code>#sim-cobrar</code>.</li>
+                <li>Pulsa <code>#sim-tarjeta</code> y espera a que <code>#sim-estado</code> diga «Pago recibido».</li>
+                <li>
+                  Lee el resultado en <code>#sim-registro</code> y en <code>#sim-datos</code>, que trae el estado en
+                  JSON con el enlace a la transacción.
+                </li>
+              </ol>
+            </div>
+            <div>
+              <h3>Sin navegador</h3>
+              <p>El mismo cobro corre con Node 18 o más nuevo. Baja tres archivos y ejecútalo:</p>
+              <pre class="monitor" id="agentes-comando">curl -sO SITIO/simulador/device.mjs -O SITIO/simulador/stellar_mcu.mjs -O SITIO/agentes/demo.mjs
+node demo.mjs</pre>
+              <p>Responde en texto y termina con una línea en JSON. Las instrucciones completas están en <a href={`${base}llms.txt`}>llms.txt</a>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="noche pie">
+      <div class="ancho">
+        <img src={`${base}logo-franja.png`} alt="Paizap" width="76" height="56" loading="lazy" />
+        <p>Paizap participa en la National Startups Hackathon by Stellar 2026.</p>
+        <ul>
+          <li><a href={docs}>Documentación del SDK</a></li>
+          <li><a href={REPO_SDK}>Stellar MCU SDK en GitHub</a></li>
+          <li><a href={REPO_PAIZAP}>Paizap en GitHub</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <script>
+      import QRCode from 'qrcode';
+      import { crearSimulador } from '../simulador/aparato.js';
+      import { dibujarPantalla } from '../simulador/pantalla.js';
+
+      const base = document.body.dataset.base;
+      const aqui = new URL(base, location.href).href;
+      const $ = (id) => document.getElementById(id);
+      const sim = $('simulador');
+
+      // El comando para agentes lleva la dirección real del sitio.
+      $('agentes-comando').textContent = $('agentes-comando').textContent.replaceAll('SITIO/', aqui);
+
+      let escena = null;
+      let hayRegistro = false;
+      const consultas = [];
+
+      function enlace(texto, url) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.textContent = texto;
+        a.target = '_blank';
+        a.rel = 'noreferrer';
+        return a;
+      }
+
+      function registrar({ texto, enlace: url, tipo }) {
+        const lista = $('sim-registro');
+        if (!hayRegistro) lista.replaceChildren();
+        hayRegistro = true;
+        const li = document.createElement('li');
+        if (tipo) li.dataset.tipo = tipo;
+        li.append(texto);
+        if (url) li.append(' ', enlace('Ver en la red', url));
+        lista.append(li);
+        lista.scrollTop = lista.scrollHeight;
+      }
+
+      function consultar(texto) {
+        consultas.push(texto);
+        if (consultas.length > 9) consultas.shift();
+        $('sim-monitor').textContent = consultas.join('\n');
+      }
+
+      const corta = (cuenta) => `${cuenta.slice(0, 6)}…${cuenta.slice(-6)}`;
+      function cuenta(id, valor) {
+        if (!valor || $(id).dataset.valor === valor) return;
+        $(id).dataset.valor = valor;
+        $(id).replaceChildren(enlace(corta(valor), `https://stellar.expert/explorer/testnet/account/${valor}`));
+      }
+      function pago(id, p) {
+        const clave = p ? p.hash + (p.firmaMs ?? '') : '';
+        if ($(id).dataset.valor === clave) return;
+        $(id).dataset.valor = clave;
+        if (!p) return $(id).replaceChildren('—');
+        const tiempos = p.firmaMs ? ` · firmado en ${p.firmaMs.toFixed(2)} ms, confirmado en ${(p.totalMs / 1000).toFixed(1)} s` : '';
+        $(id).replaceChildren(`${p.monto} XLM, pedido ${p.numero}${tiempos} · `, enlace('ver en la red', p.enlace));
+      }
+
+      let solicitudDibujada = '';
+      function pintar(estado) {
+        sim.dataset.fase = estado.fase;
+        $('sim-estado').textContent = estado.mensaje;
+        const listo = estado.fase === 'listo' || estado.fase === 'aprobado';
+        $('sim-encender').disabled = !(estado.fase === 'apagado' || estado.fase === 'error');
+        $('sim-encender').textContent = estado.fase === 'encendiendo' ? 'Encendiendo…' : estado.fase === 'error' ? 'Volver a encender' : estado.cuentaAparato ? 'Aparato encendido' : 'Encender el aparato';
+        $('sim-monto').disabled = !listo;
+        $('sim-cobrar').disabled = !listo || estado.devolviendo;
+        $('sim-tarjeta').disabled = !(estado.fase === 'esperando' && estado.pedido && !estado.tarjetaPagando);
+        $('sim-tarjeta').textContent = estado.tarjetaPagando ? 'Pagando…' : 'Acercar la tarjeta de prueba';
+        $('sim-cancelar').disabled = !(estado.fase === 'esperando' && !estado.tarjetaPagando);
+        $('sim-devolver').disabled = !(listo && estado.ultimoPago && !estado.devolviendo);
+        $('sim-devolver').textContent = estado.devolviendo ? 'Devolviendo…' : 'Devolver el último pago';
+        // Lo que se escribe en el teclado del aparato aparece también en el campo de la página.
+        if (listo && estado.monto && document.activeElement !== $('sim-monto')) $('sim-monto').value = estado.monto;
+
+        const solicitud = estado.pedido?.solicitud ?? '';
+        $('sim-pedido').hidden = !solicitud;
+        if (solicitud && solicitud !== solicitudDibujada) {
+          $('sim-solicitud').textContent = solicitud;
+          $('sim-pedido-numero').textContent = estado.pedido.numero;
+          QRCode.toDataURL(solicitud, { margin: 1, width: 296 }).then((imagen) => ($('sim-qr').src = imagen));
+        }
+        solicitudDibujada = solicitud;
+
+        cuenta('sim-cuenta-aparato', estado.cuentaAparato);
+        cuenta('sim-cuenta-tarjeta', estado.cuentaTarjeta);
+        pago('sim-ultimo', estado.ultimoPago);
+        pago('sim-devolucion', estado.ultimaDevolucion);
+        $('sim-ventas').textContent = String(estado.ventas);
+        // El mismo estado, en JSON, para quien lo quiera leer sin interpretar la página.
+        $('sim-datos').textContent = JSON.stringify({
+          fase: estado.fase,
+          mensaje: estado.mensaje,
+          red: 'Stellar testnet',
+          cuentaAparato: estado.cuentaAparato,
+          cuentaTarjeta: estado.cuentaTarjeta,
+          pedido: estado.pedido,
+          ultimoPago: estado.ultimoPago,
+          ultimaDevolucion: estado.ultimaDevolucion,
+          cobrosAprobados: estado.ventas,
+        });
+        dibujarPantalla($('sim-pantalla').getContext('2d'), estado);
+        escena?.actualizar(estado);
+      }
+
+      const simulador = crearSimulador({
+        urlAdaptacion: `${aqui}simulador/device.mjs`,
+        alCambiar: pintar,
+        alRegistrar: registrar,
+        alConsultar: consultar,
+      });
+
+      function acercarTarjeta() {
+        if ($('sim-tarjeta').disabled) return;
+        escena?.acercarTarjeta();
+        simulador.acercarTarjeta();
+      }
+      dibujarPantalla($('sim-pantalla').getContext('2d'), simulador.estado());
+      $('sim-encender').addEventListener('click', () => simulador.encender());
+      $('sim-cobrar').addEventListener('click', () => simulador.cobrar($('sim-monto').value));
+      $('sim-monto').addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter') simulador.cobrar($('sim-monto').value);
+      });
+      $('sim-tarjeta').addEventListener('click', acercarTarjeta);
+      $('sim-cancelar').addEventListener('click', () => simulador.cancelar());
+      $('sim-devolver').addEventListener('click', () => simulador.devolver());
+
+      // El modelo 3D se carga aparte: si el navegador no puede mostrarlo, los botones funcionan igual.
+      (async () => {
+        try {
+          const { crearEscena } = await import('../simulador/escena.js');
+          await Promise.all([document.fonts.load('700 20px "Barlow"'), document.fonts.load('italic 800 20px "Barlow Condensed"')]);
+          escena = await crearEscena({
+            lienzoPagina: $('sim-lienzo'),
+            lienzoPantalla: $('sim-pantalla'),
+            urlModelo: `${aqui}modelo/`,
+            alPulsarTecla: (tecla) => simulador.tecla(tecla),
+            alTocarTarjeta: acercarTarjeta,
+          });
+          escena.actualizar(simulador.estado());
+          $('sim-pista').textContent = 'Gira el aparato con el ratón o el dedo. Toca las teclas o la tarjeta.';
+        } catch (error) {
+          console.error(error);
+          $('sim-pista').textContent = 'Este navegador no puede mostrar el modelo 3D. Usa los botones: hacen lo mismo.';
+          sim.dataset.sin3d = 'si';
+        }
+      })();
+    </script>
+  </body>
+</html>

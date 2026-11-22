@@ -1,0 +1,590 @@
+/* La página de Paizap. Colores y letra: marca.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 1.0625rem/1.55 var(--letra);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p,
+ol,
+ul,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--acento);
+}
+
+:focus-visible {
+  outline: 3px solid var(--acento);
+  outline-offset: 3px;
+}
+
+.ancho {
+  width: min(72rem, 100% - 2rem);
+  margin-inline: auto;
+}
+
+/* ---- Superficies azul noche: ahí el enlace y el foco van en amarillo ---- */
+.noche {
+  background: var(--noche);
+  color: #fff;
+}
+.noche a {
+  color: var(--rayo);
+}
+.noche :focus-visible {
+  outline-color: var(--rayo);
+}
+
+/* ---- Letra de marca en los títulos ---- */
+h1.titulo-marca {
+  font-size: clamp(2.75rem, 7vw, 5rem);
+  max-width: 16ch;
+}
+h2.titulo-marca {
+  font-size: clamp(2rem, 4.5vw, 3rem);
+}
+h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.entrada {
+  font-size: 1.25rem;
+  max-width: 62ch;
+}
+.noche .entrada {
+  color: var(--noche-suave);
+}
+
+/* ---- Botones ---- */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.875rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: 600 1rem/1.2 var(--letra);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+/* El botón amarillo: la acción que sigue. */
+.boton.rayo {
+  background: var(--rayo);
+  color: var(--noche);
+  font: italic 800 1.3rem/1 var(--letra-marca);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.boton.rayo:hover:not(:disabled) {
+  background: var(--rayo-fuerte);
+}
+.boton.linea {
+  background: transparent;
+  border-color: var(--noche-linea);
+  color: #fff;
+}
+.boton.linea:hover:not(:disabled) {
+  background: var(--noche-alta);
+}
+.boton.noche-boton {
+  background: var(--noche);
+  color: #fff;
+}
+.boton:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.enlace {
+  margin-left: 1rem;
+  font-weight: 600;
+}
+
+/* ---- Barra de arriba ---- */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.75rem;
+}
+.barra .marca {
+  display: block;
+  line-height: 0;
+}
+.barra ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+.barra ul a {
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+.barra ul a:hover {
+  color: var(--rayo);
+}
+
+.titular {
+  padding-block: clamp(1.5rem, 5vw, 3.5rem) 2rem;
+}
+.titular .entrada {
+  margin-top: 1.25rem;
+}
+
+/* ---- El simulador ---- */
+.sim {
+  padding-bottom: 3rem;
+}
+.sim-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+.sello {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--rayo);
+  border-radius: 999px;
+  color: var(--rayo);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.sim-aviso {
+  margin-top: 0.9rem;
+  max-width: 75ch;
+  color: var(--noche-suave);
+}
+.sim-aviso strong {
+  color: #fff;
+}
+
+.sim-cuerpo {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+@media (min-width: 62rem) {
+  .sim-cuerpo {
+    grid-template-columns: minmax(0, 1fr) 25rem;
+  }
+  .sim-3d,
+  #sim-lienzo {
+    height: 100%;
+  }
+}
+
+.sim-3d {
+  position: relative;
+  border: 1px solid var(--noche-linea);
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 35%, #12224d 0%, var(--noche-alta) 45%, #050f2b 100%);
+  overflow: hidden;
+}
+#sim-lienzo {
+  display: block;
+  width: 100%;
+  height: clamp(22rem, 62vw, 38rem);
+  touch-action: none;
+  cursor: grab;
+}
+.sim-pista {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.6rem 1rem;
+  color: var(--noche-suave);
+  font-size: 0.9rem;
+  text-align: center;
+  pointer-events: none;
+}
+.sim[data-sin3d] #sim-lienzo {
+  height: 6rem;
+}
+
+.sim-panel {
+  padding: 1.25rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 20px;
+  background: var(--noche-alta);
+}
+.sim-pantalla {
+  margin-bottom: 1rem;
+}
+.sim-pantalla canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 6px solid #02040a;
+  border-radius: 10px;
+  image-rendering: auto;
+}
+.sim-pantalla figcaption {
+  margin-top: 0.35rem;
+  color: var(--noche-suave);
+  font-size: 0.85rem;
+}
+.sim-estado {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--rayo);
+  border-radius: 0 12px 12px 0;
+  background: var(--noche);
+  font-weight: 600;
+}
+.sim[data-fase='aprobado'] .sim-estado {
+  border-left-color: #3dff9a;
+}
+.sim[data-fase='error'] .sim-estado {
+  border-left-color: #ff8a80;
+}
+
+.pasos {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 1.1rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+.pasos > li {
+  position: relative;
+  padding-left: 2.6rem;
+  counter-increment: paso;
+}
+.pasos > li::before {
+  content: counter(paso);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 50%;
+  font: italic 800 1.15rem/1 var(--letra-marca);
+  color: var(--rayo);
+}
+.pasos p {
+  margin: 0.15rem 0 0.6rem;
+  color: var(--noche-suave);
+  font-size: 0.95rem;
+}
+.pasos kbd {
+  padding: 0 0.35rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 6px;
+  font: 600 0.9em var(--letra-codigo);
+  color: #fff;
+}
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.fila label {
+  width: 100%;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.fila input {
+  width: 7.5rem;
+  min-height: 2.875rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--texto);
+  font: 600 1.15rem var(--letra);
+  font-variant-numeric: tabular-nums;
+}
+.fila input:disabled {
+  opacity: 0.45;
+}
+
+.pedido {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  margin-top: 0.9rem;
+}
+.pedido[hidden] {
+  display: none;
+}
+.pedido img {
+  flex: none;
+  width: 9.25rem;
+  height: 9.25rem;
+  border-radius: 10px;
+  background: #fff;
+}
+.pedido figcaption {
+  min-width: 0;
+  color: var(--noche-suave);
+  font-size: 0.9rem;
+}
+.pedido code {
+  display: block;
+  margin-top: 0.5rem;
+  font: 0.75rem/1.4 var(--letra-codigo);
+  overflow-wrap: anywhere;
+}
+
+.sim-resultados {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+@media (min-width: 62rem) {
+  .sim-resultados {
+    grid-template-columns: minmax(0, 1fr) 25rem;
+  }
+}
+.sim-resultados h3 {
+  margin-bottom: 0.6rem;
+}
+.sim-resultados h3:not(:first-child) {
+  margin-top: 1.25rem;
+}
+
+.registro {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 22rem;
+  margin: 0;
+  padding: 1rem 1rem 1rem 2.6rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 16px;
+  background: var(--noche-alta);
+  overflow-y: auto;
+}
+.registro li.vacio {
+  list-style: none;
+  margin-left: -1.6rem;
+  color: var(--noche-suave);
+}
+.registro li[data-tipo='ok'] {
+  color: #9dffcb;
+}
+.registro li[data-tipo='error'] {
+  color: #ffb4ab;
+}
+
+.datos {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 16px;
+  background: var(--noche-alta);
+  font-size: 0.95rem;
+}
+.datos dt {
+  color: var(--noche-suave);
+  font-size: 0.85rem;
+}
+.datos dd {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.monitor {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 16px;
+  background: #020716;
+  color: #b9c6e6;
+  font: 0.8rem/1.6 var(--letra-codigo);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---- El resto de la página ---- */
+.bloque {
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+.bloque > .titulo-marca + *,
+.bloque .titulo-marca + .entrada {
+  margin-top: 1rem;
+}
+.franja-clara {
+  background: var(--panel);
+  border-block: 1px solid var(--borde);
+}
+
+.tres {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+@media (min-width: 48rem) {
+  .tres {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.tres article {
+  padding-top: 1rem;
+  border-top: 4px solid var(--noche);
+}
+.tres h3 {
+  font: italic 800 1.9rem/1 var(--letra-marca);
+}
+.tres p {
+  margin-top: 0.6rem;
+  color: var(--suave);
+}
+
+.dos {
+  display: grid;
+  gap: 2.5rem;
+}
+@media (min-width: 56rem) {
+  .dos {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: start;
+  }
+}
+.dos h3 {
+  margin-top: 1.5rem;
+}
+
+.lista {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1.25rem 0 1.5rem;
+  padding-left: 1.2rem;
+}
+.lista code,
+.bloque p code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 6px;
+  background: var(--fondo);
+  font: 0.9em var(--letra-codigo);
+}
+
+.capturas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+.capturas img {
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  max-height: 30rem;
+  width: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.capturas figcaption {
+  grid-column: 1 / -1;
+  color: var(--suave);
+  font-size: 0.95rem;
+}
+
+/* La tabla de medidas, como una hoja de datos. */
+.hoja {
+  width: 100%;
+  max-width: 44rem;
+  margin: 2rem 0;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.hoja caption {
+  padding-bottom: 0.6rem;
+  color: var(--suave);
+  font-size: 0.95rem;
+  text-align: left;
+}
+.hoja th,
+.hoja td {
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+}
+.hoja thead th {
+  border-bottom: 2px solid var(--noche);
+  font-size: 0.9rem;
+}
+.hoja tbody th {
+  font-weight: 500;
+}
+.hoja td {
+  font-weight: 700;
+}
+
+#agentes .monitor {
+  color: #d7e0f5;
+}
+
+.pie {
+  padding-block: 2.5rem;
+}
+.pie .ancho {
+  display: grid;
+  gap: 1rem;
+}
+.pie p {
+  color: var(--noche-suave);
+}
+.pie ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .boton {
+    transition: none;
+  }
+}
+
+/* En pantallas anchas el modelo 3D ocupa todo el alto de la columna de controles. */
+@media (min-width: 62rem) {
+  .sim-3d {
+    min-height: 36rem;
+  }
+  #sim-lienzo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+}

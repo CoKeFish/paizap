@@ -1,0 +1,133 @@
+---
+title: Confirmar un pago
+description: Que el aparato sepa, por sí mismo, que el pago llegó, con su monto y su número de pedido.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import avisador from '../../../../../ejemplos/payment_notifier/main.cpp?raw';
+
+El aparato le pregunta a un nodo de Stellar RPC por los pagos que entraron a una cuenta y lee, él
+mismo, cuánto llegó y con qué número de pedido. Es la base de una alcancía, un dispensador o una
+caja: cuando llega el pago esperado, se activa lo que haga falta.
+
+Para esto el aparato no necesita ninguna llave: solo lee de la red.
+
+El programa completo, un avisador de pagos, está al [final de la página](#el-programa-completo).
+
+## Cómo se ve un pago en la red
+
+Cada pago queda en la red como un evento `transfer` del contrato del token, con quién pagó, quién
+recibió y el monto. Eso vale para los pagos comunes y para las llamadas a contratos: un mismo
+filtro los encuentra a los dos.
+
+El aparato pide con `getEvents` los `transfer` de **un contrato** hacia **una cuenta**, desde un
+ledger en adelante.
+
+## 1. El contrato del token
+
+El contrato se calcula en el aparato, a partir de la red y del activo:
+
+```cpp
+uint8_t network_id[32], contract[32];
+board_sha256((const uint8_t *)NETWORK, strlen(NETWORK), network_id);
+stl_asset xlm = {true, "", {0}};
+stl_asset_contract(&CRYPTO, network_id, &xlm, contract);
+stl_addr_encode(STL_ADDR_CONTRACT, contract, g_contract);  // C...
+```
+
+Filtrar por esa dirección evita aceptar un token falso con el mismo nombre.
+
+| Activo | Contrato en testnet |
+|---|---|
+| XLM | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
+| USDC | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
+
+## 2. El filtro
+
+El filtro lleva dos temas: el nombre del evento y la cuenta que recibe.
+
+```cpp
+uint8_t buf[64];
+size_t n = stl_scval_symbol(buf, sizeof buf, "transfer");
+stl_b64_encode(buf, n, g_topic_transfer, sizeof g_topic_transfer);
+n = stl_scval_account(buf, g_account);
+stl_b64_encode(buf, n, g_topic_destination, sizeof g_topic_destination);
+
+snprintf(stellar_rpc::params(), stellar_rpc::paramsCap(),
+         "{\"startLedger\":%lld,\"filters\":[{\"type\":\"contract\",\"contractIds\":[\"%s\"],"
+         "\"topics\":[[\"%s\",\"*\",\"%s\",\"**\"]]}],\"pagination\":{\"limit\":10}}",
+         (long long)g_from_ledger, g_contract, g_topic_transfer, g_topic_destination);
+stellar_rpc::call("getEvents", stellar_rpc::params());
+```
+
+El `*` del medio deja pasar a cualquier pagador. `g_from_ledger` es desde cuándo se vigila: el
+ledger en que se creó el pedido, que da `getHealth` en `latestLedger`.
+
+## 3. Leer el monto y el número de pedido
+
+Cada evento trae su valor en base64. `stl_event_amount` saca el monto y, si lo hay, el memo:
+
+```cpp
+const char *value = event_field(event, next, "value", &len);
+uint8_t raw[160];
+int64_t amount = 0;
+bool has_order = false;
+uint64_t order = 0;
+int bytes = value ? stl_b64_decode(value, len, raw, sizeof raw) : -1;
+if (bytes > 0 && stl_event_amount(raw, (size_t)bytes, &amount, &has_order, &order)) {
+  on_payment(amount, has_order, order);
+}
+```
+
+El valor llega en dos formatos según el pago, y la función lee los dos:
+
+| Pago | Cómo llega el valor |
+|---|---|
+| Llamada al contrato del token | El monto solo. |
+| Pago común con memo | El monto y el memo juntos. |
+
+## 4. Saber qué pago es de qué venta
+
+Dos clientes pueden pagar casi a la vez. Para no confundirlos:
+
+- **Un número de pedido por cobro.** Cada cobro lleva un número distinto en el memo del
+  [pedido de pago](../cobrar/). El pago que llega con ese número es el de esa venta.
+- **Sin memo,** se compara el monto exacto y que el evento sea posterior al pedido.
+
+## 5. No contar dos veces
+
+Cada evento tiene un identificador, y los identificadores crecen con el tiempo. Guarda el último
+que ya avisaste y descarta los que no sean mayores:
+
+```cpp
+const char *id = event_field(event, next, "id", &n);
+if (id && n < sizeof g_last_event && strncmp(id, g_last_event, n) > 0) {
+  // new event: report it and remember it
+}
+```
+
+Para que un corte de luz no haga contar un pago dos veces, guarda ese identificador en la memoria
+de la placa.
+
+## Lo que conviene saber
+
+- **El nodo guarda unos 7 días de eventos.** Es para confirmar cobros, no para llevar un historial.
+- **Los pagos comunes aparecen como eventos si el nodo los emite.** El nodo de testnet de la
+  Stellar Development Foundation lo hace. Con otro proveedor, confírmalo.
+- **Una respuesta con dos eventos pesa 1,4 KB.** El límite de 10 eventos por consulta la mantiene
+  dentro del búfer.
+
+## El programa completo
+
+Un avisador de pagos: vigila una cuenta y avisa por el monitor serie cada pago en XLM que entra.
+
+<Code code={avisador} lang="cpp" title="payment_notifier/src/main.cpp" />
+
+Compila para ESP32-S3 y ESP32. El mismo recorrido, con el mismo núcleo, está probado contra
+testnet: detectó la carga inicial de una cuenta y un pago de 1,5 XLM con el pedido 4242
+([transacción 42fc3542…94af](https://stellar.expert/explorer/testnet/tx/42fc354228238e5ce16927ca7d2893d3ed10c186032f50e6939747bb730a94af)).
+
+```text
+Payment received: 10000 XLM
+Payment received: 1.5 XLM, order 4242
+```

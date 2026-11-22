@@ -1,0 +1,119 @@
+---
+title: Inicio rápido
+description: Tu placa crea su llave, arma un pago, lo firma, lo envía a Stellar testnet y comprueba que llegó.
+---
+
+import { Code, FileTree, Steps } from '@astrojs/starlight/components';
+import ejemplo from '../../../../ejemplos/pay_and_confirm/main.cpp?raw';
+
+En unos minutos tu placa hace su primer pago en Stellar testnet: crea su llave, arma la
+transacción, la firma, la envía y después comprueba ella misma que el pago llegó.
+
+## Qué necesitas
+
+- Una placa **ESP32-S3** o ESP32, con Wi-Fi de 2,4 GHz.
+- [PlatformIO](https://platformio.org/install), en el editor o por línea de comandos.
+
+## Paso a paso
+
+<Steps>
+
+1. **Baja el SDK.**
+
+   ```bash
+   git clone https://github.com/CoKeFish/stellar-mcu-sdk
+   cd stellar-mcu-sdk
+   ```
+
+2. **Pon tu red Wi-Fi** en `examples/esp32_pay_and_confirm/src/main.cpp`:
+
+   ```cpp
+   static const char WIFI_SSID[] = "your-network";
+   static const char WIFI_PASSWORD[] = "your-password";
+   ```
+
+3. **Graba la placa** y abre el monitor serie:
+
+   ```bash
+   pio run -d examples/esp32_pay_and_confirm -e s3 -t upload
+   pio device monitor -b 115200
+   ```
+
+   Para una ESP32 clásica, usa `-e esp32`.
+
+4. **Dale fondos de prueba.** La primera vez la placa crea su llave y muestra su cuenta:
+
+   ```text
+   Stellar MCU SDK: pay and confirm from the board
+   Board account: GAPFCT7D3MEUDYIM6YE45J5EVGSBRU7FDJZWITBNWDEGPH5O5UELZDWI
+   Give it test funds: https://friendbot.stellar.org/?addr=GAPFCT7D…ZDWI
+   ```
+
+   Abre ese enlace en el navegador: friendbot le deja 10.000 XLM de testnet.
+
+5. **Mira cómo paga.** A los pocos segundos la placa sigue sola: paga 1 XLM, espera la
+   confirmación de la red y busca el pago en los eventos.
+
+   ```text
+   Balance: 10000 XLM
+   Payment built and signed in 7102 microseconds
+   Payment confirmed in 3200 ms
+   https://stellar.expert/explorer/testnet/tx/<el identificador de tu pago>
+   Payment seen on the network: 1 XLM, order 4242
+   ```
+
+</Steps>
+
+Abre el enlace que imprime la placa: ahí está el pago, firmado por su cuenta.
+
+## Qué hizo la placa
+
+1. **Creó su llave** con el generador aleatorio del chip y la guardó. La llave nunca pasó por un PC.
+2. **Le preguntó dos cosas a la red:** la secuencia de su cuenta y la hora del último ledger. Con
+   esa hora fijó la vigencia de la transacción: la placa no necesita reloj.
+3. **Armó y firmó** el pago. Lo que firmó lo construyó ella: el nodo no le entrega nada para firmar.
+4. **Lo envió y esperó** a que la red lo confirmara.
+5. **Lo buscó en los eventos de la red** y leyó el monto y el número de pedido, como haría un
+   aparato que cobra.
+
+## El programa
+
+Este es el ejemplo completo, `examples/esp32_pay_and_confirm/src/main.cpp`:
+
+<Code code={ejemplo} lang="cpp" title="examples/esp32_pay_and_confirm/src/main.cpp" />
+
+## En tu propio proyecto
+
+Copia tres carpetas del repositorio y agrégalas a tu compilación:
+
+<FileTree>
+- src
+  - stellar_mcu.h el núcleo
+  - stellar_mcu.c
+- platforms
+  - esp32-arduino
+    - stellar_rpc.h el cliente del nodo de Stellar RPC
+    - stellar_rpc.cpp
+    - root_ca.h el certificado con el que se comprueba al nodo
+- third_party
+  - monocypher/ la firma Ed25519
+</FileTree>
+
+El `platformio.ini` del ejemplo muestra cómo compilarlas desde esas carpetas. Tu programa aporta
+dos funciones, el SHA-256 y la firma, como hace el ejemplo con `board_sha256` y `board_sign`.
+
+Para un pago común alcanza un búfer de 1 KB; para una llamada a un contrato de token, reserva 2 KB.
+
+## Sin placa
+
+El núcleo también corre en un PC. Las pruebas lo comparan con el SDK oficial de JavaScript:
+
+```bash
+sh tests/host/run.sh
+```
+
+## Qué sigue
+
+- [Pagar](../guias/pagar/): el pago por dentro, con otro activo, el memo y los reintentos.
+- [Confirmar un pago](../guias/confirmar/): que el aparato sepa cuándo le pagaron.
+- [Cómo está hecho](../como-esta-hecho/): el núcleo y lo que aporta la placa.
