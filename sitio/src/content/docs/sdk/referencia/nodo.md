@@ -1,10 +1,10 @@
 ---
 title: Cliente del nodo
-description: La parte de red para ESP32, una consulta por HTTPS a un nodo de Stellar RPC.
+description: La parte de red del primer adaptador, el de ESP32. Una consulta por HTTPS a un nodo de Stellar RPC.
 ---
 
-`platforms/esp32-arduino/stellar_rpc.h` y `stellar_rpc.cpp` son la parte de red para ESP32 y
-ESP32-S3 con Arduino. Hacen una consulta JSON-RPC por HTTPS a un nodo de
+`platforms/esp32-arduino/stellar_rpc.h` y `stellar_rpc.cpp` son la parte de red del primer adaptador, el de
+ESP32 y ESP32-S3 con Arduino; otro microcontrolador aporta la suya y usa el mismo núcleo. Hacen una consulta JSON-RPC por HTTPS a un nodo de
 [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) y dejan la respuesta en un búfer.
 
 ## Funciones

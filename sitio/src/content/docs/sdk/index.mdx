@@ -9,7 +9,8 @@ import { LinkCard, CardGrid } from '@astrojs/starlight/components';
 
 **Pagos de Stellar en dispositivos IoT.** Stellar MCU SDK es una librería abierta para que un
 microcontrolador cobre, confirme y firme pagos en [Stellar](https://stellar.org), sin un servidor
-en el medio. Está hecha por [Paizap](../).
+en el medio. No está atada a ningún chip: el núcleo es C99 portable, y el ESP32 es solo el primer
+microcontrolador con adaptador. Está hecha por [Paizap](../).
 
 Es para quienes construyen dispositivos IoT que cobran: integradores y fabricantes de máquinas, y los
 proyectos de Stellar que trabajan con hardware.
@@ -49,7 +50,8 @@ El código y sus comentarios están en inglés; esta documentación, en español
 
 - El núcleo pasa **23 de 23 comprobaciones** en el PC; 16 comparan **byte a byte** lo que arma
   con el SDK oficial de JavaScript.
-- Un ESP32-S3 **pagó solo en testnet** y después detectó sus pagos en los eventos de la red.
+- El primer microcontrolador con adaptador, un ESP32-S3, **pagó solo en testnet** y después
+  detectó sus pagos en los eventos de la red.
 - Un terminal con tarjeta NFC **firma sus cobros** con el SDK. Es
   [la demo de Paizap](./demo-terminal/).
 - El núcleo ocupa **3,4 KB** y la firma, **18 KB**. Firmar tarda **7 milisegundos** y un pago queda

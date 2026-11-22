@@ -25,9 +25,9 @@ familia. El núcleo sabe de Stellar; el adaptador sabe de la red y del chip.
 | Carpeta del repositorio | Contenido |
 |---|---|
 | `src/` | El núcleo: `stellar_mcu.h` y `stellar_mcu.c` |
-| `platforms/esp32-arduino/` | El cliente del nodo para ESP32 con Arduino |
+| `platforms/esp32-arduino/` | El primer adaptador: el cliente del nodo para ESP32 con Arduino |
 | `third_party/monocypher/` | La firma Ed25519 |
-| `examples/` | El ejemplo para ESP32 |
+| `examples/` | Los ejemplos, sobre el primer adaptador |
 | `tests/` | Las pruebas en el PC contra el SDK oficial de JavaScript |
 
 ## El núcleo
@@ -66,7 +66,7 @@ de [confirmar un pago](../guias/confirmar/), no necesita la firma.
 
 ## El cliente del nodo
 
-`platforms/esp32-arduino/stellar_rpc.cpp` es la parte de red para ESP32: hace **una consulta por
+`platforms/esp32-arduino/stellar_rpc.cpp` es la parte de red del primer adaptador, el de ESP32: hace **una consulta por
 HTTPS** a un nodo de [Stellar RPC](https://developers.stellar.org/docs/data/apis/rpc) y deja la
 respuesta en un búfer.
 

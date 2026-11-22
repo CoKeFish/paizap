@@ -1,12 +1,13 @@
 ---
 title: Microcontroladores
-description: En qué microcontroladores corre el SDK hoy y qué aporta cada familia.
+description: El SDK es para cualquier microcontrolador. Qué familias tienen adaptador hoy y qué aporta cada una.
 ---
 
-El núcleo es el mismo en todos los microcontroladores. Lo que cambia es lo que aporta cada
-familia: la red, el guardado de la llave y la firma.
+La librería es para microcontroladores en general. El núcleo no depende de ningún chip; cada
+familia suma un adaptador pequeño: la red, el guardado de la llave y la firma. La familia ESP32 es
+la primera.
 
-## Hoy
+## Con adaptador hoy
 
 | Microcontrolador | Estado |
 |---|---|
