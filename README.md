@@ -6,6 +6,8 @@ torniquetes, dispensadores de agua, máquinas expendedoras y lavanderías. Lo ha
 microcontrolador cobre, confirme y firme pagos en [Stellar](https://stellar.org), sin un servidor en
 el medio.
 
+**Pruébalo:** [demo en vivo](https://paizap.vercel.app/demo/) · [sitio](https://paizap.vercel.app) · [documentación del SDK](https://paizap.vercel.app/sdk/)
+
 > Estado: en desarrollo, sobre Stellar testnet. Abajo está [lo que ya funciona](#lo-que-ya-funciona)
 > y la [hoja de ruta](#hoja-de-ruta).
 
