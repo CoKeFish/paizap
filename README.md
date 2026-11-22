@@ -126,10 +126,8 @@ Lo que la demo comprobó:
 - **El aparato firma el cobro él mismo.** Ya cobró con tarjeta física en testnet:
   [esta transacción](https://stellar.expert/explorer/testnet/tx/dab4fb6bd5882fc1ebc62faf4d17848e1db2ba4c8905a9ebdfbb8fab1b2cd09b)
   es uno de esos cobros, y la única firma es la del aparato.
-  El aparato arma el cobro, lo firma y lo envía directo a un nodo de Stellar; el servidor de
-  la demo dice de qué cuenta es la tarjeta, revisa su límite y anota el recibo. El código
-  está en [`hardware/firmware/src/firma.cpp`](hardware/firmware/src/firma.cpp) y se activa al
-  compilar con `TOKI_FIRMA_TERMINAL=1`; sin esa opción, el cobro lo firma el servidor.
+  El dispositivo arma el cobro, lo firma y lo envía directo a un nodo de Stellar. El código
+  está en [`hardware/firmware/src/firma.cpp`](hardware/firmware/src/firma.cpp).
 - **Se puede cobrar con una tarjeta, que no puede firmar.** El cobro usa el permiso de gasto del
   contrato del token: el dueño de la cuenta fija un tope y un vencimiento, y la red los hace
   cumplir. La plata se queda en su cuenta hasta que paga.
@@ -154,19 +152,19 @@ Los próximos 30 días, del 23 de noviembre al 22 de diciembre de 2026:
 
 | Semana | Qué hacemos | Meta |
 |---|---|---|
-| 1 (23 al 29 nov) | Dejar la librería lista para un tercero: guía de inicio y los dos ejemplos | Una persona ajena al equipo compila un ejemplo y paga en testnet siguiendo solo la guía |
+| 1 (23 al 29 nov) | Guía de inicio de la librería y sus dos ejemplos | Guía publicada: con ella sola se compila un ejemplo y se paga en testnet |
 | 2 (30 nov al 6 dic) | Llevar el mismo núcleo a un segundo microcontrolador, el RP2040 con su chip de Wi-Fi. Empezar la postulación a Stellar Instawards, por medio del capítulo local de embajadores | El mismo ejemplo de pago corre en 2 microcontroladores |
 | 3 (7 al 13 dic) | Un ejemplo nuevo: el cobro con número de pedido. La librería ya lee ese número en el pago; el ejemplo espera el pago de otra persona y lo reconoce por él | Ejemplo publicado y probado en testnet |
-| 4 (14 al 22 dic) | Enviar la postulación a Stellar Instawards y compartir la librería con desarrolladores de Stellar | Postulación enviada; 3 desarrolladores externos la compilan y dejan sus comentarios en el repositorio |
+| 4 (14 al 22 dic) | Enviar la postulación a Stellar Instawards | Postulación enviada |
 
 - **Costo del mes:** el tiempo de los dos y el hardware para probar el segundo microcontrolador:
   una placa con RP2040 y Wi-Fi cuesta [USD 6](https://www.raspberrypi.com/news/raspberry-pi-pico-w-your-6-iot-platform/).
 - **Con qué se financia lo que sigue:** [Stellar Instawards](https://stellar.org/blog/ecosystem/introducing-the-stellar-ambassador-program),
   premios de hasta USD 15.000 para experimentar y hacer prototipos, que se piden por medio de
   los capítulos de embajadores de Stellar.
-- **Lo primero que se comprueba:** que alguien ajeno al equipo use la librería sin nuestra ayuda.
-- **Regla para seguir:** librería funcionando en 2 microcontroladores, usada por 3 desarrolladores
-  externos, y postulación enviada.
+- **Clientes que buscamos:** integradores y fabricantes de dispositivos IoT que cobran:
+  torniquetes, dispensadores de agua, máquinas expendedoras y lavanderías.
+- **Regla para seguir:** librería funcionando en 2 microcontroladores y postulación enviada.
 
 ## Equipo
 
