@@ -1,0 +1,417 @@
+/* La página de la demo: el terminal simulado. Colores y letra: marca.css. Base y botones: portada.css. */
+
+.pagina-demo {
+  min-height: 100vh;
+}
+.sim {
+  padding-block: 0.25rem 3rem;
+}
+
+/* ---- Qué es y qué papel juegas ---- */
+.sim-cabecera h1.titulo-marca {
+  max-width: none;
+  font-size: clamp(2rem, 4.2vw, 2.9rem);
+}
+.sim-cabecera .entrada {
+  margin-top: 0.5rem;
+  max-width: 64ch;
+  font-size: 1.125rem;
+}
+.sim-aviso {
+  margin-top: 0.5rem;
+  max-width: 64ch;
+  color: var(--noche-suave);
+  font-size: 0.95rem;
+}
+.sim-aviso strong {
+  color: var(--rayo);
+}
+
+/* ---- El aparato y el panel, lado a lado ---- */
+.sim-cuerpo {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+@media (min-width: 62rem) {
+  .sim-cuerpo {
+    grid-template-columns: minmax(0, 1fr) 24rem;
+  }
+}
+
+/* El modelo tiene su propio alto: no cambia cuando cambia el panel. */
+.sim-3d {
+  position: relative;
+  height: clamp(17rem, 78vw, 24rem);
+  border: 1px solid var(--noche-linea);
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 35%, #12224d 0%, var(--noche-alta) 45%, #050f2b 100%);
+  overflow: hidden;
+}
+@media (min-width: 62rem) {
+  .sim-3d {
+    height: clamp(24rem, 58vh, 36rem);
+  }
+}
+/* En pantallas angostas el aparato es más bajo y el panel va más apretado: así entran los dos
+   juntos en la pantalla del celular. */
+@media (max-width: 61.99rem) {
+  .sim-cuerpo {
+    scroll-margin-top: 0.5rem;
+  }
+  .sim-3d {
+    height: clamp(13rem, 36vh, 20rem);
+  }
+  .sim-cabecera h1.titulo-marca {
+    font-size: clamp(1.5rem, 7.2vw, 2.9rem);
+  }
+  .sim-cabecera .entrada {
+    font-size: 1rem;
+  }
+  .sim-aviso {
+    font-size: 0.875rem;
+  }
+  .sim-cuerpo {
+    gap: 0.75rem;
+  }
+  .sim-panel {
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+  .sim-estado {
+    font-size: 1.05rem;
+  }
+}
+#sim-lienzo {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.sim-pista {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1.5rem 1rem 0.6rem;
+  background: linear-gradient(transparent, rgba(5, 15, 43, 0.9) 60%);
+  color: var(--noche-suave);
+  font-size: 0.9rem;
+  text-align: center;
+  pointer-events: none;
+}
+.sim[data-sin3d] .sim-3d {
+  position: static;
+  height: auto;
+}
+.sim[data-sin3d] #sim-lienzo {
+  display: none;
+}
+.sim[data-sin3d] .sim-pista {
+  position: static;
+  padding: 1rem;
+  background: none;
+}
+
+/* ---- El panel: un momento a la vez ---- */
+.sim-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 20px;
+  background: var(--noche-alta);
+}
+
+/* El recorrido: tres pasos, con el actual en amarillo y los hechos en verde. */
+.sim-camino {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.sim-camino li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--noche-linea);
+  color: var(--noche-suave);
+  counter-increment: paso;
+}
+.sim-camino li::before {
+  content: counter(paso);
+  font: italic 800 1.1rem/1 var(--letra-marca);
+}
+.sim-camino li[data-estado='actual'] {
+  border-bottom-color: var(--rayo);
+  color: #fff;
+}
+.sim-camino li[data-estado='actual']::before {
+  color: var(--rayo);
+}
+.sim-camino li[data-estado='hecho'] {
+  border-bottom-color: #2fbf7a;
+  color: #c5ffe0;
+}
+.sim-camino li[data-estado='hecho']::before {
+  content: '✓';
+  color: #3dff9a;
+  font-style: normal;
+}
+
+/* La frase que dice qué pasa y qué sigue. Reserva tres renglones para que nada salte. */
+.sim-estado {
+  min-height: 4.05em;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.sim[data-etapa='resultado'] .sim-estado {
+  min-height: 0; /* debajo va el resultado, que ya no cambia de lugar */
+}
+.sim[data-fase='error'] .sim-estado {
+  color: #ffb4ab;
+}
+
+.etapa {
+  display: grid;
+  gap: 0.75rem;
+}
+.etapa[hidden] {
+  display: none;
+}
+.etapa > .boton {
+  width: 100%;
+  min-height: 3.25rem;
+}
+.etapa label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.nota {
+  color: var(--noche-suave);
+  font-size: 0.9rem;
+}
+.fila {
+  display: flex;
+  gap: 0.6rem;
+}
+.fila input {
+  flex: 1;
+  min-width: 0;
+  min-height: 3.25rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--texto);
+  font: 600 1.25rem var(--letra);
+  font-variant-numeric: tabular-nums;
+}
+.fila .boton {
+  flex: none;
+  min-height: 3.25rem;
+  padding-inline: 1.5rem;
+}
+.boton-texto {
+  justify-self: start;
+  padding: 0.35rem 0;
+  border: 0;
+  background: none;
+  color: var(--noche-suave);
+  font: 600 0.95rem var(--letra);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.boton-texto:hover:not(:disabled) {
+  color: #fff;
+}
+.boton-texto:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* El QR va plegado: es el camino de quien tiene una billetera de testnet. */
+.qr summary {
+  color: var(--noche-suave);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.qr-cuerpo {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+  color: var(--noche-suave);
+  font-size: 0.9rem;
+}
+.qr-cuerpo img {
+  flex: none;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 10px;
+  background: #fff;
+}
+.qr-cuerpo a {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+/* El resultado del cobro: se queda hasta el siguiente. */
+.resultado {
+  padding: 1rem;
+  border: 1px solid #1f8a57;
+  border-radius: 14px;
+  background: var(--noche);
+}
+.resultado[data-devuelto='si'] {
+  border-color: var(--noche-linea);
+}
+.resultado-titulo {
+  color: #7dffb8;
+  font-weight: 700;
+}
+.resultado[data-devuelto='si'] .resultado-titulo {
+  color: #fff;
+}
+.resultado-monto {
+  margin-top: -0.35rem;
+  font: italic 800 3.25rem/1 var(--letra-marca);
+  font-variant-numeric: tabular-nums;
+}
+.resultado p:not(.resultado-titulo, .resultado-monto) {
+  color: var(--noche-suave);
+  font-size: 0.95rem;
+}
+.resultado .fila {
+  flex-direction: column;
+  margin-top: 0.25rem;
+}
+
+/* ---- Debajo: los cobros hechos y lo que va plegado ---- */
+.sim-abajo {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.cobros {
+  margin-bottom: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 16px;
+  background: var(--noche-alta);
+  overflow-x: auto;
+}
+.cobros h2 {
+  margin-bottom: 0.4rem;
+  font-size: 1.125rem;
+}
+.cobros table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.cobros th,
+.cobros td {
+  padding: 0.55rem 0.75rem 0.55rem 0;
+  border-bottom: 1px solid var(--noche-linea);
+  text-align: left;
+}
+.cobros tbody tr:last-child td {
+  border-bottom: 0;
+}
+.cobros th {
+  color: var(--noche-suave);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.cobros tr[data-estado='aprobado'] td:nth-child(3) {
+  color: #7dffb8;
+}
+.cobros td:last-child a {
+  white-space: nowrap;
+}
+
+.plegable {
+  border: 1px solid var(--noche-linea);
+  border-radius: 14px;
+}
+.plegable > summary {
+  padding: 0.85rem 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.plegable[open] > summary {
+  border-bottom: 1px solid var(--noche-linea);
+}
+.plegable-cuerpo {
+  display: grid;
+  gap: 0.9rem;
+  max-width: 75ch;
+  padding: 1.1rem;
+}
+.plegable-cuerpo p {
+  color: var(--noche-suave);
+}
+.plegable .lista {
+  margin: 0;
+  color: var(--noche-suave);
+}
+.pagina-demo .lista code {
+  background: var(--noche-alta);
+  color: #fff;
+}
+
+.registro {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 22rem;
+  margin: 0;
+  padding: 1rem 1.1rem 1rem 2.7rem;
+  overflow-y: auto;
+}
+.registro li.vacio {
+  margin-left: -1.6rem;
+  list-style: none;
+  color: var(--noche-suave);
+}
+.registro li[data-tipo='ok'] {
+  color: #9dffcb;
+}
+.registro li[data-tipo='error'] {
+  color: #ffb4ab;
+}
+
+.datos {
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.95rem;
+}
+.datos dt {
+  color: var(--noche-suave);
+  font-size: 0.85rem;
+}
+.datos dd {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.monitor {
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--noche-linea);
+  border-radius: 12px;
+  background: #020716;
+  color: #d7e0f5;
+  font: 0.8rem/1.6 var(--letra-codigo);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

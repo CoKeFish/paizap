@@ -5,8 +5,8 @@
 //
 // Qué hace, en Stellar testnet y con cuentas que crea al vuelo (no usa fondos de nadie más):
 //   1. Crea la llave del aparato y la de una tarjeta de prueba, y les pide fondos a friendbot.
-//   2. El aparato arma un pedido de pago con un número de pedido.
-//   3. La tarjeta de prueba paga ese pedido.
+//   2. El aparato arma un cobro, con su número.
+//   3. La tarjeta de prueba paga ese cobro.
 //   4. El aparato busca el pago en los eventos de la red y lo comprueba él mismo.
 //   5. El aparato devuelve el pago: arma la transacción, la firma y la envía.
 //
@@ -20,7 +20,7 @@ if (!/^\d{1,3}(\.\d{1,7})?$/.test(monto) || !(Number(monto) > 0) || Number(monto
   console.error('El monto va de 0.01 a 100, con punto decimal. Ejemplo: node demo.mjs 2.5');
   process.exit(2);
 }
-const pedido = 1000 + Math.floor(Math.random() * 9000);
+const numero = 1000 + Math.floor(Math.random() * 9000);
 const decir = (texto) => console.log(texto);
 
 try {
@@ -31,25 +31,25 @@ try {
   decir('Las dos cuentas tienen fondos de prueba.');
 
   const red = await aparato.networkState();
-  const solicitud = aparato.paymentRequest(monto, pedido);
-  decir(`El aparato cobra ${monto} XLM, pedido ${pedido}. Pedido de pago: ${solicitud}`);
+  const solicitud = aparato.paymentRequest(monto, numero);
+  decir(`El aparato cobra ${monto} XLM, cobro n.º ${numero}. Solicitud de pago: ${solicitud}`);
 
-  const pago = await tarjeta.pay({ destination: aparato.account, amount: monto, order: pedido });
-  decir(`La tarjeta pagó. Firmado en ${pago.signMs.toFixed(2)} ms, confirmado en ${(pago.totalMs / 1000).toFixed(1)} s: ${pago.link}`);
+  const pago = await tarjeta.pay({ destination: aparato.account, amount: monto, order: numero });
+  decir(`La tarjeta pagó. La red lo confirmó en ${(pago.totalMs / 1000).toFixed(1)} s: ${pago.link}`);
 
-  // El aparato no conoce la transacción: busca, desde que armó el pedido, un pago con ese número.
-  // Los pagos de otro pedido (o la carga inicial de la cuenta) se dejan atrás.
+  // El aparato no conoce la transacción: busca, desde que armó el cobro, un pago con ese número.
+  // Los pagos de otro cobro (o la carga inicial de la cuenta) se dejan atrás.
   let visto = null;
   for (let desde = red.ledger, intento = 0; intento < 10 && !visto; intento++) {
     const pagoVisto = await aparato.findPayment({ fromLedger: desde, attempts: 3 });
-    if (pagoVisto && pagoVisto.order === pedido && Number(pagoVisto.amount) >= Number(monto)) visto = pagoVisto;
+    if (pagoVisto && pagoVisto.order === numero && Number(pagoVisto.amount) >= Number(monto)) visto = pagoVisto;
     else if (pagoVisto) desde = pagoVisto.ledger + 1;
   }
   if (!visto) throw new Error('el aparato no encontró el pago en los eventos de la red');
-  decir(`El aparato vio el pago en la red: ${visto.amount} XLM, pedido ${visto.order}. Cobro aprobado.`);
+  decir(`El aparato vio el pago en la red: ${visto.amount} XLM, cobro n.º ${visto.order}. Cobro aprobado.`);
 
-  const devolucion = await aparato.pay({ destination: tarjeta.account, amount: monto, order: pedido });
-  decir(`El aparato devolvió el pago. Firmado en ${devolucion.signMs.toFixed(2)} ms, confirmado en ${(devolucion.totalMs / 1000).toFixed(1)} s: ${devolucion.link}`);
+  const devolucion = await aparato.pay({ destination: tarjeta.account, amount: monto, order: numero });
+  decir(`El aparato devolvió el pago, firmando con su propia llave. La red lo confirmó en ${(devolucion.totalMs / 1000).toFixed(1)} s: ${devolucion.link}`);
 
   decir(JSON.stringify({
     ok: true,
@@ -58,11 +58,11 @@ try {
     cuentaAparato: aparato.account,
     cuentaTarjeta: tarjeta.account,
     monto,
-    pedido,
+    cobro: numero,
     solicitud,
-    pago: { hash: pago.hash, enlace: pago.link, firmaMs: pago.signMs, totalMs: pago.totalMs },
+    pago: { hash: pago.hash, enlace: pago.link, totalMs: pago.totalMs },
     vistoPorElAparato: visto,
-    devolucion: { hash: devolucion.hash, enlace: devolucion.link, firmaMs: devolucion.signMs, totalMs: devolucion.totalMs },
+    devolucion: { hash: devolucion.hash, enlace: devolucion.link, totalMs: devolucion.totalMs },
   }));
 } catch (error) {
   decir(JSON.stringify({ ok: false, error: error.message }));

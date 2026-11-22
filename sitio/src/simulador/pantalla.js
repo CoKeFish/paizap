@@ -29,7 +29,7 @@ function cabecera(ctx, que) {
   ctx.fillRect(6 * U, 19 * U, (256 - 12) * U, 2);
 }
 
-// El QR del pedido, a la izquierda, sobre fondo claro para que se pueda leer.
+// El QR del cobro, a la izquierda, sobre fondo claro para que se pueda leer.
 function qr(ctx, contenido) {
   const matriz = QRCode.create(contenido, { errorCorrectionLevel: 'L' }).modules;
   const lado = matriz.size;
@@ -72,13 +72,20 @@ export function dibujarPantalla(ctx, estado) {
     return;
   }
 
-  if (estado.fase === 'esperando' && estado.pedido) {
+  if (estado.devolviendo) {
+    cabecera(ctx, 'devolviendo');
+    texto(ctx, 'Devolviendo el pago', 6, 40, 17, { grueso: true });
+    texto(ctx, 'El aparato firma y envia...', 6, 72, 11, { color: TENUE });
+    return;
+  }
+
+  if (estado.fase === 'esperando' && estado.cobro) {
     cabecera(ctx, estado.tarjetaPagando ? 'cobrando' : 'esperando pago');
-    qr(ctx, estado.pedido.solicitud);
+    qr(ctx, estado.cobro.solicitud);
     texto(ctx, 'Total', 116, 28, 11, { color: TENUE });
-    texto(ctx, estado.pedido.monto, 116, 42, 30, { grueso: true });
+    texto(ctx, estado.cobro.monto, 116, 42, 30, { grueso: true });
     texto(ctx, 'XLM', 250, 62, 11, { alinear: 'right', color: TENUE });
-    texto(ctx, `Pedido ${estado.pedido.numero}`, 116, 84, 11);
+    texto(ctx, `Cobro ${estado.cobro.numero}`, 116, 84, 11);
     texto(ctx, estado.tarjetaPagando ? 'Pago en camino...' : 'Tarjeta o QR', 116, 104, 11, { color: AVISO });
     return;
   }
@@ -90,18 +97,12 @@ export function dibujarPantalla(ctx, estado) {
   }
 
   if (estado.fase === 'aprobado' && estado.ultimoPago) {
-    cabecera(ctx, 'aprobado');
-    texto(ctx, 'Pago recibido', 6, 30, 18, { grueso: true, color: '#7dffb8' });
+    const devuelto = Boolean(estado.ultimoPago.devolucion);
+    cabecera(ctx, devuelto ? 'devuelto' : 'aprobado');
+    texto(ctx, devuelto ? 'Pago devuelto' : 'Pago aprobado', 6, 30, 18, { grueso: true, color: devuelto ? TINTA : '#7dffb8' });
     texto(ctx, estado.ultimoPago.monto, 6, 58, 34, { grueso: true });
     texto(ctx, 'XLM', 250, 82, 11, { alinear: 'right', color: TENUE });
-    texto(ctx, `Pedido ${estado.ultimoPago.numero} · visto en la red`, 6, 106, 11, { color: TENUE });
-    return;
-  }
-
-  if (estado.devolviendo) {
-    cabecera(ctx, 'devolviendo');
-    texto(ctx, 'Devolviendo el pago', 6, 40, 17, { grueso: true });
-    texto(ctx, 'El aparato firma y envia...', 6, 72, 11, { color: TENUE });
+    texto(ctx, `Cobro ${estado.ultimoPago.numero}, ${devuelto ? 'de vuelta en la tarjeta' : 'visto en la red'}`, 6, 106, 11, { color: TENUE });
     return;
   }
 

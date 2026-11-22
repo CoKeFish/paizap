@@ -21,22 +21,27 @@ prueba a friendbot.
 
 Página: ${raiz}demo/
 
-1. Pulsa el botón con id \`sim-encender\` («Encender el aparato»). Espera a que el texto de
-   \`#sim-estado\` diga «Aparato listo». Tarda de 5 a 20 segundos.
+El panel muestra un solo momento a la vez: encender, cobrar, pagar y el resultado. La fase está en
+el atributo \`data-fase\` de \`#simulador\`: apagado, encendiendo, listo, esperando, aprobado o
+error. Espera las fases, no los textos.
+
+1. Pulsa el botón \`#sim-encender\` («Encender el aparato») y espera \`data-fase="listo"\`. Tarda
+   de 3 a 20 segundos.
 2. Escribe un monto en XLM en el campo \`#sim-monto\` (de 0.01 a 100) y pulsa \`#sim-cobrar\`
-   («Cobrar»). El aparato arma un pedido de pago y empieza a vigilar la red.
-3. Pulsa \`#sim-tarjeta\` («Acercar la tarjeta de prueba»). Espera a que \`#sim-estado\` diga
-   «Pago recibido». Tarda de 5 a 15 segundos.
-4. Opcional: pulsa \`#sim-devolver\` («Devolver el último pago») para que el aparato firme y
-   envíe él mismo un pago.
+   («Cobrar»). La fase pasa a \`esperando\`: el aparato arma el cobro y vigila la red.
+3. Pulsa \`#sim-tarjeta\` («Pagar con la tarjeta de prueba») y espera \`data-fase="aprobado"\`.
+   Tarda de 3 a 15 segundos. La fase se queda en \`aprobado\` hasta el siguiente cobro.
+4. Opcional: pulsa \`#sim-devolver\` («Devolver este pago») para que el aparato firme y envíe él
+   mismo un pago. Termina cuando \`ultimoPago.devolucion\` deja de ser nulo.
+5. Para cobrar de nuevo, pulsa \`#sim-otro\` («Cobrar otra vez») y vuelve al paso 2.
 
 Dónde leer el resultado:
 
-- \`#sim-estado\`: una frase con el estado actual.
-- \`#sim-registro\`: la lista de lo que pasó, con enlaces a cada transacción en stellar.expert.
-- \`#sim-datos\`: el estado en JSON (\`fase\`, cuentas, \`pedido\`, \`ultimoPago\` con su \`hash\` y
-  su \`enlace\`, \`ultimaDevolucion\`, \`cobrosAprobados\`).
-- El atributo \`data-fase\` de \`#simulador\`: apagado, encendiendo, listo, esperando, aprobado o error.
+- \`#sim-datos\`: el estado en JSON. Trae \`fase\`, las cuentas, \`cobro\` (el cobro en espera),
+  \`ultimoPago\` (con su \`hash\`, su \`enlace\` y su \`devolucion\`) y \`cobros\` (los cobros hechos).
+- \`#sim-estado\`: una frase con lo que pasa ahora.
+- \`#sim-registro\`: la lista de lo que hizo el aparato, con un enlace a cada transacción en
+  stellar.expert.
 
 ## Usar el simulador sin navegador
 

@@ -19,23 +19,37 @@ Se compila dentro de Docker porque Astro pide un Node más nuevo que el del PC (
 Para publicarlo en una subcarpeta, como GitHub Pages, la imagen recibe `SITIO_URL` y `SITIO_BASE`
 (ver `astro.config.mjs` y `Dockerfile`).
 
-## El simulador
+## La demo
 
 El terminal de `/demo/` no es una placa: es un simulador. Los pagos sí son reales, en Stellar
 testnet, y los arma y firma el núcleo de Stellar MCU SDK compilado para el navegador.
 
+Cómo está pensada la página:
+
+- **Un momento a la vez.** El panel muestra solo lo que toca: encender, cobrar, pagar o el
+  resultado, con una frase que dice qué pasa y un botón principal.
+- **El resultado se queda.** El pago aprobado sigue a la vista, con su enlace a la transacción,
+  hasta el siguiente cobro. Debajo queda la lista de cobros hechos, con su estado.
+- **El modelo muestra lo mismo y se puede tocar.** Las teclas y la tarjeta responden; el monto
+  es uno solo para el teclado y el campo de la página. El modelo tiene alto propio, siempre
+  encuadra el aparato y la tarjeta enteros, se gira un poco y vuelve solo a su lugar.
+- **Lo técnico va plegado:** el registro de lo que hizo el aparato, las cuentas, las consultas
+  al nodo y las instrucciones para agentes.
+
 | Carpeta | Qué hay |
 |---|---|
+| `src/pages/demo.astro` | La página de la demo |
 | `src/simulador/aparato.js` | Lo que hace el aparato: cobrar, vigilar la red, aprobar y devolver |
+| `src/simulador/pagina.js` | Une el aparato con el panel, la lista de cobros y el registro |
 | `src/simulador/pantalla.js` | Lo que muestra la pantalla del aparato |
 | `src/simulador/escena.js` | El modelo 3D: la carcasa, el teclado y la tarjeta de prueba |
-| `src/simulador/pagina.js` | Une el simulador con los botones y el registro de la página |
+| `src/styles/demo.css` | Los estilos de la demo |
 | `public/modelo/` | La base y la tapa de la carcasa, exportadas de `hardware/carcasa` |
-| `simulador/tapa_demo.scad` | La tapa de la demo, con la ventana de la pantalla más grande |
-| `simulador/retrato.mjs` | Saca la imagen del aparato de la portada (`public/aparato.webp`) con Playwright |
 | `public/simulador/` | El núcleo del SDK compilado (`stellar_mcu.mjs`) y quien hace de placa (`device.mjs`) |
-| `simulador/adaptacion/` | Las fuentes de esa adaptación y cómo volver a compilarla |
 | `public/agentes/demo.mjs` | El mismo cobro sin navegador, con Node |
+| `simulador/adaptacion/` | Las fuentes de esa adaptación y cómo volver a compilarla |
+| `simulador/tapa_demo.scad` | La tapa de la demo, con la ventana de la pantalla más grande |
+| `simulador/retrato.mjs`, `recortar_retrato.py` | Sacan la imagen del aparato de la portada (`public/aparato.webp`) |
 
 La pantalla del modelo es más grande que la del terminal que se imprime (64 × 32 mm en vez de
 la OLED chica), para que se lea en la web. La base es la misma.
@@ -48,9 +62,10 @@ SDK_DIR=/ruta/a/stellar-mcu-sdk sh simulador/adaptacion/build.sh
 cp simulador/adaptacion/stellar_mcu.mjs public/simulador/
 ```
 
-El simulador se puede manejar de tres formas: con el modelo 3D, con los botones de la página
-(tienen identificadores fijos, `sim-encender`, `sim-cobrar`, `sim-tarjeta`, `sim-devolver`, y el
-resultado queda en texto y en JSON en `sim-datos`) y sin navegador, con `agentes/demo.mjs`.
+Para agentes: los botones tienen identificadores fijos (`sim-encender`, `sim-cobrar`,
+`sim-tarjeta`, `sim-devolver`, `sim-otro`), la fase está en `data-fase` de `#simulador` y el
+estado completo, en JSON, en `#sim-datos`. Sin navegador, `agentes/demo.mjs` hace el mismo
+recorrido. Todo está explicado en `/llms.txt`.
 
 ## La documentación
 
@@ -65,5 +80,6 @@ SDK, sin grabar nada en una placa.
 
 ## La marca
 
-Colores y letra: `src/styles/marca.css` (los mismos de `app/src/index.css`). La portada y la demo
-se pintan con `src/styles/portada.css` y la documentación con `src/styles/docs.css`.
+Colores y letra: `src/styles/marca.css` (los mismos de `app/src/index.css`). La portada se pinta
+con `src/styles/portada.css`, la demo le suma `src/styles/demo.css` y la documentación usa
+`src/styles/docs.css`.
