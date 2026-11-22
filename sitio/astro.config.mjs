@@ -10,6 +10,9 @@ const base = process.env.SITIO_BASE || '/';
 
 export default defineConfig({
   site: sitio,
+  // Astro 7 quita por defecto los espacios alrededor de las etiquetas, como JSX, y pega palabras
+  // con enlaces y negritas. Así los comprime sin perder el espacio entre una palabra y la siguiente.
+  compressHTML: true,
   base,
   integrations: [
     starlight({
