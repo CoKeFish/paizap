@@ -53,16 +53,15 @@ Cobro confirmado por la red en 7350 ms
 La transacción está en la red:
 [9a0b9c10…f325285a](https://stellar.expert/explorer/testnet/tx/9a0b9c10a2e2bf430e0782f347be0da91bca52d1b5ba5c85b4d80a04f325285a).
 
-Fue el primero de seis cobros firmados por el terminal en testnet, tres de ellos con tarjeta
+Fue el primero de ocho cobros firmados por el terminal en testnet, cuatro de ellos con tarjeta
 física. El último con tarjeta es
-[6f2127eb…ffcd3f46](https://stellar.expert/explorer/testnet/tx/6f2127ebd08855e3b83446a301e966da843d5f2ae21cae5bb7edba8dffcd3f46).
+[dab4fb6b…1b2cd09b](https://stellar.expert/explorer/testnet/tx/dab4fb6bd5882fc1ebc62faf4d17848e1db2ba4c8905a9ebdfbb8fab1b2cd09b).
 
 ## Lo que se midió
 
 | Qué | Resultado |
 |---|---|
-| De la tarjeta al «aprobado», con la conexión al nodo sin abrir | 9,4 s |
-| Lo mismo, con la conexión ya abierta | unos 7 s |
+| De la tarjeta al «aprobado» | De 7 a 10 s. La primera vez, con la conexión al nodo sin abrir, 9,4 s; con la conexión ya abierta, unos 7 s |
 | Quién firmó, leído de la red | La cuenta del terminal. Una sola firma. |
 | Comisión que cobró la red | 9.110 stroops |
 | Terminal sin autorización en la red | La red rechazó el cobro |

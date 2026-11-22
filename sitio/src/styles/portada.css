@@ -355,6 +355,13 @@ h3 {
   margin-top: 0.4rem;
   color: var(--suave);
 }
+/* El equipo: dos personas, lado a lado. */
+@media (min-width: 62rem) {
+  .usos.equipo {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 52rem;
+  }
+}
 .cierre {
   margin-top: 2rem;
   max-width: 62ch;

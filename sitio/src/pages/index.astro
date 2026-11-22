@@ -21,7 +21,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
     <title>Paizap: pagos de Stellar en dispositivos IoT</title>
     <meta
       name="description"
-      content="Paizap lleva pagos de Stellar a dispositivos IoT: torniquetes, dispensadores, máquinas expendedoras. Se paga con un toque de tarjeta y el aparato cobra solo."
+      content="Paizap lleva pagos de Stellar a dispositivos IoT: torniquetes, dispensadores, máquinas expendedoras. Se paga con un toque de tarjeta y el aparato firma él mismo el cobro."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="apple-touch-icon" href={`${base}icono.png`} />
@@ -45,7 +45,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
           <h1 class="titulo-marca">Aparatos que cobran en Stellar.</h1>
           <p class="entrada">
             Paizap lleva pagos de Stellar a dispositivos IoT: un torniquete, un dispensador, una máquina
-            expendedora. Se paga con un toque de tarjeta y el aparato cobra solo.
+            expendedora. Se paga con un toque de tarjeta y el aparato firma él mismo el cobro.
           </p>
           <p class="acciones">
             <a class="boton rayo" href={demo}>Probar la demo</a>
@@ -148,16 +148,23 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
             </p>
             <ul class="lista">
               <li>
-                <strong>Lee una tarjeta y firma él mismo el cobro.</strong> De acercar la tarjeta al «aprobado» pasan
-                de 7 a 9 segundos, con la confirmación de la red incluida.
+                <strong>El aparato firma el cobro él mismo.</strong> Firmó ocho cobros en testnet, cuatro de ellos con
+                tarjeta física; el último con tarjeta es <a href="https://stellar.expert/explorer/testnet/tx/dab4fb6bd5882fc1ebc62faf4d17848e1db2ba4c8905a9ebdfbb8fab1b2cd09b">esta transacción</a>. Lo arma, lo firma y
+                lo envía directo a un nodo de Stellar; el servidor de la demo dice de qué cuenta es la tarjeta, revisa
+                su límite y anota el recibo.
               </li>
               <li>
-                <strong>El dueño de la cuenta pone un tope de gasto</strong> y la red lo hace cumplir: el aparato
-                nunca puede cobrar más de lo autorizado.
+                <strong>De acercar la tarjeta al «aprobado» pasan de 7 a 10 segundos,</strong> con la confirmación de
+                la red incluida.
               </li>
               <li>
-                <strong>Con el relé activa una máquina.</strong> Es lo que hace girar un torniquete o arrancar una
-                lavadora.
+                <strong>Se puede cobrar con una tarjeta, que no puede firmar.</strong> El cobro usa el permiso de
+                gasto del contrato del token: el dueño de la cuenta fija un tope y un vencimiento, y la red los hace
+                cumplir.
+              </li>
+              <li>
+                <strong>Sirve de caja y de máquina.</strong> Con precio fijo cobra solo y activa un relé: así
+                funcionan un torniquete, un dispensador o una lavadora.
               </li>
             </ul>
             <p class="acciones">
@@ -200,6 +207,26 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
             <a class="boton rayo" href={docs}>Leer la documentación</a>
             <a class="enlace" href={REPO_SDK}>Stellar MCU SDK, en GitHub</a>
           </p>
+        </div>
+      </section>
+
+      <section id="equipo" class="bloque" aria-labelledby="equipo-titulo">
+        <div class="ancho">
+          <h2 id="equipo-titulo" class="titulo-marca">Equipo</h2>
+          <p class="entrada">Un equipo que une electrónica y negocios.</p>
+          <ul class="usos equipo">
+            <li>
+              <h3>Rodion Romanovich</h3>
+              <p>
+                Hardware y Stellar. Ingeniería electrónica e integración blockchain para microcontroladores.
+                <a href="https://github.com/CoKeFish">GitHub</a>
+              </p>
+            </li>
+            <li>
+              <h3>Clyn Roje Quispe Villegas</h3>
+              <p>Negocio y producto. Desarrollo de negocio y enfoque de producto.</p>
+            </li>
+          </ul>
         </div>
       </section>
     </main>
