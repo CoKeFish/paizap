@@ -361,3 +361,30 @@ h3 {
   font-size: 1.125rem;
   font-weight: 600;
 }
+
+/* ---- Portada: por qué IoT. Tres datos, cada uno con su fuente ---- */
+.pruebas {
+  display: grid;
+  gap: 1.5rem 2rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 56rem) {
+  .pruebas {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.pruebas li {
+  padding-left: 1rem;
+  border-left: 4px solid var(--rayo);
+}
+.pruebas p {
+  font-size: 1.125rem;
+}
+.pruebas a {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--suave);
+  font-size: 0.9rem;
+}

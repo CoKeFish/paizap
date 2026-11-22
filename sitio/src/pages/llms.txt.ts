@@ -8,7 +8,7 @@ export const GET: APIRoute = ({ site }) => {
 
   const texto = `# Paizap
 
-> Paizap pone pagos de Stellar dentro de aparatos conectados: torniquetes, dispensadores, cajas.
+> Paizap lleva pagos de Stellar a dispositivos IoT: torniquetes, dispensadores, cajas.
 > Este sitio trae un simulador con tres aparatos que hacen pagos reales en la red de pruebas de
 > Stellar (testnet). La librería con la que cobran es Stellar MCU SDK: pagos de Stellar para
 > microcontroladores.

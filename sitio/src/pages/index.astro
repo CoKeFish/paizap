@@ -1,5 +1,5 @@
 ---
-// Portada de Paizap: pagos de Stellar dentro de aparatos conectados. Qué aparatos, la demo en una
+// Portada de Paizap: pagos de Stellar en dispositivos IoT. Por qué IoT, qué aparatos, la demo en un
 // aparato real (un terminal, que es eso: una demo) y la librería con que cobran. La demo interactiva
 // va aparte, en /demo/.
 import '../styles/marca.css';
@@ -18,10 +18,10 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000b25" />
-    <title>Paizap: aparatos que cobran en Stellar</title>
+    <title>Paizap: pagos de Stellar en dispositivos IoT</title>
     <meta
       name="description"
-      content="Paizap pone pagos de Stellar dentro de aparatos conectados: torniquetes, dispensadores, máquinas expendedoras. Se paga con un toque de tarjeta y el aparato cobra solo."
+      content="Paizap lleva pagos de Stellar a dispositivos IoT: torniquetes, dispensadores, máquinas expendedoras. Se paga con un toque de tarjeta y el aparato cobra solo."
     />
     <link rel="icon" type="image/png" href={`${base}favicon.png`} />
     <link rel="apple-touch-icon" href={`${base}icono.png`} />
@@ -32,6 +32,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
       <nav class="ancho barra" aria-label="Principal">
         <a href={base} class="marca"><img src={`${base}logo-franja.png`} alt="Paizap" width="76" height="56" /></a>
         <ul>
+          <li class="solo-ancho"><a href="#iot">Por qué IoT</a></li>
           <li class="solo-ancho"><a href="#aparatos">Aparatos</a></li>
           <li class="solo-ancho"><a href="#sdk">El SDK</a></li>
           <li><a href={demo}>Demo</a></li>
@@ -43,7 +44,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
         <div>
           <h1 class="titulo-marca">Aparatos que cobran en Stellar.</h1>
           <p class="entrada">
-            Paizap pone pagos de Stellar dentro de aparatos conectados: un torniquete, un dispensador, una máquina
+            Paizap lleva pagos de Stellar a dispositivos IoT: un torniquete, un dispensador, una máquina
             expendedora. Se paga con un toque de tarjeta y el aparato cobra solo.
           </p>
           <p class="acciones">
@@ -63,7 +64,40 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
     </header>
 
     <main>
-      <section id="aparatos" class="bloque" aria-labelledby="aparatos-titulo">
+      <section id="iot" class="bloque" aria-labelledby="iot-titulo">
+        <div class="ancho">
+          <h2 id="iot-titulo" class="titulo-marca">El IoT ya es enorme. Paizap le lleva el cobro</h2>
+          <ul class="pruebas">
+            <li>
+              <p>
+                En 2025 hay <strong>21.100 millones de dispositivos IoT conectados</strong> en el mundo, y se estima que
+                serán 39.000 millones en 2030.
+              </p>
+              <a href="https://iot-analytics.com/number-connected-iot-devices/">IoT Analytics, State of IoT 2025</a>
+            </li>
+            <li>
+              <p>
+                Espressif, que fabrica el ESP32, lleva despachados <strong>más de 1.500 millones de chips IoT</strong>.
+                El ESP32 es el primer microcontrolador donde corre la librería de Paizap.
+              </p>
+              <a href="https://www.espressif.com/en/company/about-espressif">Espressif, sobre la empresa</a>
+            </li>
+            <li>
+              <p>
+                Stellar cuenta entre sus usos los <strong>pagos de máquina a máquina</strong>: pagos frecuentes entre
+                sistemas automáticos, como los dispositivos IoT.
+              </p>
+              <a href="https://stellar.org/x402">Stellar, x402</a>
+            </li>
+          </ul>
+          <p class="cierre">
+            Para que un dispositivo cobre hace falta una librería de pagos que quepa en su microcontrolador. Paizap la
+            escribió y la usa para llevar el cobro a cada aparato.
+          </p>
+        </div>
+      </section>
+
+      <section id="aparatos" class="bloque franja-clara" aria-labelledby="aparatos-titulo">
         <div class="ancho">
           <h2 id="aparatos-titulo" class="titulo-marca">El cobro va dentro del aparato</h2>
           <p class="entrada">
@@ -85,7 +119,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
         </div>
       </section>
 
-      <section id="aparato-real" class="bloque franja-clara" aria-labelledby="aparato-real-titulo">
+      <section id="aparato-real" class="bloque" aria-labelledby="aparato-real-titulo">
         <div class="ancho dos">
           <div>
             <h2 id="aparato-real-titulo" class="titulo-marca">Probado en un aparato de verdad</h2>
@@ -120,7 +154,7 @@ const REPO_SDK = 'https://github.com/CoKeFish/stellar-mcu-sdk';
         </div>
       </section>
 
-      <section id="sdk" class="bloque" aria-labelledby="sdk-titulo">
+      <section id="sdk" class="bloque franja-clara" aria-labelledby="sdk-titulo">
         <div class="ancho">
           <h2 id="sdk-titulo" class="titulo-marca">Hecho con Stellar MCU SDK</h2>
           <p class="entrada">
