@@ -5,7 +5,7 @@ torniquetes, dispensadores de agua, máquinas expendedoras y lavanderías. Lo ha
 **[Stellar MCU SDK](https://github.com/CoKeFish/stellar-mcu-sdk)**, su librería abierta para que un
 microcontrolador cobre, confirme y firme él mismo pagos en [Stellar](https://stellar.org).
 
-**Pruébalo:** [demo en vivo](https://paizap.vercel.app/demo/) · [sitio](https://paizap.vercel.app) · [documentación del SDK](https://paizap.vercel.app/sdk/)
+**Pruébalo:** [demo en vivo](https://paizap.vercel.app/demo/) · [video del dispositivo](https://youtube.com/shorts/vNxY6FoxzuY) · [sitio](https://paizap.vercel.app) · [documentación del SDK](https://paizap.vercel.app/sdk/)
 
 <p align="center">
   <img src="sitio/public/aparato.webp" alt="Modelo 3D de un torniquete que cobra con Paizap, junto a la billetera en el teléfono y la tarjeta de prueba" width="560">
@@ -112,7 +112,7 @@ SDK.
 <p align="center">
   <img src="hardware/img/terminal-demo.jpg" alt="El terminal de demostración sobre una mesa: una mano acerca una tarjeta a la zona de lectura; arriba, la pantalla encendida, y abajo, el teclado" width="620">
 </p>
-<p align="center"><em>El terminal de demostración, cobrando con una tarjeta.</em></p>
+<p align="center"><em>El terminal de demostración, cobrando con una tarjeta. <a href="https://youtube.com/shorts/vNxY6FoxzuY">Míralo funcionando en video</a>.</em></p>
 
 <p align="center">
   <img src="hardware/carcasa/img/conjunto.png" alt="Modelo 3D del terminal de demostración, visto de frente: pantalla, zona de lectura de la tarjeta y teclado" width="380">
