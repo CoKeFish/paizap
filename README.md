@@ -8,6 +8,11 @@ el medio.
 
 **Pruébalo:** [demo en vivo](https://paizap.vercel.app/demo/) · [sitio](https://paizap.vercel.app) · [documentación del SDK](https://paizap.vercel.app/sdk/)
 
+<p align="center">
+  <img src="sitio/public/aparato.webp" alt="Modelo 3D de un torniquete que cobra con Paizap, junto a la billetera en el teléfono y la tarjeta de prueba" width="560">
+</p>
+<p align="center"><em>Modelo de la demo: un torniquete que cobra, la billetera y la tarjeta.</em></p>
+
 > Estado: en desarrollo, sobre Stellar testnet. Abajo está [lo que ya funciona](#lo-que-ya-funciona)
 > y la [hoja de ruta](#hoja-de-ruta).
 
@@ -98,6 +103,12 @@ En testnet, sobre un ESP32-S3:
 Para probar el SDK en un aparato de verdad armamos un terminal de cobro con tarjeta NFC: un
 ESP32-S3 con lector NFC, pantalla y teclado. Es una demostración de lo que se puede hacer con el
 SDK.
+
+<p align="center">
+  <img src="hardware/carcasa/img/conjunto.png" alt="Modelo 3D del terminal de demostración, visto de frente: pantalla, zona de lectura de la tarjeta y teclado" width="380">
+  <img src="hardware/carcasa/img/atras.png" alt="Modelo 3D del terminal de demostración, visto desde atrás, con la entrada del cable" width="380">
+</p>
+<p align="center"><em>Modelo 3D del terminal de demostración. Los archivos para imprimirlo están en <a href="hardware/carcasa/">hardware/carcasa</a>.</em></p>
 
 Lo que la demo comprobó:
 
