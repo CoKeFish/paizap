@@ -39,7 +39,7 @@ Del 23 de noviembre al 22 de diciembre de 2026:
   una placa con RP2040 y Wi-Fi cuesta [USD 6](https://www.raspberrypi.com/news/raspberry-pi-pico-w-your-6-iot-platform/).
 - **Con qué se financia lo que sigue:** [Stellar Instawards](https://stellar.org/blog/ecosystem/introducing-the-stellar-ambassador-program),
   premios de hasta USD 15.000 para experimentar y hacer prototipos, que se piden por medio de los
-  capítulos de embajadores de Stellar. El equipo ya ganó uno con un proyecto anterior, Kiba.
+  capítulos de embajadores de Stellar.
 
 ## Más adelante
 
