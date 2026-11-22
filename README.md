@@ -141,7 +141,7 @@ Los próximos 30 días, del 23 de noviembre al 22 de diciembre de 2026:
   una placa con RP2040 y Wi-Fi cuesta [USD 6](https://www.raspberrypi.com/news/raspberry-pi-pico-w-your-6-iot-platform/).
 - **Con qué se financia lo que sigue:** [Stellar Instawards](https://stellar.org/blog/ecosystem/introducing-the-stellar-ambassador-program),
   premios de hasta USD 15.000 para experimentar y hacer prototipos, que se piden por medio de
-  los capítulos de embajadores de Stellar. El equipo ya ganó uno con un proyecto anterior, Kiba.
+  los capítulos de embajadores de Stellar.
 - **Lo primero que se comprueba:** que alguien ajeno al equipo use la librería sin nuestra ayuda.
 - **Regla para seguir:** librería funcionando en 2 microcontroladores, usada por 3 desarrolladores
   externos, y postulación enviada.
@@ -152,7 +152,7 @@ Un equipo que une electrónica y negocios.
 
 | Quién | Rol | Qué aporta |
 |---|---|---|
-| **Rodion Romanovich** ([rodion.com.co](https://rodion.com.co), [@CoKeFish](https://github.com/CoKeFish)) | Hardware y Stellar | Ingeniero electrónico: ingeniería electrónica e integración blockchain para microcontroladores. Con su proyecto anterior sobre Stellar, [Kiba](https://github.com/CoKeFish/kiba) (pagos por llamada en USDC), ganó un Stellar Instaward. Antes hizo [Mesura](https://github.com/CoKeFish/mesura-firmware), sensores IoT sobre Arduino, ESP32 y Raspberry Pi |
+| **Rodion Romanovich** ([rodion.com.co](https://rodion.com.co), [@CoKeFish](https://github.com/CoKeFish)) | Hardware y Stellar | Ingeniero electrónico: ingeniería electrónica e integración blockchain para microcontroladores. Su proyecto anterior sobre Stellar es [Kiba](https://github.com/CoKeFish/kiba), pagos por llamada en USDC, hecho para el Stellar PULSO Hackathon. Antes hizo [Mesura](https://github.com/CoKeFish/mesura-firmware), sensores IoT sobre Arduino, ESP32 y Raspberry Pi |
 | **Clyn Roje Quispe Villegas** | Negocio y producto | Desarrollo de negocio y enfoque de producto |
 
 Paizap mantiene Stellar MCU SDK, que es abierto, y hace la integración en el aparato de cada
