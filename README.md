@@ -12,8 +12,12 @@ microcontrolador cobre, confirme y firme él mismo pagos en [Stellar](https://st
 </p>
 <p align="center"><em>Modelo de la demo: un torniquete que cobra, la billetera y la tarjeta.</em></p>
 
-> Estado: en desarrollo, sobre Stellar testnet. Abajo está [lo que ya funciona](#lo-que-ya-funciona)
-> y la [hoja de ruta](#hoja-de-ruta).
+**El producto es la librería.** Stellar MCU SDK no necesita un servidor: sus ejemplos cobran y
+pagan hablando solo con un nodo público de Stellar. Paizap no vende un terminal: el terminal con
+tarjeta de este repositorio es una demostración hecha con la librería.
+
+> Estado: demo pública en vivo y librería abierta, sobre Stellar testnet. Abajo está
+> [lo que ya funciona](#lo-que-ya-funciona) y la [hoja de ruta](#hoja-de-ruta).
 
 ## El problema
 
@@ -61,7 +65,7 @@ servidores; falta el que corre dentro del dispositivo.
 
 | Pieza | Qué hace el dispositivo |
 |---|---|
-| **Cobrar** | Arma el pedido de pago para mostrarlo como QR |
+| **Cobrar** | Arma el pedido de pago (SEP-7). La [demo del navegador](https://paizap.vercel.app/demo/) lo muestra como QR |
 | **Confirmar** | Le pregunta a un nodo de Stellar RPC y comprueba él mismo que el pago llegó, con su monto y su número de pedido, si el pago lo trae. Entonces suena, lo muestra o activa un relé |
 | **Pagar** | Guarda su llave, arma la transacción, la firma y la envía: un pago o una llamada a un contrato de token |
 
@@ -107,7 +111,8 @@ En testnet, sobre el primer microcontrolador, un ESP32-S3:
 
 Para probar el SDK en un aparato de verdad armamos un terminal de cobro con tarjeta NFC: un
 ESP32-S3 con lector NFC, pantalla y teclado. Es una demostración de lo que se puede hacer con el
-SDK.
+SDK. La demo suma un servidor propio para la app y el registro de tarjetas; la librería no lo
+necesita.
 
 <p align="center">
   <img src="hardware/img/terminal-demo.jpg" alt="El terminal de demostración sobre una mesa: una mano acerca una tarjeta a la zona de lectura; arriba, la pantalla encendida, y abajo, el teclado" width="620">
