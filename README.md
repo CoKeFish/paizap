@@ -34,7 +34,11 @@ el 78 % de las ventas de 2025 fue sin efectivo. Hoy ese cobro pasa por un lector
 [Nayax](https://shop.nayax.com/usa_en/vpos-touch.html) cuesta USD 399 por unidad en su tienda de
 Estados Unidos, y la empresa
 [reporta](https://ir.nayax.com/news/news-details/2026/Nayax-Reports-Second-Quarter-2026-Results/default.aspx)
-una comisión de pagos del 2,62 % sobre lo que procesa.
+una comisión de pagos del 2,62 % sobre lo que procesa. Y es un negocio grande: Nayax
+[cerró 2025](https://ir.nayax.com/news/news-details/2026/Nayax-Reports-Fourth-Quarter-and-Full-Year-2025-Results/default.aspx)
+con 1,46 millones de dispositivos conectados y cerca de 115.000 clientes, y Cantaloupe
+[cerró su año fiscal 2025](https://www.sec.gov/Archives/edgar/data/0000896429/000162828025044777/ctlp-20251010.htm)
+con 1,28 millones de dispositivos activos.
 
 Esos dispositivos corren sobre microcontroladores. Stellar tiene SDK para la web, el celular y los
 servidores; falta el que corre dentro del dispositivo.
@@ -42,6 +46,13 @@ servidores; falta el que corre dentro del dispositivo.
 - **Stellar no tiene un SDK para microcontroladores.** La documentación oficial lista SDK para
   JavaScript, Python, Rust, Java, Go y otros lenguajes de aplicaciones, y ninguno para
   microcontroladores ([Stellar Docs](https://developers.stellar.org/docs/tools/sdks/client-sdks)).
+- **Otras redes ya lo tienen.** Bitcoin ([uBitcoin](https://github.com/micro-bitcoin/uBitcoin)),
+  Ethereum ([Web3E](https://github.com/AlphaWallet/Web3E)), Solana
+  ([sol](https://github.com/torrey-xyz/solduino)), Algorand
+  ([Vertices](https://github.com/vertices-network/c-algorand-sdk)), IoTeX
+  ([arduino-sdk](https://github.com/iotexproject/arduino-sdk)) y Sui
+  ([MicroSui](https://github.com/MicroSui/microsui-lib)) tienen librería para microcontroladores
+  en los registros de Arduino o PlatformIO. Stellar no tiene ninguna.
 - **Hoy hay dos salidas: escribir el protocolo a mano o poner un servidor en el medio.** Así
   resuelven hoy el camino a la red los proyectos públicos que arman aparatos sobre Stellar:
 
@@ -155,10 +166,13 @@ Los próximos 30 días, del 23 de noviembre al 22 de diciembre de 2026:
 
 | Semana | Qué hacemos | Meta |
 |---|---|---|
-| 1 (23 al 29 nov) | Guía de inicio de la librería y sus dos ejemplos | Guía publicada: con ella sola se compila un ejemplo y se paga en testnet |
+| 1 (23 al 29 nov) | Publicar la librería en los registros de Arduino y PlatformIO, con su primera versión numerada | Versión 0.1 instalable desde los dos registros |
 | 2 (30 nov al 6 dic) | Llevar el mismo núcleo a un segundo microcontrolador, el RP2040 con su chip de Wi-Fi. Empezar la postulación a Stellar Instawards, por medio del capítulo local de embajadores | El mismo ejemplo de pago corre en 2 microcontroladores |
-| 3 (7 al 13 dic) | Un ejemplo nuevo: el cobro con número de pedido. La librería ya lee ese número en el pago; el ejemplo espera el pago de otra persona y lo reconoce por él | Ejemplo publicado y probado en testnet |
+| 3 (7 al 13 dic) | Un ejemplo nuevo: el dispositivo paga en USDC de testnet con una llamada al contrato del token. El núcleo ya arma esa llamada; el ejemplo la corre en el dispositivo, sin servidor | Ejemplo publicado y probado en testnet, con su transacción enlazada |
 | 4 (14 al 22 dic) | Enviar la postulación a Stellar Instawards | Postulación enviada |
+
+Dos cosas que estaban en este plan ya están publicadas: la [guía de inicio](https://paizap.vercel.app/sdk/inicio-rapido/) y el
+[ejemplo que cobra con número de pedido](https://github.com/CoKeFish/stellar-mcu-sdk/tree/main/examples/esp32_standalone_device).
 
 - **Costo del mes:** el tiempo de los dos y el hardware para probar el segundo microcontrolador:
   una placa con RP2040 y Wi-Fi cuesta [USD 6](https://www.raspberrypi.com/news/raspberry-pi-pico-w-your-6-iot-platform/).
