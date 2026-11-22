@@ -74,6 +74,10 @@ servidores; falta el que corre dentro del dispositivo.
 
 ## Qué hace Stellar MCU SDK
 
+Stellar MCU SDK existe para llenar ese hueco: darle a Stellar la librería para microcontroladores
+que otras redes ya tienen. Es de código abierto y de libre uso, bajo la
+[licencia Apache 2.0](https://github.com/CoKeFish/stellar-mcu-sdk/blob/main/LICENSE).
+
 | Pieza | Qué hace el dispositivo |
 |---|---|
 | **Cobrar** | Arma el pedido de pago (SEP-7). La [demo del navegador](https://paizap.vercel.app/demo/) lo muestra como QR |
@@ -85,7 +89,7 @@ La librería, sus ejemplos y su documentación están en su propio repositorio:
 
 ## Lo que ya funciona
 
-En testnet, sobre el primer microcontrolador, un ESP32-S3:
+En testnet, sobre un microcontrolador:
 
 - **El microcontrolador armó, firmó y envió solo dos tipos de pago,** hablando directo con un nodo
   de Stellar RPC y sin servidor propio en el medio: un
