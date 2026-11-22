@@ -80,7 +80,8 @@ stl_amount_parse("1.5", &units);  // 15000000
 ### Otro activo
 
 Para pagar en un activo emitido, como USDC, pasa un `stl_asset` con su código y su emisor en lugar
-de `NULL`. La cuenta que recibe necesita tener habilitado ese activo.
+de `NULL`. La cuenta que recibe necesita tener habilitado ese activo. Este pago está comprobado en
+el PC, byte a byte contra el SDK oficial de JavaScript; en el microcontrolador se probó el de XLM.
 
 ```cpp
 stl_asset usdc = {false, "USDC", {0}};

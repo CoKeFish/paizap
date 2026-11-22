@@ -33,7 +33,8 @@ web+stellar:pay?destination=GAPT3IMGXHKXAKM4NLWM6FA7EJMCZYQH6BNBWFEB7F7R7K24KXCP
 | `a` | El activo: `NULL` para XLM. Con un `stl_asset`, el pedido lleva el código y el emisor. |
 | `has_memo`, `memo` | El número de este cobro. |
 
-La función devuelve el largo del texto, o 0 si no cupo en el búfer. Un pedido ocupa entre 95 y 209
+La función devuelve el largo del texto, o 0 si no cupo en el búfer. El pedido está entre las
+comprobaciones del PC. Un pedido ocupa entre 95 y 209
 letras, según lleve activo y memo.
 
 ## Un memo por cobro

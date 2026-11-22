@@ -8,17 +8,21 @@ description: Qué hace el SDK hoy y qué sigue.
 Probado en un ESP32-S3 contra Stellar testnet:
 
 - Direcciones (`G…`, `C…`, `S…`) y montos sin coma flotante.
-- Pago de XLM o de un activo emitido, con memo.
-- `transfer` y `transfer_from` en el contrato del token, con simulación y tope de comisión.
+- Pago de XLM, con memo.
+- `transfer` y `transfer_from` en el contrato del token de XLM, con simulación y tope de comisión.
 - La autorización de la llamada, armada por el aparato.
 - La dirección del contrato del token, calculada en el aparato.
 - Detección de pagos por eventos, con monto y memo.
-- Pedido de pago SEP-7.
 - Cliente del nodo para ESP32: conexión segura con certificado comprobado y conexión reutilizada.
-- 23 de 23 comprobaciones en el PC; 16 comparan byte a byte con el SDK oficial de JavaScript.
 - Dos ejemplos: un pago con su confirmación, y un aparato autónomo que cobra, ve llegar el pago y
   paga.
 - Un terminal con tarjeta NFC, la demo de Paizap, que firma sus cobros con el SDK.
+
+Comprobado en el PC:
+
+- 23 de 23 comprobaciones; 16 comparan byte a byte con el SDK oficial de JavaScript.
+- El pago de un activo emitido (USDC) y la dirección de su contrato.
+- El pedido de pago SEP-7.
 
 ## Lo que sigue
 
