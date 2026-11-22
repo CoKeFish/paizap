@@ -66,7 +66,7 @@ La librería, sus ejemplos y su documentación están en su propio repositorio:
 
 ## Lo que ya funciona
 
-En testnet, sobre el primer microcontrolador con adaptador, un ESP32-S3:
+En testnet, sobre el primer microcontrolador, un ESP32-S3:
 
 - **El microcontrolador armó, firmó y envió solo dos tipos de pago,** hablando directo con un nodo
   de Stellar RPC y sin servidor propio en el medio: un
@@ -92,11 +92,11 @@ En testnet, sobre el primer microcontrolador con adaptador, un ESP32-S3:
 
 - **Un núcleo en C portable,** sin memoria dinámica y sin depender de ningún chip: direcciones,
   montos, XDR, transacciones, llamadas a contratos de token y lectura de eventos de pago.
-- **Un adaptador por microcontrolador,** que solo aporta la conexión segura a internet y la
+- **Cada microcontrolador aporta solo dos cosas:** la conexión segura a internet y la
   criptografía.
 - **Sobre Stellar RPC,** no sobre Horizon.
-- **Para cualquier microcontrolador:** el núcleo no depende de ningún chip. El ESP32 es solo el
-  primero con adaptador; la hoja de ruta suma el RP2040 sin tocar el núcleo.
+- **Librería para microcontroladores:** el núcleo no depende de ningún chip. El ESP32 es el
+  primero; la hoja de ruta suma el RP2040 sin tocar el núcleo.
 
 ## La demo en un aparato real
 
