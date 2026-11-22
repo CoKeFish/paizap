@@ -281,7 +281,7 @@ Stellar. Para quien usa el terminal todo se ve igual: monto, tarjeta, aviso, rel
   necesitar otra raíz.
 
 Medido en la ESP32-S3: el SDK suma 23,5 KB de flash; abrir la conexión con el nodo tarda unos 2 s
-la primera vez; de la tarjeta al «aprobado» pasan de 7 a 10 s.
+la primera vez; de la tarjeta al «aprobado» pasan de 7 a 10 s (el pago en la red se confirma en 3 a 6 s).
 
 | Entorno | Para |
 |---|---|

@@ -1,10 +1,9 @@
 # Paizap
 
-**Pagos de Stellar en dispositivos IoT.** Paizap lleva sistemas de pago a aparatos conectados, como
+**Pagos de Stellar en dispositivos IoT.** Paizap lleva sistemas de pago a dispositivos IoT, como
 torniquetes, dispensadores de agua, máquinas expendedoras y lavanderías. Lo hace con
 **[Stellar MCU SDK](https://github.com/CoKeFish/stellar-mcu-sdk)**, su librería abierta para que un
-microcontrolador cobre, confirme y firme pagos en [Stellar](https://stellar.org), sin un servidor en
-el medio.
+microcontrolador cobre, confirme y firme él mismo pagos en [Stellar](https://stellar.org).
 
 **Pruébalo:** [demo en vivo](https://paizap.vercel.app/demo/) · [sitio](https://paizap.vercel.app) · [documentación del SDK](https://paizap.vercel.app/sdk/)
 

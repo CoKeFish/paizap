@@ -1,4 +1,4 @@
-# Carcasa del terminal Toki
+# Carcasa del terminal de demostración de Paizap
 
 Caja inclinada de mesa para la pantalla OLED, el lector PN532, el teclado de membrana 4×4 y la
 ESP32-S3, con el interior libre para los cables. Mide 86 × 172 mm, con 22,5 mm de alto al frente y
