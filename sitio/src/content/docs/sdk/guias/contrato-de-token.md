@@ -28,6 +28,11 @@ stl_token_call payment = {contract, "transfer", {payer, destination}, 2, units};
 Las cuentas (`G…`, como 32 bytes) van en el orden de los argumentos de la función, y el monto al
 final.
 
+Una llamada a contrato no puede llevar memo: desde el protocolo 25 la red la rechaza con
+`txSOROBAN_INVALID`
+([Stellar Docs](https://developers.stellar.org/docs/build/guides/transactions/pooled-accounts-muxed-accounts-memos)).
+Por eso `stl_tx_token_call` nunca lo escribe, aunque `has_memo` esté puesto.
+
 ## 1. Simular
 
 Se arma la transacción sin recursos y sin firma, y se le pide al nodo que la simule:

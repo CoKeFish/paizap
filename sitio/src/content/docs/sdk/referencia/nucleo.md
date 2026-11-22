@@ -77,7 +77,7 @@ typedef struct {
   uint32_t fee;          // total, in stroops
   int64_t sequence;      // the account's sequence number plus one
   uint64_t valid_until;  // Unix time; 0 = no limit
-  bool has_memo;
+  bool has_memo;         // only stl_tx_payment writes the memo
   uint64_t memo;         // numeric memo
   bool has_op_source;    // the operation is made on behalf of another account
   uint8_t op_source[32];
@@ -110,7 +110,7 @@ size_t         stl_tx_envelope_len(const stl_xdr *x);
 |---|---|
 | `stl_tx_begin` | Prepara el búfer para una transacción de esa red. Siempre va primero. |
 | `stl_tx_payment` | Escribe un pago de `amount` a `destination`. `a` es el activo; `NULL` es XLM. |
-| `stl_tx_token_call` | Escribe una llamada al contrato del token. Con `soroban_data` en `NULL` arma la transacción que se manda a simular; con los datos que devolvió la simulación, la que se firma. |
+| `stl_tx_token_call` | Escribe una llamada al contrato del token. Con `soroban_data` en `NULL` arma la transacción que se manda a simular; con los datos que devolvió la simulación, la que se firma. Nunca escribe el memo, aunque `has_memo` esté puesto: la red rechaza una llamada a contrato que lo lleve. |
 | `stl_token_auth` | Escribe la autorización que necesita esa llamada, para compararla con la que propone el nodo. `stl_tx_token_call` ya la incluye. |
 | `stl_tx_sign` | Firma la transacción y le agrega la firma. Deja en `hash` el identificador de la transacción. |
 | `stl_tx_unsigned` | Cierra la transacción sin firmas. Es la que se manda a simular. |
