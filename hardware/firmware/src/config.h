@@ -98,6 +98,11 @@
 #ifndef TOKEN_CONTRATO
 #define TOKEN_CONTRATO ""
 #endif
+// Símbolo que el terminal muestra junto al monto (PAIZAP_MONEDA). Va con el token: XLM si no
+// se configura otro.
+#ifndef MONEDA
+#define MONEDA "XLM"
+#endif
 // Llave del terminal (PAIZAP_TERMINAL_SECRET, una S...). Vacía = el terminal crea la suya la
 // primera vez y la guarda en la placa.
 #ifndef TERMINAL_SEMILLA

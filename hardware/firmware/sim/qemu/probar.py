@@ -21,8 +21,8 @@ TAMANO_FLASH = 4 * 1024 * 1024
 PASOS = [
     # (esperar este texto, luego escribir esto)
     ("Listo.", "12.50\n"),
-    ("Cobrar 12.50 USDC: acerque la tarjeta", "t\n"),
-    ("Monto: 12.50 USDC", None),
+    ("Cobrar 12.50 XLM: acerque la tarjeta", "t\n"),
+    ("Monto: 12.50 XLM", None),
     ("Relé ON", None),
     ("Relé OFF", None),
     ("Pago OK", None),

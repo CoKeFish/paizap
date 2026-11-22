@@ -36,6 +36,7 @@ contenido = (
     "#define FIRMA_TERMINAL " + firma_terminal + "\n"
     "#define COMERCIO_CUENTA " + cadena_c("PAIZAP_COMERCIO") + "\n"
     "#define TOKEN_CONTRATO " + cadena_c("PAIZAP_TOKEN") + "\n"
+    "#define MONEDA " + json.dumps(os.environ.get("PAIZAP_MONEDA") or "XLM", ensure_ascii=False) + "\n"
     "#define TERMINAL_SEMILLA " + cadena_c("PAIZAP_TERMINAL_SECRET") + "\n"
 )
 

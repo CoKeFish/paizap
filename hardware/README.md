@@ -244,6 +244,7 @@ Doppler). Sin servidor, el terminal queda en modo prueba: recorre el flujo sin c
 | `PAIZAP_COMERCIO` | Cuenta del comercio de este terminal; con ella, solo cobra para esa cuenta |
 | `PAIZAP_TERMINAL_SECRET` | Llave del terminal (`S...`). Vacía: el terminal crea la suya y la guarda |
 | `PAIZAP_TOKEN` | Contrato del token con el que cobra (`C...`). Vacío: XLM de la red |
+| `PAIZAP_MONEDA` | Símbolo que la pantalla muestra junto al monto. Vacío: `XLM`. Si cobras con otro token, pon el suyo |
 
 ### Cobro firmado por el terminal (SDK)
 

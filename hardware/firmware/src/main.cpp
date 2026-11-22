@@ -104,7 +104,7 @@ void rele(bool encendido) {
 }
 
 void pantallaMonto() {
-  pantalla::mostrar("Paizap: Monto (USDC)", monto.isEmpty() ? "0" : monto, "# cobrar  * borrar");
+  pantalla::mostrar("Paizap: Monto (" MONEDA ")", monto.isEmpty() ? "0" : monto, "# cobrar  * borrar");
 }
 
 // Pantalla de reposo: en modo caja, el monto; en modo productos, la lista con sus precios.
@@ -133,7 +133,7 @@ void volverAlInicio() {
   concepto = "";
   if (AUTOSERVICIO) {
     monto = PRECIO_FIJO;
-    Serial.printf("Autoservicio: %s USDC, acerque la tarjeta\n", monto.c_str());
+    Serial.printf("Autoservicio: %s " MONEDA ", acerque la tarjeta\n", monto.c_str());
     prepararCobro();
   } else {
     monto = "";
@@ -543,7 +543,7 @@ void pagoAprobado(const Resultado &r);
 
 void cobrar(const Tarjeta &t) {
   Serial.println("--- Tarjeta leída ---");
-  Serial.printf("Monto: %s USDC\n", monto.c_str());
+  Serial.printf("Monto: %s " MONEDA "\n", monto.c_str());
   Serial.printf("UID:   %s\n", t.uid.c_str());
   Serial.printf("SUN:   %s\n", t.url.isEmpty() ? "(sin URL: no es NTAG 424 DNA o no está configurada)" : t.url.c_str());
 
@@ -715,7 +715,7 @@ bool leerLineaSerie(String &linea) {
 
 void pedirTarjeta() {
   if (monto.endsWith(".")) monto.remove(monto.length() - 1);
-  Serial.printf("Cobrar %s USDC: acerque la tarjeta\n", monto.c_str());
+  Serial.printf("Cobrar %s " MONEDA ": acerque la tarjeta\n", monto.c_str());
   prepararCobro();
 }
 
@@ -727,7 +727,7 @@ void cancelar() {
 void elegirProducto(uint8_t i) {
   concepto = productos[i].nombre;
   monto = productos[i].precio;
-  Serial.printf("Producto %d (%s): cobrar %s USDC, acerque la tarjeta\n", i + 1, concepto.c_str(), monto.c_str());
+  Serial.printf("Producto %d (%s): cobrar %s " MONEDA ", acerque la tarjeta\n", i + 1, concepto.c_str(), monto.c_str());
   prepararCobro();
 }
 
