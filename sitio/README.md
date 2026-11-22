@@ -4,7 +4,8 @@ Un solo sitio estático, hecho con [Astro](https://astro.build) y [Starlight](ht
 
 | Dirección | Qué es |
 |---|---|
-| `/` | La página de Paizap, con el terminal simulado |
+| `/` | La portada de Paizap: qué es, su terminal y el SDK |
+| `/demo/` | La demo: el terminal simulado, que cobra en Stellar testnet |
 | `/sdk/` | La documentación de Stellar MCU SDK |
 | `/llms.txt` | Cómo usar el simulador, para agentes |
 
@@ -20,18 +21,24 @@ Para publicarlo en una subcarpeta, como GitHub Pages, la imagen recibe `SITIO_UR
 
 ## El simulador
 
-El terminal de la página no es una placa: es un simulador. Los pagos sí son reales, en Stellar
+El terminal de `/demo/` no es una placa: es un simulador. Los pagos sí son reales, en Stellar
 testnet, y los arma y firma el núcleo de Stellar MCU SDK compilado para el navegador.
 
 | Carpeta | Qué hay |
 |---|---|
 | `src/simulador/aparato.js` | Lo que hace el aparato: cobrar, vigilar la red, aprobar y devolver |
-| `src/simulador/pantalla.js` | La pantalla del aparato (OLED de 128 × 64) |
-| `src/simulador/escena.js` | El modelo 3D: la carcasa real, el teclado y la tarjeta de prueba |
+| `src/simulador/pantalla.js` | Lo que muestra la pantalla del aparato |
+| `src/simulador/escena.js` | El modelo 3D: la carcasa, el teclado y la tarjeta de prueba |
+| `src/simulador/pagina.js` | Une el simulador con los botones y el registro de la página |
 | `public/modelo/` | La base y la tapa de la carcasa, exportadas de `hardware/carcasa` |
+| `simulador/tapa_demo.scad` | La tapa de la demo, con la ventana de la pantalla más grande |
+| `simulador/retrato.mjs` | Saca la imagen del aparato de la portada (`public/aparato.webp`) con Playwright |
 | `public/simulador/` | El núcleo del SDK compilado (`stellar_mcu.mjs`) y quien hace de placa (`device.mjs`) |
 | `simulador/adaptacion/` | Las fuentes de esa adaptación y cómo volver a compilarla |
 | `public/agentes/demo.mjs` | El mismo cobro sin navegador, con Node |
+
+La pantalla del modelo es más grande que la del terminal que se imprime (64 × 32 mm en vez de
+la OLED chica), para que se lea en la web. La base es la misma.
 
 La adaptación para el navegador es de Paizap, para esta demo. No es parte del SDK, que es para
 microcontroladores. Para volver a compilarla hace falta Emscripten y el repositorio del SDK:
@@ -58,5 +65,5 @@ SDK, sin grabar nada en una placa.
 
 ## La marca
 
-Colores y letra: `src/styles/marca.css` (los mismos de `app/src/index.css`). La página de Paizap
-se pinta con `src/styles/portada.css` y la documentación con `src/styles/docs.css`.
+Colores y letra: `src/styles/marca.css` (los mismos de `app/src/index.css`). La portada y la demo
+se pintan con `src/styles/portada.css` y la documentación con `src/styles/docs.css`.

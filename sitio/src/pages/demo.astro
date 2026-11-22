@@ -1,0 +1,161 @@
+---
+// La demo: el terminal simulado, en su propia página. Cobra de verdad en Stellar testnet y se
+// maneja con el modelo 3D o con los botones (pensados también para agentes que usan el navegador).
+import '../styles/marca.css';
+import '../styles/portada.css';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const docs = `${base}sdk/`;
+// Enlace al video del aparato real. Vacío: la página no lo menciona.
+const VIDEO = '';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000b25" />
+    <title>Demo: el terminal de Paizap, simulado</title>
+    <meta name="description" content="Un terminal de cobro simulado que paga de verdad en la red de pruebas de Stellar. Úsalo con el modelo 3D o con los botones." />
+    <link rel="icon" type="image/png" href={`${base}favicon.png`} />
+    <link rel="alternate" type="text/plain" href={`${base}llms.txt`} title="Cómo usar la demo, para agentes" />
+  </head>
+  <body data-base={base} class="pagina-demo">
+    <header class="noche portada">
+      <nav class="ancho barra" aria-label="Principal">
+        <a href={base} class="marca"><img src={`${base}logo-franja.png`} alt="Paizap" width="76" height="56" /></a>
+        <ul>
+          <li><a href={base}>Paizap</a></li>
+          <li><a href={docs}>Documentación del SDK</a></li>
+        </ul>
+      </nav>
+
+    <section id="simulador" class="ancho sim" aria-labelledby="sim-titulo" data-fase="apagado">
+      <div class="sim-cabecera">
+        <h1 id="sim-titulo" class="titulo-marca">Prueba el terminal</h1>
+        <p class="sello">Simulador · Stellar testnet</p>
+      </div>
+      <p class="sim-aviso">
+        <strong>Esto es un simulador:</strong> no hay una placa detrás. Los pagos sí son reales, en la red de pruebas
+        de Stellar, y los arma y firma el mismo núcleo que corre en el terminal.
+        {VIDEO && <a href={VIDEO}>Mira el aparato real en el video.</a>}
+      </p>
+
+      <div class="sim-cuerpo">
+        <div class="sim-3d">
+          <canvas id="sim-lienzo" aria-label="Modelo 3D del terminal de Paizap. Los botones de la derecha hacen lo mismo."></canvas>
+          <p class="sim-pista" id="sim-pista">Cargando el modelo…</p>
+        </div>
+
+        <div class="sim-panel">
+          <p id="sim-estado" class="sim-estado" role="status" aria-live="polite">El aparato está apagado.</p>
+
+          <ol class="pasos">
+            <li>
+              <h3>Enciende el aparato</h3>
+              <p>Crea su llave y pide fondos de prueba. Tarda unos segundos.</p>
+              <button type="button" id="sim-encender" class="boton rayo">Encender el aparato</button>
+            </li>
+            <li>
+              <h3>Cobra</h3>
+              <p>Escribe el monto aquí, o en el teclado del aparato y pulsa <kbd>#</kbd>.</p>
+              <div class="fila">
+                <label for="sim-monto">Monto en XLM</label>
+                <input id="sim-monto" name="monto" inputmode="decimal" autocomplete="off" value="1.50" disabled />
+                <button type="button" id="sim-cobrar" class="boton rayo" disabled>Cobrar</button>
+              </div>
+            </li>
+            <li>
+              <h3>Paga</h3>
+              <p>Acerca la tarjeta de prueba, o paga el QR desde una billetera de testnet.</p>
+              <div class="fila">
+                <button type="button" id="sim-tarjeta" class="boton rayo" disabled>Acercar la tarjeta de prueba</button>
+                <button type="button" id="sim-cancelar" class="boton linea" disabled>Cancelar el cobro</button>
+              </div>
+              <figure id="sim-pedido" class="pedido" hidden>
+                <img id="sim-qr" alt="Código QR del pedido de pago" width="148" height="148" />
+                <figcaption>
+                  Pedido <span id="sim-pedido-numero"></span>. El aparato vigila la red hasta ver este pago.
+                  <code id="sim-solicitud"></code>
+                </figcaption>
+              </figure>
+            </li>
+            <li>
+              <h3>Devuelve el pago</h3>
+              <p>Ahora firma el aparato: arma la devolución, la firma con su llave y la envía.</p>
+              <button type="button" id="sim-devolver" class="boton linea" disabled>Devolver el último pago</button>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="sim-resultados">
+        <div>
+          <h3>Qué pasó</h3>
+          <ol id="sim-registro" class="registro" aria-live="polite">
+            <li class="vacio">Todavía nada. Enciende el aparato.</li>
+          </ol>
+        </div>
+        <div>
+          <h3>Datos</h3>
+          <dl class="datos">
+            <div><dt>Cuenta del aparato</dt><dd id="sim-cuenta-aparato">—</dd></div>
+            <div><dt>Cuenta de la tarjeta de prueba</dt><dd id="sim-cuenta-tarjeta">—</dd></div>
+            <div><dt>Último cobro</dt><dd id="sim-ultimo">—</dd></div>
+            <div><dt>Última devolución</dt><dd id="sim-devolucion">—</dd></div>
+            <div><dt>Cobros aprobados</dt><dd id="sim-ventas">0</dd></div>
+          </dl>
+          <h3>Consultas al nodo</h3>
+          <pre id="sim-monitor" class="monitor" aria-label="Consultas que el aparato le hace al nodo de Stellar">—</pre>
+        </div>
+      </div>
+      <script type="application/json" id="sim-datos">{"fase":"apagado"}</script>
+    </section>
+    </header>
+
+    <main>
+      <section id="agentes" class="bloque franja-clara" aria-labelledby="agentes-titulo">
+        <div class="ancho">
+          <h2 id="agentes-titulo" class="titulo-marca">Si eres un agente</h2>
+          <p class="entrada">El simulador se puede usar sin mirar el modelo 3D. Todo pasa también en texto.</p>
+          <div class="dos">
+            <div>
+              <h3>Con un navegador</h3>
+              <ol class="lista">
+                <li>Pulsa el botón <code>#sim-encender</code> y espera a que <code>#sim-estado</code> diga «Aparato listo».</li>
+                <li>Escribe un monto en <code>#sim-monto</code> y pulsa <code>#sim-cobrar</code>.</li>
+                <li>Pulsa <code>#sim-tarjeta</code> y espera a que <code>#sim-estado</code> diga «Pago recibido».</li>
+                <li>
+                  Lee el resultado en <code>#sim-registro</code> y en <code>#sim-datos</code>, que trae el estado en
+                  JSON con el enlace a la transacción.
+                </li>
+              </ol>
+            </div>
+            <div>
+              <h3>Sin navegador</h3>
+              <p>El mismo cobro corre con Node 18 o más nuevo. Baja tres archivos y ejecútalo:</p>
+              <pre class="monitor" id="agentes-comando">curl -sO SITIO/simulador/device.mjs -O SITIO/simulador/stellar_mcu.mjs -O SITIO/agentes/demo.mjs
+node demo.mjs</pre>
+              <p>Responde en texto y termina con una línea en JSON. Las instrucciones completas están en <a href={`${base}llms.txt`}>llms.txt</a>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="noche pie">
+      <div class="ancho">
+        <ul>
+          <li><a href={base}>Paizap</a></li>
+          <li><a href={docs}>Documentación del SDK</a></li>
+          <li><a href="https://github.com/CoKeFish/stellar-mcu-sdk">Stellar MCU SDK en GitHub</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <script>
+      import '../simulador/pagina.js';
+    </script>
+  </body>
+</html>

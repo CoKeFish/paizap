@@ -1,5 +1,6 @@
-// El aparato en 3D: la carcasa real del terminal (los mismos modelos que se imprimen), con su
-// pantalla, su teclado y una tarjeta de prueba. Se puede girar con el ratón o el dedo; las teclas
+// El aparato en 3D: la carcasa del terminal, con su pantalla, su teclado y una tarjeta de prueba.
+// La base es la que se imprime; la tapa lleva una ventana de pantalla más grande, solo para la
+// demo web (simulador/tapa_demo.scad). Se puede girar con el ratón o el dedo; las teclas
 // y la tarjeta responden al clic. Todo lo que se hace aquí también se puede hacer con los botones
 // de la página: el 3D es una forma más de usar el mismo aparato.
 //
@@ -7,6 +8,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { ALTO, ANCHO, dibujarPantalla } from './pantalla.js';
 
 // De la carcasa: ancho, alto del frente, inclinación de la tapa y dónde va cada pieza sobre ella.
 const ANCHO_MM = 86;
@@ -16,6 +18,7 @@ const INCLINACION = 10;
 const GROSOR_TAPA = 2;
 const CENTRO = ANCHO_MM / 2;
 const PANTALLA_V = 151.4; // centro de la ventana de la pantalla, medido sobre la tapa
+const PANTALLA = { ancho: 64, alto: 32 }; // la ventana de la demo, en milímetros
 const LECTOR_V = 110.85; // centro del lector de tarjetas
 const TECLADO = { v0: 9, ancho: 69, alto: 77 };
 // Las teclas, de la fila más cercana a quien usa el aparato a la más lejana.
@@ -92,11 +95,10 @@ function texturaSombra() {
 }
 
 /**
- * Arma la escena sobre `lienzoPagina`. `lienzoPantalla` es el lienzo donde la página dibuja la
- * pantalla del aparato. `urlModelo` es la carpeta con base.stl y tapa.stl.
+ * Arma la escena sobre `lienzoPagina`. `urlModelo` es la carpeta con base.stl y tapa.stl.
  * Devuelve cómo actualizarla con el estado del simulador y cómo animar la tarjeta y las teclas.
  */
-export async function crearEscena({ lienzoPagina, lienzoPantalla, urlModelo, alPulsarTecla, alTocarTarjeta }) {
+export async function crearEscena({ lienzoPagina, urlModelo, alPulsarTecla, alTocarTarjeta }) {
   const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const pintor = new THREE.WebGLRenderer({ canvas: lienzoPagina, antialias: true, alpha: true });
   pintor.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -143,13 +145,16 @@ export async function crearEscena({ lienzoPagina, lienzoPantalla, urlModelo, alP
   tapa.rotation.x = THREE.MathUtils.degToRad(INCLINACION);
   aparato.add(tapa);
 
-  // Pantalla: el lienzo de la página, que se vuelve a dibujar con cada cambio.
+  // Pantalla: un lienzo que se vuelve a dibujar con cada cambio y llena la ventana de la tapa.
+  const lienzoPantalla = lienzo(ANCHO, ALTO);
+  const ctxPantalla = lienzoPantalla.getContext('2d');
   const texturaPantalla = texturaDe(lienzoPantalla);
-  const fondoPantalla = new THREE.Mesh(new THREE.PlaneGeometry(27, 17), new THREE.MeshBasicMaterial({ color: '#02040a' }));
-  fondoPantalla.position.set(CENTRO, PANTALLA_V, 0.9);
-  const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(25, 12.5), new THREE.MeshBasicMaterial({ map: texturaPantalla }));
-  pantalla.position.set(CENTRO, PANTALLA_V, 1.1);
-  tapa.add(fondoPantalla, pantalla);
+  const pantalla = new THREE.Mesh(
+    new THREE.PlaneGeometry(PANTALLA.ancho, PANTALLA.alto),
+    new THREE.MeshBasicMaterial({ map: texturaPantalla }),
+  );
+  pantalla.position.set(CENTRO, PANTALLA_V, 1.2);
+  tapa.add(pantalla);
 
   // Teclado: la membrana y sus 16 teclas.
   const membrana = new THREE.Mesh(
@@ -176,7 +181,7 @@ export async function crearEscena({ lienzoPagina, lienzoPantalla, urlModelo, alP
 
   // La luz del relé: se enciende cuando el aparato entrega.
   const luzRele = new THREE.Mesh(new THREE.SphereGeometry(2.2, 20, 12), new THREE.MeshStandardMaterial({ color: '#26355f', emissive: '#000000' }));
-  luzRele.position.set(CENTRO + 30, PANTALLA_V, GROSOR_TAPA + 0.8);
+  luzRele.position.set(CENTRO + 33, LECTOR_V + 14, GROSOR_TAPA + 0.8);
   tapa.add(luzRele);
 
   // La tarjeta de prueba descansa al lado del aparato y viaja hasta el lector cuando se acerca.
@@ -298,8 +303,9 @@ export async function crearEscena({ lienzoPagina, lienzoPantalla, urlModelo, alP
     pintor.render(escena, camara);
   });
 
-  /** Refleja el estado del simulador: la pantalla (ya dibujada en su lienzo) y la luz del relé. */
+  /** Refleja el estado del simulador: la pantalla y la luz del relé. */
   function actualizar(estado) {
+    dibujarPantalla(ctxPantalla, estado);
     texturaPantalla.needsUpdate = true;
     luzRele.material.color.set(estado.rele ? '#3dff9a' : '#26355f');
     luzRele.material.emissive.set(estado.rele ? '#19c96b' : '#000000');

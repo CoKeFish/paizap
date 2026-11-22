@@ -8,7 +8,7 @@ export const GET: APIRoute = ({ site }) => {
 
   const texto = `# Paizap
 
-> Paizap construye aparatos que cobran en Stellar. Esta página trae un simulador de su primer
+> Paizap construye aparatos que cobran en Stellar. Este sitio trae un simulador de su primer
 > aparato, un terminal de cobro, que hace pagos reales en la red de pruebas de Stellar (testnet).
 > La librería con la que está hecho es Stellar MCU SDK: pagos de Stellar para microcontroladores.
 
@@ -19,7 +19,7 @@ prueba a friendbot.
 
 ## Usar el simulador con un navegador
 
-Página: ${raiz}#simulador
+Página: ${raiz}demo/
 
 1. Pulsa el botón con id \`sim-encender\` («Encender el aparato»). Espera a que el texto de
    \`#sim-estado\` diga «Aparato listo». Tarda de 5 a 20 segundos.
@@ -53,7 +53,7 @@ transacciones. Usa cuentas nuevas con fondos de friendbot: no gasta fondos de na
 
 ## Enlaces
 
-- [Simulador](${raiz}#simulador): el terminal simulado.
+- [Demo](${raiz}demo/): el terminal simulado.
 - [Documentación de Stellar MCU SDK](${raiz}sdk/): inicio rápido, guías, referencia y medidas.
 - [Stellar MCU SDK en GitHub](https://github.com/CoKeFish/stellar-mcu-sdk): la librería, en C, con licencia Apache 2.0.
 - [Paizap en GitHub](https://github.com/CoKeFish/paizap): el terminal, su servidor y su app.
