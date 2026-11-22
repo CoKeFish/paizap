@@ -9,7 +9,7 @@ desde el aparato sirve para dos cosas:
 
 - **`transfer`**: pagar de una cuenta a otra con el mismo código para cualquier activo.
 - **`transfer_from`**: cobrar de una cuenta que antes dio un **permiso de gasto**. Es lo que hace
-  el [terminal de Paizap](../../demo-terminal/): cobra de la cuenta del dueño de la tarjeta, hasta
+  el [terminal de la demo](../../demo-terminal/): cobra de la cuenta del dueño de la tarjeta, hasta
   el tope que ese dueño firmó.
 
 Una llamada a contrato tiene un paso más que un pago común: antes de firmar se **simula**, para
@@ -112,5 +112,5 @@ de esa cuenta.
 
 ## Dónde verlo completo
 
-El terminal de Paizap hace este recorrido en cada cobro con tarjeta. Su código está en
-`hardware/firmware/src/firma.cpp`, en el [repositorio de Paizap](https://github.com/CoKeFish/paizap).
+El terminal de la demo hace este recorrido en cada cobro con tarjeta. Su código está en el
+[repositorio de Paizap](https://github.com/CoKeFish/paizap).

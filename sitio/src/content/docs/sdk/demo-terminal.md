@@ -1,16 +1,16 @@
 ---
-title: "Demo: el terminal de Paizap"
-description: El primer aparato hecho con el SDK lee una tarjeta NFC y firma el cobro él mismo.
+title: "Demo: un terminal en una placa real"
+description: Un terminal de demostración, hecho con el SDK, lee una tarjeta NFC y firma el cobro él mismo.
 sidebar:
   label: "Demo: el terminal"
 ---
 
-El primer aparato hecho con el SDK es el terminal de cobro de [Paizap](../../): quien paga acerca
-una tarjeta NFC y el terminal **firma el cobro él mismo** y lo envía a Stellar. Ningún servidor
-firma por él.
+El primer aparato hecho con el SDK es un terminal de cobro que [Paizap](../../) armó como
+demostración: quien paga acerca una tarjeta NFC y el terminal **firma el cobro él mismo** y lo
+envía a Stellar. Ningún servidor firma por él.
 
-Es una demostración de lo que se puede construir con el SDK. En la [página de Paizap](../../) hay
-un simulador para verlo cobrar sin tener la placa.
+Muestra lo que se puede construir con el SDK. En la [demo](../../demo/) hay un simulador para ver
+el mismo cobro en un torniquete, un dispensador y una caja, sin tener la placa.
 
 ## Qué es
 
@@ -52,6 +52,10 @@ Cobro confirmado por la red en 7350 ms
 
 La transacción está en la red:
 [9a0b9c10…f325285a](https://stellar.expert/explorer/testnet/tx/9a0b9c10a2e2bf430e0782f347be0da91bca52d1b5ba5c85b4d80a04f325285a).
+
+Fue el primero de seis cobros firmados por el terminal en testnet, tres de ellos con tarjeta
+física. El último con tarjeta es
+[6f2127eb…ffcd3f46](https://stellar.expert/explorer/testnet/tx/6f2127ebd08855e3b83446a301e966da843d5f2ae21cae5bb7edba8dffcd3f46).
 
 ## Lo que se midió
 
