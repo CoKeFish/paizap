@@ -38,7 +38,7 @@ const cobro = (uid, monto, concepto = '') =>
   pedir('POST', '/cobros', { cuerpo: { id: `a-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`, uid, monto, concepto }, cabeceras: TERMINAL });
 
 const [, info] = await pedir('GET', '/api/info');
-comprobar('info del servidor', info.ok && info.toki?.startsWith('G') && info.moneda, `${info.red} · ${info.moneda}`);
+comprobar('info del servidor', info.ok && info.gastador?.startsWith('G') && info.moneda, `${info.red} · ${info.moneda}`);
 
 // 1. Sesión: la firma de la cuenta abre la sesión; sin firma o con la firma de otro, no.
 const dueno = Keypair.random();
@@ -66,14 +66,14 @@ comprobar('la cuenta abre sesión firmando el reto', sesion.estado === 200 && se
 // 3. Permiso de gasto: el servidor lo arma, la llave del dueño lo firma y la red lo registra.
 {
   const [estado, preparado] = await pedir('POST', '/api/permiso/preparar', { ...sesion, cuerpo: { monto: '25', dias: 7 } });
-  comprobar('el servidor arma el permiso de gasto', estado === 200 && preparado.xdr && preparado.gastador === info.toki);
-  const saldoAntes = await saldo(dueno.publicKey(), info.toki);
+  comprobar('el servidor arma el permiso de gasto', estado === 200 && preparado.xdr && preparado.gastador === info.gastador);
+  const saldoAntes = await saldo(dueno.publicKey(), info.gastador);
   const tx = TransactionBuilder.fromXDR(preparado.xdr, PASSPHRASE);
   tx.sign(dueno);
   const [enviado, resultado] = await pedir('POST', '/api/permiso', { ...sesion, cuerpo: { xdr: tx.toXDR() } });
-  const enLaRed = await permiso(dueno.publicKey(), info.toki);
+  const enLaRed = await permiso(dueno.publicKey(), info.gastador);
   comprobar('el permiso firmado queda en la red', enviado === 200 && enLaRed === aUnidades('25'), resultado.hash ?? resultado.motivo);
-  const saldoDespues = await saldo(dueno.publicKey(), info.toki);
+  const saldoDespues = await saldo(dueno.publicKey(), info.gastador);
   comprobar('Paizap paga la comisión del permiso', saldoDespues === saldoAntes, `saldo del dueño ${deUnidades(saldoDespues)}`);
   const [, cuenta] = await pedir('GET', '/api/cuenta', sesion);
   comprobar('la app ve el permiso y su vencimiento', cuenta.permiso.restante === '25' && cuenta.permiso.firmado === '25' && Boolean(cuenta.permiso.vence?.fecha),
@@ -102,7 +102,7 @@ const uid = uidAzar();
 // 5. Pago con la tarjeta: sale del permiso firmado en la app y aparece en los movimientos.
 {
   const [estado, pago] = await cobro(uid, '1.50', 'Gaseosa');
-  const restante = await permiso(dueno.publicKey(), info.toki);
+  const restante = await permiso(dueno.publicKey(), info.gastador);
   comprobar('la tarjeta paga con el permiso del dueño', estado === 200 && pago.ok && restante === aUnidades('23.5'), pago.hash ?? pago.motivo);
   const [, cuenta] = await pedir('GET', '/api/cuenta', sesion);
   const ultimo = cuenta.movimientos.find((m) => m.tipo === 'cobro');
@@ -126,9 +126,9 @@ const pedido = (monto, concepto) => {
   const [sinSesion] = await pedir('POST', `/api/pedidos/${id}/pagar`, { cuerpo: { uid } });
   comprobar('nadie paga un cobro con la tarjeta de otra cuenta', ajeno === 404 && sinSesion === 401);
 
-  const antes = await permiso(dueno.publicKey(), info.toki);
+  const antes = await permiso(dueno.publicKey(), info.gastador);
   const [estado, pago] = await pedir('POST', `/api/pedidos/${id}/pagar`, { ...sesion, cuerpo: { uid } });
-  const despues = await permiso(dueno.publicKey(), info.toki);
+  const despues = await permiso(dueno.publicKey(), info.gastador);
   comprobar('la app paga el cobro del QR con el permiso del dueño', estado === 200 && pago.ok && antes - despues === aUnidades('0.25'), pago.hash ?? pago.motivo);
 
   const [, terminal] = await pedir('GET', `/cobros/${id}`, { cabeceras: TERMINAL });
@@ -137,7 +137,7 @@ const pedido = (monto, concepto) => {
   const [otraVez] = await pedir('POST', `/api/pedidos/${id}/pagar`, { ...sesion, cuerpo: { uid } });
   const [, cuenta] = await pedir('GET', '/api/cuenta', sesion);
   const ultimo = cuenta.movimientos.find((m) => m.tipo === 'cobro');
-  comprobar('el pago con QR queda en los movimientos y no se repite', ultimo?.medio === 'qr' && ultimo.monto === '0.25' && cuenta.tarjetas[0].gastadoHoy === '1.75' && despues === await permiso(dueno.publicKey(), info.toki),
+  comprobar('el pago con QR queda en los movimientos y no se repite', ultimo?.medio === 'qr' && ultimo.monto === '0.25' && cuenta.tarjetas[0].gastadoHoy === '1.75' && despues === await permiso(dueno.publicKey(), info.gastador),
     `segundo intento: ${otraVez}`);
 }
 
@@ -180,9 +180,9 @@ const pedido = (monto, concepto) => {
 // 7. Recarga de prueba con la cuenta ya creada: llega el monto fijo.
 {
   await new Promise((listo) => setTimeout(listo, 15500)); // el servidor pide unos segundos entre recargas
-  const antes = await saldo(dueno.publicKey(), info.toki);
+  const antes = await saldo(dueno.publicKey(), info.gastador);
   const [estado, recarga] = await pedir('POST', '/api/cuenta/recarga', sesion);
-  const despues = await saldo(dueno.publicKey(), info.toki);
+  const despues = await saldo(dueno.publicKey(), info.gastador);
   comprobar('la recarga de prueba llega a la cuenta', estado === 200 && despues - antes === aUnidades(info.recargaPrueba), `+${deUnidades(despues - antes)}`);
 }
 

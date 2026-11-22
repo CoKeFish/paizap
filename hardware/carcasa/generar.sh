@@ -8,11 +8,11 @@ DIR="$(pwd -W 2>/dev/null || pwd)"
 MSYS_NO_PATHCONV=1 docker run --rm -v "$DIR:/work" -w /work openscad/openscad:dev sh -c '
   set -e
   for p in base tapa barras tapa_y_barras todo prueba; do
-    openscad --backend=manifold -D "pieza=\"$p\"" -o stl/$p.stl toki_carcasa.scad 2>&1 | grep -E "WARNING|ERROR" || true
+    openscad --backend=manifold -D "pieza=\"$p\"" -o stl/$p.stl paizap_carcasa.scad 2>&1 | grep -E "WARNING|ERROR" || true
   done
   V="--imgsize=1500,1100 --colorscheme=Tomorrow --autocenter --viewall"
   vista() { # nombre, pieza, cámara
-    openscad $V -D "pieza=\"$2\"" --camera=$3 -o img/$1.png toki_carcasa.scad >/dev/null 2>&1 || echo "FALLO la vista $1"
+    openscad $V -D "pieza=\"$2\"" --camera=$3 -o img/$1.png paizap_carcasa.scad >/dev/null 2>&1 || echo "FALLO la vista $1"
   }
   vista conjunto      conjunto 0,0,0,58,0,25,0
   vista atras         conjunto 0,0,0,65,0,205,0

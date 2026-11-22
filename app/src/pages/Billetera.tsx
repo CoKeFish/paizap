@@ -324,7 +324,7 @@ function CambiarTope({ cuenta, alCerrar, alTerminar }: { cuenta: Cuenta; alCerra
       setPaso('Preparando el permiso…')
       const preparado = await pedir<{ xdr: string }>('POST', '/api/permiso/preparar', { monto: pedido, dias })
       setPaso('Firmando en este dispositivo…')
-      const firmado = firmarPermiso(preparado.xdr, info.red, llave, { token: info.token, gastador: info.toki, monto: pedido })
+      const firmado = firmarPermiso(preparado.xdr, info.red, llave, { token: info.token, gastador: info.gastador, monto: pedido })
       setPaso('Registrando en Stellar…')
       await pedir('POST', '/api/permiso', { xdr: firmado })
       alTerminar()

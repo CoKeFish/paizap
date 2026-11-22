@@ -42,11 +42,11 @@
 #endif
 
 // ---- Red y servidor ----
-// Vienen de variables de entorno al compilar (ver red_desde_entorno.py): TOKI_WIFI_SSID,
-// TOKI_WIFI_CLAVE, TOKI_SERVIDOR_URL y TERMINAL_TOKEN. Sin servidor, el terminal no cobra
+// Vienen de variables de entorno al compilar (ver red_desde_entorno.py): PAIZAP_WIFI_SSID,
+// PAIZAP_WIFI_CLAVE, PAIZAP_SERVIDOR_URL y TERMINAL_TOKEN. Sin servidor, el terminal no cobra
 // (solo muestra la tarjeta). En el simulador, la red es Wokwi-GUEST.
-#if __has_include("toki_red.h")
-#include "toki_red.h"
+#if __has_include("paizap_red.h")
+#include "paizap_red.h"
 #endif
 #ifndef WIFI_SSID
 #define WIFI_SSID ""
@@ -54,7 +54,7 @@
 #ifndef WIFI_CLAVE
 #define WIFI_CLAVE ""
 #endif
-// Segunda red, opcional (TOKI_WIFI_SSID2 y TOKI_WIFI_CLAVE2): el terminal usa la que esté
+// Segunda red, opcional (PAIZAP_WIFI_SSID2 y PAIZAP_WIFI_CLAVE2): el terminal usa la que esté
 // disponible, por ejemplo el Wi-Fi del local y el punto de acceso de un celular.
 #ifndef WIFI_SSID2
 #define WIFI_SSID2 ""
@@ -78,7 +78,7 @@
 
 // ---- Cobro firmado por el terminal (SDK) ----
 // El terminal firma y envía él mismo el cobro a Stellar (ver firma.h): es lo que hace por defecto.
-// Con TOKI_FIRMA_TERMINAL=0 al compilar, le pide el cobro al servidor de la demo.
+// Con PAIZAP_FIRMA_TERMINAL=0 al compilar, le pide el cobro al servidor de la demo.
 #ifndef FIRMA_TERMINAL
 #define FIRMA_TERMINAL 1
 #endif
@@ -89,16 +89,16 @@
 #ifndef RED_STELLAR
 #define RED_STELLAR "Test SDF Network ; September 2015"
 #endif
-// Cuenta del comercio de este terminal (TOKI_COMERCIO). Si está, el terminal solo cobra para
+// Cuenta del comercio de este terminal (PAIZAP_COMERCIO). Si está, el terminal solo cobra para
 // esa cuenta, diga lo que diga el servidor.
 #ifndef COMERCIO_CUENTA
 #define COMERCIO_CUENTA ""
 #endif
-// Contrato del token con el que cobra (TOKI_TOKEN, una dirección C...). Vacío = XLM de la red.
+// Contrato del token con el que cobra (PAIZAP_TOKEN, una dirección C...). Vacío = XLM de la red.
 #ifndef TOKEN_CONTRATO
 #define TOKEN_CONTRATO ""
 #endif
-// Llave del terminal (TOKI_TERMINAL_SECRET, una S...). Vacía = el terminal crea la suya la
+// Llave del terminal (PAIZAP_TERMINAL_SECRET, una S...). Vacía = el terminal crea la suya la
 // primera vez y la guarda en la placa.
 #ifndef TERMINAL_SEMILLA
 #define TERMINAL_SEMILLA ""
@@ -109,7 +109,7 @@
 #endif
 
 // ---- Modo del terminal ----
-// Con precio fijo (variable TOKI_PRECIO_FIJO al compilar, por ejemplo 1.50) el terminal trabaja
+// Con precio fijo (variable PAIZAP_PRECIO_FIJO al compilar, por ejemplo 1.50) el terminal trabaja
 // en autoservicio: sin teclado, cobra ese monto a cada tarjeta que se acerca y activa el relé.
 // Vacío = modo caja: el monto se escribe en el teclado.
 #ifndef PRECIO_FIJO
@@ -137,14 +137,14 @@ struct Producto {
 #define PRODUCTOS {{"Agua", "1.00"}, {"Gaseosa", "1.50"}, {"Galletas", "0.75"}, {"Cafe", "1.20"}}
 #endif
 
-#ifdef TOKI_SIM
-#define TOKI_SIM_ACTIVO 1
+#ifdef PAIZAP_SIM
+#define PAIZAP_SIM_ACTIVO 1
 #else
-#define TOKI_SIM_ACTIVO 0
+#define PAIZAP_SIM_ACTIVO 0
 #endif
 
 // El simulador no tiene PN532 ni buzzer activo.
-#ifdef TOKI_SIM
+#ifdef PAIZAP_SIM
 #undef LECTOR
 #define LECTOR LECTOR_BOTON
 #undef BUZZER_PASIVO
@@ -161,7 +161,7 @@ constexpr uint8_t PIN_SCK = 12, PIN_MISO = 13, PIN_MOSI = 11, PIN_SS = 10, PIN_R
 constexpr uint8_t PINES_FILAS[4] = {4, 5, 6, 7};
 constexpr uint8_t PINES_COLUMNAS[4] = {15, 16, 17, 18};
 constexpr uint8_t PIN_BUZZER = 21, PIN_RELE = 2, PIN_LED_OK = 41, PIN_LED_ERROR = 42;
-#ifdef TOKI_SIM
+#ifdef PAIZAP_SIM
 constexpr uint8_t PIN_BOTON_TARJETA = 1;  // botón verde del diagrama de Wokwi
 #else
 constexpr uint8_t PIN_BOTON_TARJETA = 0;  // botón BOOT de la placa

@@ -95,8 +95,8 @@ export const aprobar = (dueno, gastador, monto, vence) =>
   invocar(dueno, 'approve', direccion(dueno.publicKey()), direccion(gastador), i128(aUnidades(monto)), u32(vence));
 
 /** Paizap mueve `monto` de la cuenta del cliente a la del comercio usando el permiso de gasto. */
-export const cobrar = (toki, cliente, comercio, monto) =>
-  invocar(toki, 'transfer_from', direccion(toki.publicKey()), direccion(cliente), direccion(comercio), i128(aUnidades(monto)));
+export const cobrar = (paizap, cliente, comercio, monto) =>
+  invocar(paizap, 'transfer_from', direccion(paizap.publicKey()), direccion(cliente), direccion(comercio), i128(aUnidades(monto)));
 
 /** Envío directo del token desde la cuenta de `desde` (la recarga de prueba en testnet). */
 export const transferir = (desde, hacia, monto) =>

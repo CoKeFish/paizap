@@ -3,7 +3,7 @@
 // mandaron y comprueba que sea exactamente lo que el dueño pidió.
 import { Address, Keypair, Networks, StrKey, TransactionBuilder, scValToNative } from '@stellar/stellar-sdk'
 
-const CLAVE = 'toki.llave'
+const CLAVE = 'paizap.llave'
 
 export const fraseDeRed = (red: string) => (red === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET)
 

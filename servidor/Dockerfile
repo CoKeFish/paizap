@@ -1,6 +1,6 @@
 # Servidor de Paizap con la web adentro: la misma dirección atiende al terminal, a la web y a la app.
 # El contexto de build es la raíz del repo (lo pone compose.yaml):
-#   docker build -t toki-servidor -f servidor/Dockerfile .
+#   docker build -t paizap-servidor -f servidor/Dockerfile .
 
 # --- web: compila app/ ---
 FROM node:22-slim AS web

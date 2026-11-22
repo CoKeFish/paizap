@@ -16,14 +16,14 @@ import { Recibo } from './pages/Recibo'
 
 /**
  * En Android, la página que abre el QR de pago ofrece «Abrir en la app»: ese enlace
- * (toki://pagar/<id>) llega aquí y lleva a la pantalla de pago.
+ * (paizap://pagar/<id>) llega aquí y lleva a la pantalla de pago.
  */
 function EnlacesDeLaApp() {
   const navegar = useNavigate()
   useEffect(() => {
     if (!esNativa) return
     const escucha = App.addListener('appUrlOpen', ({ url }) => {
-      const pago = url.match(/^toki:\/\/pagar\/([\w-]{3,64})$/)
+      const pago = url.match(/^paizap:\/\/pagar\/([\w-]{3,64})$/)
       if (pago) navegar(`/pagar/${pago[1]}`)
     })
     return () => {

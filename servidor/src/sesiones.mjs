@@ -5,16 +5,16 @@ import crypto from 'node:crypto';
 import { StrKey, WebAuth } from '@stellar/stellar-sdk';
 import { PASSPHRASE } from './stellar.mjs';
 
-const DOMINIO = process.env.DOMINIO ?? 'toki.local';
+const DOMINIO = process.env.DOMINIO ?? 'paizap.local';
 const DURACION_RETO = 300; // segundos
 const DURACION_SESION = 12 * 60 * 60 * 1000;
 
 let servidor; // Keypair de Paizap: firma los retos
 let llave; // clave de las sesiones, derivada de la llave de Paizap
 
-export function iniciar(toki) {
-  servidor = toki;
-  llave = crypto.createHash('sha256').update(`toki-sesiones:${toki.secret()}`).digest();
+export function iniciar(paizap) {
+  servidor = paizap;
+  llave = crypto.createHash('sha256').update(`paizap-sesiones:${paizap.secret()}`).digest();
 }
 
 const firmar = (texto) => crypto.createHmac('sha256', llave).update(texto).digest('base64url');

@@ -1,4 +1,4 @@
-package app.toki.billetera;
+package app.paizap.billetera;
 
 import com.getcapacitor.BridgeActivity;
 

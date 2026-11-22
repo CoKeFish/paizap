@@ -20,7 +20,7 @@ Sin soportes. PLA, boquilla de 0,4 mm, capa de 0,2 mm, 4 paredes. Son unos 120 g
 ## Antes de imprimir: compara estas medidas con tus piezas
 
 El diseño usa las medidas más comunes de cada módulo, pero cambian según el fabricante. Mide con
-una regla o un calibrador; si algo no coincide, cambia el parámetro en `toki_carcasa.scad` y vuelve
+una regla o un calibrador; si algo no coincide, cambia el parámetro en `paizap_carcasa.scad` y vuelve
 a generar los archivos.
 
 | Pieza | Medida que usa el diseño | Parámetro |
@@ -82,7 +82,7 @@ de cada placa y 0,6 mm de grabado. Por eso conviene imprimir primero `prueba.stl
 
 ## Cambiar el diseño
 
-`toki_carcasa.scad` es el modelo en [OpenSCAD](https://openscad.org); los parámetros están al
+`paizap_carcasa.scad` es el modelo en [OpenSCAD](https://openscad.org); los parámetros están al
 comienzo del archivo. Para generar de nuevo los STL y las vistas, con Docker:
 
 ```bash

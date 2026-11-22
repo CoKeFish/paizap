@@ -1,14 +1,14 @@
 # Servidor de Paizap (con la web adentro) + túnel público, para que el terminal, la web y la app del
 # celular lo alcancen desde cualquier red.
 # Los secretos vienen de Doppler:
-#   doppler run --project toki --config dev -- docker compose up -d --build
+#   doppler run --project paizap --config dev -- docker compose up -d --build
 services:
   servidor:
     build:
       context: ..  # la imagen lleva el servidor y la compilación de app/
       dockerfile: servidor/Dockerfile
     environment:
-      - TOKI_SECRET
+      - PAIZAP_SECRET
       - COMERCIO_PUBLIC
       - TARJETAS
       - TERMINAL_TOKEN

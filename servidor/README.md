@@ -5,10 +5,8 @@ anota cada cobro. El cobro con tarjeta lo arma, lo firma y lo envía el terminal
 usando el **permiso de gasto** (`approve` / `transfer_from`) del contrato del token: la red no deja
 pasar del tope que autorizó el dueño de la cuenta.
 
-En el código, las variables y los comandos aparece `toki`: es el nombre interno del proyecto.
-
 ```
-Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(toki, cliente, comercio, monto)──► Stellar
+Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(paizap, cliente, comercio, monto)──► Stellar
                                            ▲
 Web y app del celular ──/api/…─────────────┤   billetera del dueño y panel del comercio
 Celular que escanea el QR ──/p/<id>────────┘   paga el mismo cobro sin la tarjeta
@@ -43,8 +41,8 @@ Un terminal que firma el cobro con su propia llave (ver «Cobro firmado por el t
 Para que la red acepte los cobros de un terminal, su llave se autoriza una vez:
 
 ```bash
-doppler run --project toki --config dev -- node src/autorizar-terminal.mjs <cuenta G del terminal>
-doppler run --project toki --config dev -- node src/autorizar-terminal.mjs <cuenta G del terminal> quitar
+doppler run --project paizap --config dev -- node src/autorizar-terminal.mjs <cuenta G del terminal>
+doppler run --project paizap --config dev -- node src/autorizar-terminal.mjs <cuenta G del terminal> quitar
 ```
 
 Eso agrega la llave del terminal como firmante de la cuenta de Paizap con peso 1, y deja la llave
@@ -80,7 +78,7 @@ bloqueo y su límite diario:
 
 - **Con la billetera de Paizap** (`POST /api/pedidos/<id>/pagar {uid}`, con sesión): la firma de la
   cuenta ya prueba quién paga, así que no hace falta PIN. La página `/p/<id>` pasa sola a la
-  billetera si está en ese navegador, y en Android ofrece abrir la app (`toki://pagar/<id>`).
+  billetera si está en ese navegador, y en Android ofrece abrir la app (`paizap://pagar/<id>`).
 - **Sin la billetera** (`POST /p/<id>/pagar {codigo, pin}`): la página `/p/<id>` es liviana, no
   depende de la web y pide el código de cuenta (6 dígitos) y el PIN (4 dígitos) de la tarjeta.
   Lleva la marca Paizap (ver la identidad visual en el README de `app/`); el logo y la letra los
@@ -140,19 +138,19 @@ identifica por su UID; la verificación de la NTAG 424 DNA (SUN) viene después.
 
 ## Correr
 
-Todo en Docker y con los secretos en Doppler (proyecto `toki`, config `dev`). La imagen se
+Todo en Docker y con los secretos en Doppler (proyecto `paizap`, config `dev`). La imagen se
 construye desde la raíz del repo, porque lleva el servidor y la web:
 
 ```bash
-# Una vez: crea las cuentas de testnet (toki, comercio, cliente) y el permiso de gasto del cliente
-docker build -t toki-servidor -f servidor/Dockerfile .
-docker run --rm toki-servidor node src/preparar-testnet.mjs > testnet.json
-doppler secrets upload testnet.json --project toki --config dev && rm testnet.json
+# Una vez: crea las cuentas de testnet (paizap, comercio, cliente) y el permiso de gasto del cliente
+docker build -t paizap-servidor -f servidor/Dockerfile .
+docker run --rm paizap-servidor node src/preparar-testnet.mjs > testnet.json
+doppler secrets upload testnet.json --project paizap --config dev && rm testnet.json
 
 # Servidor (puerto 8090) y túnel público, para que el terminal, la web y el celular lo alcancen
 # desde cualquier red
 cd servidor
-doppler run --project toki --config dev -- docker compose --profile tunel up -d --build
+doppler run --project paizap --config dev -- docker compose --profile tunel up -d --build
 docker compose logs tunel | grep bore.pub          # dirección pública: http://bore.pub:<puerto>
 ```
 
@@ -161,12 +159,12 @@ su cuenta ahí mismo; el comercio entra con la llave de su cuenta (`COMERCIO_SEC
 del comercio que ve quien paga con el QR sale de `COMERCIO_NOMBRE`.
 
 Para levantar una segunda copia sin tocar la primera (otro puerto, otros datos):
-`PUERTO_HOST=8091 docker compose -p toki-prueba up -d --build`.
+`PUERTO_HOST=8091 docker compose -p paizap-prueba up -d --build`.
 
 ```bash
 # Prueba sin terminal: cobra 1.25 y comprueba que el saldo del comercio subió
-doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC \
-  -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/prueba-cobro.mjs 1.25
+doppler run --project paizap --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC \
+  -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 paizap-servidor node src/prueba-cobro.mjs 1.25
 ```
 
 ## Registrar una tarjeta
@@ -178,7 +176,7 @@ puede escribir el UID.
 **Sin la app**, con un cliente de prueba creado por el servidor:
 
 ```bash
-doppler run --project toki --config dev -- docker run --rm --network host -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/registrar-tarjeta.mjs 04:11:22:33:44:55:66
+doppler run --project paizap --config dev -- docker run --rm --network host -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 paizap-servidor node src/registrar-tarjeta.mjs 04:11:22:33:44:55:66
 ```
 
 Para pasar a la app una tarjeta que ya estaba registrada así, primero se quita
@@ -191,11 +189,11 @@ Cada prueba mira la red, no solo la respuesta del servidor.
 ```bash
 # El terminal: tarjeta desconocida, registro, cobro, reintento sin doble cobro, pago con QR
 # (código y PIN) y límite diario
-doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC -e TERMINAL_TOKEN -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas.mjs
+doppler run --project paizap --config dev -- docker run --rm --network host -e COMERCIO_PUBLIC -e TERMINAL_TOKEN -e ADMIN_TOKEN -e SERVIDOR_URL=http://localhost:8090 paizap-servidor node src/pruebas.mjs
 
 # La app: sesión con la cuenta, recarga, permiso firmado por el dueño, vincular, pagar con la
 # tarjeta y con el QR, PIN, bloquear, límite diario y panel del comercio
-doppler run --project toki --config dev -- docker run --rm --network host -e COMERCIO_SECRET -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 toki-servidor node src/pruebas-app.mjs
+doppler run --project paizap --config dev -- docker run --rm --network host -e COMERCIO_SECRET -e TERMINAL_TOKEN -e SERVIDOR_URL=http://localhost:8090 paizap-servidor node src/pruebas-app.mjs
 ```
 
 ## Probar con el terminal simulado
@@ -203,11 +201,11 @@ doppler run --project toki --config dev -- docker run --rm --network host -e COM
 Desde `hardware/firmware`, compila el simulador con la URL del túnel y corre la prueba en Wokwi:
 
 ```bash
-doppler run --project toki --config dev -- docker run --rm -e TERMINAL_TOKEN \
-  -e TOKI_SERVIDOR_URL=http://bore.pub:<puerto> -v "$PWD":/work -v toki-pio-cache:/root/.platformio \
-  toki-pio run -e sim-esp32
-doppler run --project toki --config dev -- docker run --rm -e WOKWI_CLI_TOKEN -v "$PWD":/work \
-  --entrypoint wokwi-cli toki-pio sim/esp32 --scenario cobro.test.yaml --timeout 90000
+doppler run --project paizap --config dev -- docker run --rm -e TERMINAL_TOKEN \
+  -e PAIZAP_SERVIDOR_URL=http://bore.pub:<puerto> -v "$PWD":/work -v paizap-pio-cache:/root/.platformio \
+  paizap-pio run -e sim-esp32
+doppler run --project paizap --config dev -- docker run --rm -e WOKWI_CLI_TOKEN -v "$PWD":/work \
+  --entrypoint wokwi-cli paizap-pio sim/esp32 --scenario cobro.test.yaml --timeout 90000
 ```
 
 Con la placa real se usa la misma dirección pública del túnel: así el terminal alcanza al

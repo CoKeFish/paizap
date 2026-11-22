@@ -2,7 +2,7 @@
 // Una sola página sin dependencias: muestra el cobro, pide el código de cuenta y el PIN, y paga.
 //
 // Quien tiene la billetera no necesita PIN: si la billetera está en este mismo navegador, la
-// página pasa a ella (#/pagar/<id>); en Android ofrece abrir la app (toki://pagar/<id>).
+// página pasa a ella (#/pagar/<id>); en Android ofrece abrir la app (paizap://pagar/<id>).
 // Con ?simple=1 la página se queda aquí, con código y PIN.
 //
 // Lleva la identidad de Paizap (los mismos colores y la misma letra que app/src/index.css). El
@@ -79,13 +79,13 @@ const VISTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const GUION = `
   const datos = JSON.parse(document.getElementById('datos').textContent);
   const $ = (id) => document.getElementById(id);
-  // 'toki.llave' es donde la billetera web guarda la llave de la cuenta: aquí solo se mira si
+  // 'paizap.llave' es donde la billetera web guarda la llave de la cuenta: aquí solo se mira si
   // existe, para pasar a la billetera.
-  if (datos.billetera && !/[?&]simple=1/.test(location.search) && localStorage.getItem('toki.llave')) {
+  if (datos.billetera && !/[?&]simple=1/.test(location.search) && localStorage.getItem('paizap.llave')) {
     location.replace('/#/pagar/' + datos.id);
   }
   if (/Android/.test(navigator.userAgent)) $('app').hidden = false;
-  const guardado = localStorage.getItem('toki-codigo');
+  const guardado = localStorage.getItem('paizap-codigo');
   if (guardado) {
     $('codigo').value = guardado;
     $('campo-codigo').hidden = true;
@@ -94,7 +94,7 @@ const GUION = `
     $('cuenta-guardada').hidden = false;
   }
   $('otra-cuenta').addEventListener('click', () => {
-    localStorage.removeItem('toki-codigo');
+    localStorage.removeItem('paizap-codigo');
     $('codigo').value = '';
     $('campo-codigo').hidden = false;
     $('otra-cuenta').hidden = true;
@@ -119,7 +119,7 @@ const GUION = `
       });
       const resultado = await respuesta.json();
       if (!resultado.ok) throw new Error(resultado.motivo || 'No se pudo cobrar.');
-      localStorage.setItem('toki-codigo', $('codigo').value.replace(/\\D/g, ''));
+      localStorage.setItem('paizap-codigo', $('codigo').value.replace(/\\D/g, ''));
       $('por-pagar').hidden = true;
       $('cobro').hidden = true;
       if (resultado.saldoCliente != null) {
@@ -183,7 +183,7 @@ export function paginaPago({ id, monto, concepto, moneda, comercio, aviso, conBi
         <button id="otra-cuenta" class="enlace" type="button" hidden>Usar otra cuenta</button>
       </form>
       <p class="pie">Se cobra de tu cuenta Paizap, la misma de tu tarjeta, con tu límite diario.</p>
-      <p class="pie"><a id="app" href="toki://pagar/${escapar(id)}" hidden>Abrir en la app de Paizap y pagar sin PIN</a></p>
+      <p class="pie"><a id="app" href="paizap://pagar/${escapar(id)}" hidden>Abrir en la app de Paizap y pagar sin PIN</a></p>
     </div>
 
     <div id="despues" hidden>

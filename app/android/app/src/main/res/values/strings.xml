@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Paizap</string>
     <string name="title_activity_main">Paizap</string>
-    <string name="package_name">app.toki.billetera</string>
-    <string name="custom_url_scheme">app.toki.billetera</string>
+    <string name="package_name">app.paizap.billetera</string>
+    <string name="custom_url_scheme">app.paizap.billetera</string>
 </resources>

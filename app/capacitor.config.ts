@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   // El identificador de la app no cambia con la marca: cambiarlo la volvería otra app en el celular.
-  appId: 'app.toki.billetera',
+  appId: 'app.paizap.billetera',
   appName: 'Paizap',
   webDir: 'dist',
   backgroundColor: '#000b25', // el azul noche del logo, mientras carga

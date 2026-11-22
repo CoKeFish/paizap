@@ -53,13 +53,13 @@ import * as tarjetas from './tarjetas.mjs';
 
 function requerida(nombre) {
   if (!process.env[nombre]) {
-    console.error(`Falta la variable ${nombre}. Corre con: doppler run --project toki --config dev -- ...`);
+    console.error(`Falta la variable ${nombre}. Corre con: doppler run --project paizap --config dev -- ...`);
     process.exit(1);
   }
   return process.env[nombre];
 }
 
-const toki = Keypair.fromSecret(requerida('TOKI_SECRET'));
+const paizap = Keypair.fromSecret(requerida('PAIZAP_SECRET'));
 const COMERCIO = requerida('COMERCIO_PUBLIC');
 const TERMINAL_TOKEN = process.env.TERMINAL_TOKEN ?? '';
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? '';
@@ -72,7 +72,7 @@ const NOMBRE_COMERCIO = process.env.COMERCIO_NOMBRE || 'Comercio de prueba';
 const PUERTO = Number(process.env.PUERTO || 8080);
 
 tarjetas.cargar(JSON.parse(process.env.TARJETAS || '{}'));
-sesiones.iniciar(toki);
+sesiones.iniciar(paizap);
 
 const enlaceExplorador = (hash) =>
   `https://stellar.expert/explorer/${RED === 'mainnet' ? 'public' : 'testnet'}/tx/${hash}`;
@@ -81,7 +81,7 @@ const enlaceExplorador = (hash) =>
 // arrancar, se vuelve a intentar la próxima vez que haga falta.
 let moneda = null;
 async function leerMoneda() {
-  if (!moneda) moneda = await simbolo(toki.publicKey()).catch(() => null);
+  if (!moneda) moneda = await simbolo(paizap.publicKey()).catch(() => null);
   return moneda ?? '';
 }
 leerMoneda();
@@ -131,7 +131,7 @@ let contactoTerminal = null;
 const saldoComercio = { valor: null, momento: 0, pendiente: null };
 function leerSaldoComercio(forzar = false) {
   if (!saldoComercio.pendiente && (forzar || Date.now() - saldoComercio.momento > 30000)) {
-    saldoComercio.pendiente = saldo(COMERCIO, toki.publicKey())
+    saldoComercio.pendiente = saldo(COMERCIO, paizap.publicKey())
       .then((unidades) => { saldoComercio.valor = deUnidades(unidades); })
       .catch(() => {})
       .finally(() => { saldoComercio.momento = Date.now(); saldoComercio.pendiente = null; });
@@ -184,15 +184,15 @@ async function procesarCobro({ id, uid, monto, concepto, medio, soloValidar, has
       }
     }
     if (soloValidar) {
-      return [200, { ok: true, cuenta: tarjeta.cuenta, comercio: COMERCIO, gastador: toki.publicKey(), token: TOKEN }];
+      return [200, { ok: true, cuenta: tarjeta.cuenta, comercio: COMERCIO, gastador: paizap.publicKey(), token: TOKEN }];
     }
     let hash;
     try {
       if (hashDelTerminal) {
-        await verificarCobro(hashDelTerminal, { gastador: toki.publicKey(), cliente: tarjeta.cuenta, comercio: COMERCIO, monto });
+        await verificarCobro(hashDelTerminal, { gastador: paizap.publicKey(), cliente: tarjeta.cuenta, comercio: COMERCIO, monto });
         hash = hashDelTerminal;
       } else {
-        hash = await cobrar(toki, tarjeta.cuenta, COMERCIO, monto);
+        hash = await cobrar(paizap, tarjeta.cuenta, COMERCIO, monto);
       }
     } catch (error) {
       // Sin permiso suficiente, permiso vencido o sin saldo: la red no deja pasar el cobro.
@@ -209,8 +209,8 @@ async function procesarCobro({ id, uid, monto, concepto, medio, soloValidar, has
   leerSaldoComercio(true);
   const { cuenta, limite, ...respuesta } = cuerpo;
   const [restante, saldoCliente] = await Promise.all([
-    permiso(cuenta, toki.publicKey()),
-    saldo(cuenta, toki.publicKey()),
+    permiso(cuenta, paizap.publicKey()),
+    saldo(cuenta, paizap.publicKey()),
   ]).catch(() => [null, null]);
   return [200, {
     ...respuesta,
@@ -328,7 +328,7 @@ const movimiento = (c) => ({
 });
 
 async function datosDeCuenta(cuenta) {
-  const fuente = toki.publicKey();
+  const fuente = paizap.publicKey();
   const [existe, unidades, restante, vence] = await Promise.all([
     cuentaExiste(cuenta),
     saldo(cuenta, fuente).catch(() => 0n),
@@ -388,7 +388,7 @@ async function recargaDePrueba(cuenta) {
     historial.anotar({ tipo: 'recarga', cuenta, monto: '', concepto: 'Cuenta creada en testnet', ok: true });
     return [200, { ok: true, creada: true }];
   }
-  const hash = await enCola(() => transferir(toki, cuenta, RECARGA_PRUEBA));
+  const hash = await enCola(() => transferir(paizap, cuenta, RECARGA_PRUEBA));
   historial.anotar({ tipo: 'recarga', cuenta, monto: RECARGA_PRUEBA, concepto: 'Recarga de prueba', ok: true, hash });
   return [200, { ok: true, hash, monto: RECARGA_PRUEBA }];
 }
@@ -404,8 +404,8 @@ async function prepararPermiso(cuenta, { monto, dias }) {
   }
   if (!(await cuentaExiste(cuenta))) return [409, { ok: false, motivo: 'la cuenta todavia no existe en la red' }];
   const vence = await ledgerEnDias(dias);
-  const xdr = await prepararAprobacion(cuenta, toki.publicKey(), monto, vence);
-  return [200, { ok: true, xdr, monto, dias, vence, gastador: toki.publicKey(), token: TOKEN }];
+  const xdr = await prepararAprobacion(cuenta, paizap.publicKey(), monto, vence);
+  return [200, { ok: true, xdr, monto, dias, vence, gastador: paizap.publicKey(), token: TOKEN }];
 }
 
 async function enviarPermiso(cuenta, { xdr }) {
@@ -416,12 +416,12 @@ async function enviarPermiso(cuenta, { xdr }) {
     aprobacion = null;
   }
   // Solo se manda lo que es, exactamente, el permiso de gasto de esta cuenta para Paizap.
-  if (!aprobacion || aprobacion.dueno !== cuenta || aprobacion.gastador !== toki.publicKey()) {
+  if (!aprobacion || aprobacion.dueno !== cuenta || aprobacion.gastador !== paizap.publicKey()) {
     return [400, { ok: false, motivo: 'eso no es un permiso de gasto de esta cuenta' }];
   }
   let hash;
   try {
-    hash = await enviarFirmada(aprobacion.tx, toki); // Paizap paga la comisión
+    hash = await enviarFirmada(aprobacion.tx, paizap); // Paizap paga la comisión
   } catch (error) {
     console.error('permiso rechazado:', error.message);
     return [402, { ok: false, motivo: 'la red rechazo el permiso' }];
@@ -465,7 +465,7 @@ async function atenderApp(req, res, ruta, consulta) {
 
   if (metodo === 'GET' && ruta === '/api/info') {
     return responder(res, 200, {
-      ok: true, red: RED, moneda: await leerMoneda(), token: TOKEN, toki: toki.publicKey(), comercio: COMERCIO,
+      ok: true, red: RED, moneda: await leerMoneda(), token: TOKEN, gastador: paizap.publicKey(), comercio: COMERCIO,
       comercioNombre: NOMBRE_COMERCIO, limiteDiario: LIMITE_DIARIO, recargaPrueba: RED === 'mainnet' ? null : RECARGA_PRUEBA,
       explorador: enlaceExplorador('').replace(/\/tx\/$/, ''),
     });
@@ -580,7 +580,7 @@ async function atenderApp(req, res, ruta, consulta) {
 
 http.createServer(async (req, res) => {
   try {
-    const url = new URL(req.url, 'http://toki');
+    const url = new URL(req.url, 'http://paizap');
     const ruta = url.pathname;
 
     if (req.method === 'OPTIONS') {
@@ -757,7 +757,7 @@ http.createServer(async (req, res) => {
       if (req.method === 'POST' && !deAdmin[1]) {
         const { uid, cuenta } = await leerJson(req);
         if (!tarjetas.normalizar(uid)) return responder(res, 400, { ok: false, motivo: 'falta uid' });
-        const registro = await enCola(() => tarjetas.registrar(uid, cuenta, toki.publicKey()));
+        const registro = await enCola(() => tarjetas.registrar(uid, cuenta, paizap.publicKey()));
         console.log(`tarjeta ${registro.uid} -> ${registro.cuenta}`);
         return responder(res, 200, { ok: true, ...registro });
       }

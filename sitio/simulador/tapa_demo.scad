@@ -1,6 +1,6 @@
 // La tapa del terminal con una ventana de pantalla mucho más grande. Solo para la demo web:
 // la carcasa que se imprime lleva la ventana chica de la OLED real.
-use <toki_carcasa.scad>
+use <paizap_carcasa.scad>
 difference() {
   tapa_ensamblada();
   // Ventana de 64 x 32 mm, centrada donde va la pantalla. El corte se lleva también los

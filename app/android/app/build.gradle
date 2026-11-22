@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "app.toki.billetera"
+    namespace = "app.paizap.billetera"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.toki.billetera"
+        applicationId "app.paizap.billetera"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

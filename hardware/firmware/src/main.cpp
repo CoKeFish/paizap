@@ -7,7 +7,7 @@
 // Sin servidor configurado queda en modo prueba: recorre el mismo flujo sin cobrar, para probar
 // cada pieza (pantalla, teclado, buzzer, LEDs, relé y lector).
 //
-// FIRMA_TERMINAL viene encendido. Con TOKI_FIRMA_TERMINAL=0 al compilar, el terminal le pide el
+// FIRMA_TERMINAL viene encendido. Con PAIZAP_FIRMA_TERMINAL=0 al compilar, el terminal le pide el
 // cobro al servidor de la demo; para quien usa el terminal todo se ve igual.
 //
 // Las piezas se eligen en config.h; la red y el servidor, al compilar (red_desde_entorno.py).
@@ -179,7 +179,7 @@ void listarRedes() {
 }
 
 void conectarWifi() {
-  const char *ssid = strlen(WIFI_SSID) ? WIFI_SSID : (TOKI_SIM_ACTIVO ? "Wokwi-GUEST" : "");
+  const char *ssid = strlen(WIFI_SSID) ? WIFI_SSID : (PAIZAP_SIM_ACTIVO ? "Wokwi-GUEST" : "");
   if (strlen(SERVIDOR_URL) == 0 || strlen(ssid) == 0) {
     Serial.println("Sin servidor configurado: modo prueba, no cobra");
     return;
@@ -192,7 +192,7 @@ void conectarWifi() {
       Serial.printf("Wi-Fi desconectado (motivo %d)\n", (int)info.wifi_sta_disconnected.reason);
     }
   });
-  if (TOKI_SIM_ACTIVO) {
+  if (PAIZAP_SIM_ACTIVO) {
     WiFi.begin(ssid, "", 6);  // Wokwi: canal 6, sin clave
     for (int i = 0; i < 60 && WiFi.status() != WL_CONNECTED; i++) {
       delay(250);
@@ -684,7 +684,7 @@ void setup() {
     Serial.println("ERROR: el terminal no pudo preparar su llave: no va a poder cobrar");
   }
 #endif
-  memoria.begin("toki", false);
+  memoria.begin("paizap", false);
   modo = memoria.getUChar("modo", 0) == 1 ? Modo::Productos : Modo::Caja;
   if (AUTOSERVICIO) {
     Serial.printf("Listo. Autoservicio: cobra %s a cada tarjeta que se acerque\n", PRECIO_FIJO);

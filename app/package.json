@@ -1,5 +1,5 @@
 {
-  "name": "toki-app",
+  "name": "paizap-app",
   "private": true,
   "version": "0.1.0",
   "description": "App de Paizap: billetera del dueño de la tarjeta y panel del comercio. La misma base sale como web y como app de Android.",

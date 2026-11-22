@@ -1,4 +1,4 @@
-// Carcasa del terminal Toki
+// Carcasa del terminal de demostración de Paizap
 // Pantalla OLED 0.96", lector PN532, teclado de membrana 4x4 y ESP32-S3, con espacio para los cables.
 // Medidas en mm. Si una pieza tuya mide distinto, cambia su parámetro y vuelve a generar (ver README.md).
 //

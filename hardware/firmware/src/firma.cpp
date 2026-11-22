@@ -84,7 +84,7 @@ bool iniciar() {
   // El token con el que cobra el terminal: el configurado o, si no hay, el XLM de esa red.
   if (strlen(TOKEN_CONTRATO)) {
     if (!stl_addr_decode(TOKEN_CONTRATO, STL_ADDR_CONTRACT, contratoToken)) {
-      Serial.println("ERROR: TOKI_TOKEN no es una direccion de contrato valida");
+      Serial.println("ERROR: PAIZAP_TOKEN no es una direccion de contrato valida");
       return false;
     }
   } else {
@@ -97,12 +97,12 @@ bool iniciar() {
   // crea aquí se pierde si se graba la placa con la imagen completa (borra lo guardado).
   if (strlen(TERMINAL_SEMILLA)) {
     if (!stl_addr_decode(TERMINAL_SEMILLA, STL_ADDR_SEED, semilla)) {
-      Serial.println("ERROR: TOKI_TERMINAL_SECRET no es una llave valida");
+      Serial.println("ERROR: PAIZAP_TERMINAL_SECRET no es una llave valida");
       return false;
     }
   } else {
     Preferences guardado;
-    guardado.begin("toki-llave", false);
+    guardado.begin("paizap-llave", false);
     if (guardado.isKey("semilla") && guardado.getBytes("semilla", semilla, 32) == 32) {
       Serial.println("Llave del terminal: la guardada");
     } else {

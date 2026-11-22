@@ -159,7 +159,7 @@ también se puede **pagar con QR** desde el celular, sin la tarjeta.
 - La tecla `B` alterna entre caja y productos, y el terminal recuerda el modo aunque se apague.
 - `A` o `*` cancelan mientras espera la tarjeta. Cualquier tecla cierra el QR del recibo.
 - Los productos se definen en `PRODUCTOS`, en `config.h`. La pantalla OLED muestra los 5 primeros.
-- El precio fijo se activa al compilar con la variable `TOKI_PRECIO_FIJO` (por ejemplo `1.50`).
+- El precio fijo se activa al compilar con la variable `PAIZAP_PRECIO_FIJO` (por ejemplo `1.50`).
   En ese modo, después de cada pago el terminal espera a que retiren la tarjeta, para no cobrarla
   dos veces.
 
@@ -229,21 +229,19 @@ Cada tecla del teclado se anuncia como `Tecla: X`, para comprobar su cableado.
 ### Variables al compilar
 
 La red y el servidor se pasan al compilar con variables de entorno (el equipo las tiene en
-Doppler). Sin servidor, el terminal queda en modo prueba: recorre el flujo sin cobrar. Las
-variables, las imágenes de Docker y el proyecto de Doppler llevan `toki`, el nombre interno del
-proyecto.
+Doppler). Sin servidor, el terminal queda en modo prueba: recorre el flujo sin cobrar.
 
 | Variable | Para |
 |---|---|
-| `TOKI_WIFI_SSID`, `TOKI_WIFI_CLAVE` | Red Wi-Fi |
-| `TOKI_WIFI_SSID2`, `TOKI_WIFI_CLAVE2` | Segunda red, opcional |
-| `TOKI_SERVIDOR_URL` | Dirección del servidor, por ejemplo `http://bore.pub:<puerto>` |
+| `PAIZAP_WIFI_SSID`, `PAIZAP_WIFI_CLAVE` | Red Wi-Fi |
+| `PAIZAP_WIFI_SSID2`, `PAIZAP_WIFI_CLAVE2` | Segunda red, opcional |
+| `PAIZAP_SERVIDOR_URL` | Dirección del servidor, por ejemplo `http://bore.pub:<puerto>` |
 | `TERMINAL_TOKEN` | Clave del terminal ante el servidor |
-| `TOKI_PRECIO_FIJO` | Activa el modo de precio fijo con ese monto |
-| `TOKI_FIRMA_TERMINAL` | El terminal firma el cobro él mismo: es lo que viene por defecto (ver «Cobro firmado por el terminal»). Con `0`, le pide el cobro al servidor de la demo |
-| `TOKI_COMERCIO` | Cuenta del comercio de este terminal; con ella, solo cobra para esa cuenta |
-| `TOKI_TERMINAL_SECRET` | Llave del terminal (`S...`). Vacía: el terminal crea la suya y la guarda |
-| `TOKI_TOKEN` | Contrato del token con el que cobra (`C...`). Vacío: XLM de la red |
+| `PAIZAP_PRECIO_FIJO` | Activa el modo de precio fijo con ese monto |
+| `PAIZAP_FIRMA_TERMINAL` | El terminal firma el cobro él mismo: es lo que viene por defecto (ver «Cobro firmado por el terminal»). Con `0`, le pide el cobro al servidor de la demo |
+| `PAIZAP_COMERCIO` | Cuenta del comercio de este terminal; con ella, solo cobra para esa cuenta |
+| `PAIZAP_TERMINAL_SECRET` | Llave del terminal (`S...`). Vacía: el terminal crea la suya y la guarda |
+| `PAIZAP_TOKEN` | Contrato del token con el que cobra (`C...`). Vacío: XLM de la red |
 
 ### Cobro firmado por el terminal (SDK)
 
@@ -269,7 +267,7 @@ monto, tarjeta, aviso, relé y recibo.
   [`servidor/`](../servidor/README.md).
 - **La cuenta del terminal** paga la comisión de cada cobro (unos 9 000 stroops en testnet). El
   terminal la dice al arrancar y con la orden `c` del monitor serie.
-- **Límites que pone el terminal:** solo cobra para `TOKI_COMERCIO`, solo con su token, y no firma
+- **Límites que pone el terminal:** solo cobra para `PAIZAP_COMERCIO`, solo con su token, y no firma
   si la comisión pasa de 0.1 XLM (`COMISION_MAXIMA` en `config.h`). Son límites del firmware: la
   red no los impone, así que protegen de un error o de un servidor que pida otra cosa, no de
   quien saque la llave del terminal.
@@ -293,9 +291,9 @@ la primera vez; de la tarjeta al «aprobado» pasan de 7 a 10 s (el pago en la r
 
 ```bash
 cd hardware/firmware
-docker build -t toki-pio .
-docker run --rm -v "$PWD":/work -v toki-pio-cache:/root/.platformio toki-pio run            # todos
-docker run --rm -v "$PWD":/work -v toki-pio-cache:/root/.platformio toki-pio run -e esp32   # uno
+docker build -t paizap-pio .
+docker run --rm -v "$PWD":/work -v paizap-pio-cache:/root/.platformio paizap-pio run            # todos
+docker run --rm -v "$PWD":/work -v paizap-pio-cache:/root/.platformio paizap-pio run -e esp32   # uno
 ```
 
 ### Grabar la placa
@@ -328,17 +326,17 @@ relé, y hasta da Wi-Fi con internet (red `Wokwi-GUEST`). **No tiene el PN532**:
   termine:
 
   ```bash
-  docker run --rm -v "$PWD":/work -v toki-pio-cache:/root/.platformio toki-pio run -e sim-esp32
-  docker run --rm -v "$PWD":/work --entrypoint python toki-pio sim/qemu/probar.py
+  docker run --rm -v "$PWD":/work -v paizap-pio-cache:/root/.platformio paizap-pio run -e sim-esp32
+  docker run --rm -v "$PWD":/work --entrypoint python paizap-pio sim/qemu/probar.py
   ```
 
 - **Prueba automática con pantalla (Wokwi, Docker):** `sim/<placa>/cobro.test.yaml` escribe un
   monto, aprieta el botón de la tarjeta, comprueba que el relé se active y se apague, y guarda
   capturas de la pantalla (`1-monto.png`, `2-acerque.png`, `3-pago-ok.png`). Necesita un token de
-  https://wokwi.com/dashboard/ci; el equipo lo tiene en Doppler (proyecto `toki`, config `dev`):
+  https://wokwi.com/dashboard/ci; el equipo lo tiene en Doppler (proyecto `paizap`, config `dev`):
 
   ```bash
-  doppler run --project toki --config dev -- docker run --rm -e WOKWI_CLI_TOKEN -v "$PWD":/work     --entrypoint wokwi-cli toki-pio sim/esp32 --scenario cobro.test.yaml --timeout 60000
+  doppler run --project paizap --config dev -- docker run --rm -e WOKWI_CLI_TOKEN -v "$PWD":/work     --entrypoint wokwi-cli paizap-pio sim/esp32 --scenario cobro.test.yaml --timeout 60000
   ```
 
 - **En VS Code, para jugar con el circuito:** instala la extensión *Wokwi for VS Code*, pide la

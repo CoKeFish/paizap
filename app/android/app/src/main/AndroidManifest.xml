@@ -26,12 +26,12 @@
             </intent-filter>
 
             <!-- La pagina que abre el QR de pago del terminal ofrece "Abrir en la app":
-                 el enlace toki://pagar/<id> abre aqui la pantalla de pago. -->
+                 el enlace paizap://pagar/<id> abre aqui la pantalla de pago. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="toki" android:host="pagar" />
+                <data android:scheme="paizap" android:host="pagar" />
             </intent-filter>
 
         </activity>

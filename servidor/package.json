@@ -1,5 +1,5 @@
 {
-  "name": "toki-servidor",
+  "name": "paizap-servidor",
   "version": "0.1.0",
   "private": true,
   "description": "Servidor de Paizap: recibe el toque de la tarjeta y cobra en Stellar con el permiso de gasto",

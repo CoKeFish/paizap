@@ -5,7 +5,7 @@ tarjeta de prueba ("t") y comprueba que el terminal active el relé y termine el
 QEMU no emula la pantalla, el teclado ni el buzzer: eso se ve en Wokwi o en la placa real.
 
 Uso (desde hardware/firmware):
-  docker run --rm -v "$PWD":/work --entrypoint python toki-pio sim/qemu/probar.py
+  docker run --rm -v "$PWD":/work --entrypoint python paizap-pio sim/qemu/probar.py
 """
 import queue
 import subprocess

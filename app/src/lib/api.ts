@@ -7,7 +7,7 @@ import { Capacitor } from '@capacitor/core'
 import type { Keypair } from '@stellar/stellar-sdk'
 import { firmarReto } from './billetera'
 
-const CLAVE_SERVIDOR = 'toki.servidor'
+const CLAVE_SERVIDOR = 'paizap.servidor'
 export const esNativa = Capacitor.isNativePlatform()
 const DE_FABRICA = (import.meta.env.VITE_SERVIDOR_URL ?? '').replace(/\/+$/, '')
 
@@ -41,7 +41,7 @@ export interface Info {
   red: string
   moneda: string
   token: string
-  toki: string
+  gastador: string
   comercio: string
   comercioNombre: string
   limiteDiario: number

@@ -1,9 +1,5 @@
 # App de Paizap (web y Android)
 
-**Paizap** es el nombre del producto y la marca con la que sale la app (nombre, logo, colores y
-letra). En las carpetas, las variables y los identificadores del código sigue el nombre interno del
-proyecto, `toki`.
-
 Una sola base de código (React + Tailwind) que sale de dos formas:
 
 - **Web:** la entrega el [servidor de Paizap](../servidor/README.md) en su misma dirección.
@@ -28,7 +24,7 @@ bloqueo y mismo límite diario):
 | Desde | Cómo |
 |---|---|
 | **El navegador donde está la billetera** | La página del QR pasa sola a la billetera: un botón «Pagar», sin PIN |
-| **Un celular con la app de Android** | En la página del QR, «Abrir en la app de Paizap y pagar sin PIN» (`toki://pagar/<id>`) y «Pagar» |
+| **Un celular con la app de Android** | En la página del QR, «Abrir en la app de Paizap y pagar sin PIN» (`paizap://pagar/<id>`) y «Pagar» |
 | **Cualquier otro celular** | La página del QR pide el código de cuenta (6 dígitos) y un PIN (4 dígitos) |
 
 El código de cuenta y el PIN se crean en la billetera, en la tarjeta: «Nombre, límite y PIN». El

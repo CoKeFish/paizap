@@ -18,7 +18,7 @@
 //   node src/autorizar-terminal.mjs <cuenta G del terminal> quitar   le quita la firma
 //
 // La cuenta del terminal la dice el propio terminal al arrancar y con la orden «c» del monitor
-// serie. Necesita TOKI_SECRET (doppler run --project toki --config dev -- ...).
+// serie. Necesita PAIZAP_SECRET (doppler run --project paizap --config dev -- ...).
 import { BASE_FEE, Keypair, Operation, StrKey, TransactionBuilder } from '@stellar/stellar-sdk';
 import { PASSPHRASE, RED, cuentaExiste, fondearTestnet, rpcServer } from './stellar.mjs';
 
@@ -27,11 +27,11 @@ if (!terminal || !StrKey.isValidEd25519PublicKey(terminal) || (orden && orden !=
   console.error('Uso: node src/autorizar-terminal.mjs <cuenta G del terminal> [quitar]');
   process.exit(1);
 }
-if (!process.env.TOKI_SECRET) {
-  console.error('Falta TOKI_SECRET. Corre con: doppler run --project toki --config dev -- ...');
+if (!process.env.PAIZAP_SECRET) {
+  console.error('Falta PAIZAP_SECRET. Corre con: doppler run --project paizap --config dev -- ...');
   process.exit(1);
 }
-const toki = Keypair.fromSecret(process.env.TOKI_SECRET);
+const paizap = Keypair.fromSecret(process.env.PAIZAP_SECRET);
 const quitar = orden === 'quitar';
 
 if (!quitar && !(await cuentaExiste(terminal))) {
@@ -49,12 +49,12 @@ const opciones = quitar
     masterWeight: 2, lowThreshold: 1, medThreshold: 1, highThreshold: 2,
     signer: { ed25519PublicKey: terminal, weight: 1 },
   };
-const cuenta = await rpcServer.getAccount(toki.publicKey());
+const cuenta = await rpcServer.getAccount(paizap.publicKey());
 const tx = new TransactionBuilder(cuenta, { fee: BASE_FEE, networkPassphrase: PASSPHRASE })
   .addOperation(Operation.setOptions(opciones))
   .setTimeout(60)
   .build();
-tx.sign(toki);
+tx.sign(paizap);
 const enviada = await rpcServer.sendTransaction(tx);
 if (enviada.status === 'ERROR') {
   console.error('La red rechazó el cambio de firmantes.');
@@ -66,6 +66,6 @@ if (resultado.status !== 'SUCCESS') {
   process.exit(1);
 }
 console.log(quitar
-  ? `El terminal ${terminal} ya no puede cobrar en nombre de ${toki.publicKey()}.`
-  : `El terminal ${terminal} ya puede cobrar en nombre de ${toki.publicKey()}.`);
+  ? `El terminal ${terminal} ya no puede cobrar en nombre de ${paizap.publicKey()}.`
+  : `El terminal ${terminal} ya puede cobrar en nombre de ${paizap.publicKey()}.`);
 console.log(`Transacción: ${enviada.hash}`);
