@@ -142,7 +142,8 @@ la verificación SUN.
 `firmware/` tiene el programa del terminal. Lee la tarjeta, le pide el cobro al
 [servidor](../servidor/README.md) por Wi-Fi y, si se aprueba, muestra el pago, pita, enciende el
 LED verde, activa el relé un segundo y deja en pantalla un **QR de recibo** que abre la
-transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo.
+transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo. El mismo cobro
+también se puede **pagar con QR** desde el celular, sin la tarjeta.
 
 ### Modos
 
@@ -158,6 +159,20 @@ transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo.
 - El precio fijo se activa al compilar con la variable `TOKI_PRECIO_FIJO` (por ejemplo `1.50`).
   En ese modo, después de cada pago el terminal espera a que retiren la tarjeta, para no cobrarla
   dos veces.
+
+### Pagar con QR
+
+Mientras espera la tarjeta, la pantalla muestra el monto junto a un QR. El cliente elige: acerca
+la tarjeta o escanea el QR con la cámara del celular.
+
+- El QR abre una página del servidor con el monto. Ahí el cliente escribe el código de su cuenta
+  y su PIN, y paga de la misma cuenta de su tarjeta.
+- El terminal consulta al servidor cada 2 segundos. Cuando el pago entra, hace lo mismo que con
+  la tarjeta: aviso, relé y recibo.
+- El cobro tiene un solo identificador para los dos caminos, así que no se puede pagar dos veces.
+- Al cancelar (`A` o `*`), el terminal le avisa al servidor y ese QR deja de servir. Si nadie paga
+  en 4 minutos, el terminal cancela solo; en precio fijo saca un QR nuevo.
+- Si el servidor no responde al preparar el cobro, la pantalla pide solo la tarjeta.
 
 ### Recibo con QR
 
@@ -176,6 +191,8 @@ servidor alcanzó a cobrar. Por eso:
 - Si aun así no hay respuesta, la pantalla dice «Sin confirmar», no «Rechazado», y el terminal
   sigue consultando ese cobro. Si se había cobrado, termina el pago: aviso, relé y recibo.
 - Se pueden configurar dos redes Wi-Fi: el terminal usa la que esté disponible.
+- Al encender, el terminal intenta conectarse hasta tres veces, porque el primer escaneo de redes
+  a veces no encuentra ninguna.
 
 ### Consumo
 

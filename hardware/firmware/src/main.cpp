@@ -58,6 +58,13 @@ Preferences memoria;
 WiFiMulti redes;           // las redes Wi-Fi configuradas (hasta dos)
 bool variasRedes = false;  // false en el simulador, que usa una red fija
 
+// El cobro que se está esperando. Su id se fija al empezar a esperar y es el mismo para pagar con
+// la tarjeta o escaneando el QR: lo que llegue primero paga, y se cobra una sola vez.
+String cobroId;
+bool pedidoListo = false;   // el servidor ya tiene el cobro: se puede pagar con el QR
+uint32_t esperaDesde = 0;   // cuándo se empezó a esperar el pago
+const uint32_t ESPERA_MAXIMA_MS = 4UL * 60 * 1000;  // el servidor guarda el pedido 5 minutos
+
 // ---- Salidas ----
 
 void bip(uint16_t frecuencia, uint16_t ms) {
@@ -107,15 +114,18 @@ void pantallaReposo() {
   pantalla::lista("Toki | Elija producto", renglones, cantidad);
 }
 
+void soltarPedido();
+void prepararCobro();
+
 // Vuelve al reposo: en modo caja, a escribir el monto; en modo productos, a la lista; en
-// autoservicio, a esperar la siguiente tarjeta con el precio fijo.
+// autoservicio, a esperar el siguiente pago con el precio fijo.
 void volverAlInicio() {
+  soltarPedido();  // si quedó un cobro ofrecido por QR, ya no se espera: se retira del servidor
   concepto = "";
   if (AUTOSERVICIO) {
     monto = PRECIO_FIJO;
-    estado = Estado::EsperandoTarjeta;
-    pantalla::mostrar("Toki | Autoservicio", monto, "Acerque la tarjeta");
     Serial.printf("Autoservicio: %s USDC, acerque la tarjeta\n", monto.c_str());
+    prepararCobro();
   } else {
     monto = "";
     estado = Estado::Monto;
@@ -187,7 +197,11 @@ void conectarWifi() {
     redes.addAP(WIFI_SSID, WIFI_CLAVE);
     if (strlen(WIFI_SSID2)) redes.addAP(WIFI_SSID2, WIFI_CLAVE2);
     variasRedes = true;
-    redes.run(15000);
+    // El primer escaneo después de encender la radio a veces no encuentra las redes: se insiste.
+    for (int intento = 0; intento < 3 && redes.run(8000) != WL_CONNECTED; intento++) {
+      Serial.print('.');
+      delay(700);
+    }
   }
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf(" Wi-Fi OK, red [%s], IP %s. Servidor %s\n", WiFi.SSID().c_str(),
@@ -296,6 +310,51 @@ struct {
   String id, monto, concepto;
 } pendiente;
 
+// Retira del servidor el cobro que estaba ofrecido por QR, para que nadie lo pague cuando el
+// terminal ya no lo espera. Si justo lo estaban pagando, queda pendiente de confirmar.
+void soltarPedido() {
+  if (!pedidoListo) return;
+  pedidoListo = false;
+  String respuesta;
+  int codigo = pedirHttp("/pedidos/" + cobroId + "/cancelar", "{}", respuesta, 4000);
+  if (codigo == 409 && !pendiente.activo) {
+    pendiente.activo = true;
+    pendiente.id = cobroId;
+    pendiente.monto = monto;
+    pendiente.concepto = concepto;
+    Serial.println("Ese cobro ya se estaba pagando con QR: se confirma en un momento");
+  }
+}
+
+// Empieza a esperar el pago de `monto`. Le da un id al cobro y lo registra en el servidor, para
+// que además de la tarjeta se pueda pagar escaneando el QR de la pantalla. Sin conexión no hay
+// QR: queda solo la tarjeta.
+void prepararCobro() {
+  cobroId = String((uint32_t)ESP.getEfuseMac(), HEX) + "-" + String(esp_random(), HEX);
+  pedidoListo = false;
+  esperaDesde = millis();
+  estado = Estado::EsperandoTarjeta;
+
+  // Primero el aviso de siempre, para que se pueda acercar la tarjeta mientras se prepara el QR.
+  if (concepto.isEmpty()) {
+    pantalla::mostrar("Toki | Cobrar " + monto, "Acerque", "la tarjeta");
+  } else {
+    pantalla::mostrar("Toki | " + concepto, monto, "Acerque la tarjeta");
+  }
+  if (strlen(SERVIDOR_URL) == 0 || WiFi.status() != WL_CONNECTED) return;
+
+  String respuesta;
+  String cuerpo = "{\"id\":\"" + cobroId + "\",\"monto\":\"" + monto + "\",\"concepto\":\"" + concepto + "\"}";
+  pedidoListo = pedirHttp("/pedidos", cuerpo, respuesta, 5000) == 200;
+  if (!pedidoListo) return;
+
+  // Con QR: el código a la izquierda y, a la derecha, qué se cobra y cómo se paga.
+  String enlace = String(SERVIDOR_URL) + "/p/" + cobroId;
+  if (pantalla::qr(enlace, concepto.isEmpty() ? String("Total") : concepto, monto, "Tarjeta/QR")) {
+    Serial.printf("QR de pago: %s\n", enlace.c_str());
+  }
+}
+
 // Pide el cobro al servidor de Toki, que cobra en Stellar con el permiso de gasto.
 // Cada cobro lleva un id fijo. Si la respuesta se pierde, el terminal no sabe si se cobró:
 // reintenta con el mismo id, esperando a que vuelva el Wi-Fi, y el servidor devuelve el mismo
@@ -304,7 +363,7 @@ Resultado pedirCobro(const Tarjeta &t) {
   if (strlen(SERVIDOR_URL) == 0) return {true, "(sin servidor: modo prueba)"};
   if (!esperarWifi(5000)) return {false, "sin Wi-Fi"};  // todavía no se mandó nada: no se cobra
 
-  String id = String((uint32_t)ESP.getEfuseMac(), HEX) + "-" + String(esp_random(), HEX);
+  String id = cobroId;  // el mismo id del pedido ofrecido por QR: tarjeta o QR, se cobra una vez
   String cuerpo = "{\"id\":\"" + id + "\",\"uid\":\"" + t.uid + "\",\"monto\":\"" + monto + "\",\"sun\":\"" + t.url +
                   "\",\"concepto\":\"" + concepto + "\"}";
   String respuesta;
@@ -413,8 +472,22 @@ void resolverPendiente() {
   }
 }
 
+// Mientras espera el pago, le pregunta al servidor si ya lo pagaron escaneando el QR.
+void revisarPagoQr() {
+  static uint32_t ultima = 0;
+  if (!pedidoListo || millis() - ultima < 2000 || WiFi.status() != WL_CONNECTED) return;
+  ultima = millis();
+  String respuesta;
+  int codigo = pedirHttp("/cobros/" + cobroId, "", respuesta, 4000);
+  if (codigo == 200 && respuesta.indexOf("\"ok\":true") >= 0) {
+    Serial.println("Pagado con QR");
+    pagoAprobado({true, campoJson(respuesta, "hash"), campoJson(respuesta, "recibo")});
+  }
+}
+
 // Lo que pasa cuando un pago queda aprobado: aviso, relé y recibo.
 void pagoAprobado(const Resultado &r) {
+  pedidoListo = false;  // ya está pagado: no queda nada que retirar del servidor
   Serial.printf("Pago aprobado: %s\n", r.detalle.c_str());
   digitalWrite(PIN_LED_OK, HIGH);
   pantalla::mostrar(concepto.isEmpty() ? String("Toki | Pago") : "Toki | " + concepto, "OK " + monto,
@@ -504,9 +577,8 @@ bool leerLineaSerie(String &linea) {
 
 void pedirTarjeta() {
   if (monto.endsWith(".")) monto.remove(monto.length() - 1);
-  estado = Estado::EsperandoTarjeta;
-  pantalla::mostrar("Toki | Cobrar " + monto, "Acerque", "la tarjeta");
   Serial.printf("Cobrar %s USDC: acerque la tarjeta\n", monto.c_str());
+  prepararCobro();
 }
 
 void cancelar() {
@@ -517,9 +589,8 @@ void cancelar() {
 void elegirProducto(uint8_t i) {
   concepto = productos[i].nombre;
   monto = productos[i].precio;
-  estado = Estado::EsperandoTarjeta;
-  pantalla::mostrar("Toki | " + concepto, monto, "Acerque la tarjeta");
   Serial.printf("Producto %d (%s): cobrar %s USDC, acerque la tarjeta\n", i + 1, concepto.c_str(), monto.c_str());
+  prepararCobro();
 }
 
 void cambiarModo() {
@@ -630,7 +701,20 @@ void loop() {
 
   if (estado == Estado::EsperandoTarjeta) {
     Tarjeta t;
-    if (lector::leer(t)) cobrar(t);
+    if (lector::leer(t)) {
+      cobrar(t);
+      return;
+    }
+    revisarPagoQr();
+    // Un cobro que nadie paga no se queda ofrecido para siempre: en caja se cancela y con precio
+    // fijo se renueva (el QR lleva a un cobro nuevo).
+    if (estado == Estado::EsperandoTarjeta && millis() - esperaDesde > ESPERA_MAXIMA_MS) {
+      if (AUTOSERVICIO) {
+        volverAlInicio();
+      } else {
+        cancelar();
+      }
+    }
   }
 
   // En reposo (sin monto escrito), una tarjeta acercada solo se identifica: no cobra. Sirve para
