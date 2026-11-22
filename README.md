@@ -111,6 +111,11 @@ ESP32-S3 con lector NFC, pantalla y teclado. Es una demostración de lo que se p
 SDK.
 
 <p align="center">
+  <img src="hardware/img/terminal-demo.jpg" alt="El terminal de demostración sobre una mesa: una mano acerca una tarjeta a la zona de lectura; arriba, la pantalla encendida, y abajo, el teclado" width="620">
+</p>
+<p align="center"><em>El terminal de demostración, cobrando con una tarjeta.</em></p>
+
+<p align="center">
   <img src="hardware/carcasa/img/conjunto.png" alt="Modelo 3D del terminal de demostración, visto de frente: pantalla, zona de lectura de la tarjeta y teclado" width="380">
   <img src="hardware/carcasa/img/atras.png" alt="Modelo 3D del terminal de demostración, visto desde atrás, con la entrada del cable" width="380">
 </p>
