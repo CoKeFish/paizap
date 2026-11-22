@@ -46,8 +46,11 @@ cambia una línea en `firmware/src/config.h`.
 documentación. El RC522 es más barato y está en todas partes, pero solo acepta 3.3 V: conectarlo
 a 5 V lo daña.
 
-**Para después, no para el prototipo:** módulo 4G (SIM7600 o A7670) donde no hay Wi-Fi, carcasa
-impresa en 3D y una placa propia (PCB) que reemplace la protoboard.
+**Carcasa:** el modelo para imprimir en 3D, con sus medidas y el armado, está en
+[`carcasa/`](carcasa/README.md).
+
+**Para después, no para el prototipo:** módulo 4G (SIM7600 o A7670) donde no hay Wi-Fi y una
+placa propia (PCB) que reemplace la protoboard.
 
 ## Configurar el firmware según las piezas
 
