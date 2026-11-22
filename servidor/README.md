@@ -1,8 +1,9 @@
 # Servidor de Paizap (MVP)
 
-Recibe el toque de la tarjeta desde el terminal y cobra en Stellar con el **permiso de gasto**
-(`approve` / `transfer_from`) del contrato del token. Paizap firma, pero la red no le deja pasar del
-tope que autorizó el dueño de la cuenta.
+Es el servidor de la demo: guarda qué cuenta corresponde a cada tarjeta, atiende la web y la app, y
+anota cada cobro. El cobro con tarjeta lo arma, lo firma y lo envía el terminal con Stellar MCU SDK,
+usando el **permiso de gasto** (`approve` / `transfer_from`) del contrato del token: la red no deja
+pasar del tope que autorizó el dueño de la cuenta.
 
 En el código, las variables y los comandos aparece `toki`: es el nombre interno del proyecto.
 

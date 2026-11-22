@@ -77,10 +77,10 @@
 #endif
 
 // ---- Cobro firmado por el terminal (SDK) ----
-// Con TOKI_FIRMA_TERMINAL=1 al compilar, el terminal firma y envía él mismo el cobro a Stellar
-// (ver firma.h). Sin eso, el cobro lo firma el servidor, como antes.
+// El terminal firma y envía él mismo el cobro a Stellar (ver firma.h): es lo que hace por defecto.
+// Con TOKI_FIRMA_TERMINAL=0 al compilar, le pide el cobro al servidor de la demo.
 #ifndef FIRMA_TERMINAL
-#define FIRMA_TERMINAL 0
+#define FIRMA_TERMINAL 1
 #endif
 // Nodo RPC de Stellar al que habla el terminal y la red en la que firma.
 #ifndef STELLAR_RPC_HOST

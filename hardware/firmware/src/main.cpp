@@ -1,14 +1,14 @@
 // Paizap: firmware del terminal.
 //
 // Flujo (modo caja): escribe el monto, # para cobrar, acerca la tarjeta. El terminal lee la
-// tarjeta y le pide el cobro al servidor de Paizap, que cobra en Stellar con el permiso de gasto;
-// según la respuesta muestra el pago, pita y activa el relé (modo autoservicio).
+// tarjeta, arma el cobro con el permiso de gasto, lo firma y lo envía él mismo a Stellar con
+// Stellar MCU SDK (firma.h y sdk/); según el resultado muestra el pago, pita y activa el relé
+// (modo autoservicio).
 // Sin servidor configurado queda en modo prueba: recorre el mismo flujo sin cobrar, para probar
 // cada pieza (pantalla, teclado, buzzer, LEDs, relé y lector).
 //
-// Con FIRMA_TERMINAL (variable TOKI_FIRMA_TERMINAL al compilar) el cobro no lo firma el servidor:
-// el terminal guarda una llave y arma, firma y envía él mismo el cobro a Stellar con el SDK
-// (firma.h y sdk/). Para quien usa el terminal todo se ve igual.
+// FIRMA_TERMINAL viene encendido. Con TOKI_FIRMA_TERMINAL=0 al compilar, el terminal le pide el
+// cobro al servidor de la demo; para quien usa el terminal todo se ve igual.
 //
 // Las piezas se eligen en config.h; la red y el servidor, al compilar (red_desde_entorno.py).
 

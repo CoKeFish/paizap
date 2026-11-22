@@ -240,16 +240,16 @@ proyecto.
 | `TOKI_SERVIDOR_URL` | Dirección del servidor, por ejemplo `http://bore.pub:<puerto>` |
 | `TERMINAL_TOKEN` | Clave del terminal ante el servidor |
 | `TOKI_PRECIO_FIJO` | Activa el modo de precio fijo con ese monto |
-| `TOKI_FIRMA_TERMINAL` | Con `1`, el terminal firma el cobro él mismo (ver «Cobro firmado por el terminal») |
+| `TOKI_FIRMA_TERMINAL` | El terminal firma el cobro él mismo: es lo que viene por defecto (ver «Cobro firmado por el terminal»). Con `0`, le pide el cobro al servidor de la demo |
 | `TOKI_COMERCIO` | Cuenta del comercio de este terminal; con ella, solo cobra para esa cuenta |
 | `TOKI_TERMINAL_SECRET` | Llave del terminal (`S...`). Vacía: el terminal crea la suya y la guarda |
 | `TOKI_TOKEN` | Contrato del token con el que cobra (`C...`). Vacío: XLM de la red |
 
 ### Cobro firmado por el terminal (SDK)
 
-Con `TOKI_FIRMA_TERMINAL=1` el servidor deja de firmar el cobro con tarjeta. El terminal guarda
-una llave, arma el `transfer_from` del permiso de gasto, lo firma y lo manda directo a un nodo de
-Stellar. Para quien usa el terminal todo se ve igual: monto, tarjeta, aviso, relé y recibo.
+El terminal guarda una llave, arma el `transfer_from` del permiso de gasto, lo firma y lo manda
+directo a un nodo de Stellar. Es lo que hace por defecto. Para quien usa el terminal se ve así:
+monto, tarjeta, aviso, relé y recibo.
 
 | Paso | Quién |
 |---|---|
@@ -275,7 +275,7 @@ Stellar. Para quien usa el terminal todo se ve igual: monto, tarjeta, aviso, rel
   quien saque la llave del terminal.
 - **Si no llega la confirmación**, el terminal dice «Sin confirmar» y sigue preguntándole a la
   red. La transacción vale 90 segundos: o entra en ese plazo, o no entra nunca.
-- **El pago con QR** no cambia: lo sigue cobrando el servidor.
+- **El pago con QR** es otro camino: quien paga lo hace desde su celular, en la página de la demo.
 - **El nodo** es `soroban-testnet.stellar.org` (`STELLAR_RPC_HOST` en `config.h`). El terminal
   comprueba su certificado contra la raíz de `firmware/src/sdk/root_ca.h`; otro proveedor puede
   necesitar otra raíz.
