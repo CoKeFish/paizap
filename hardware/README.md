@@ -9,7 +9,7 @@ del terminal: **caja** (teclado para el monto) y **autoservicio** (relé que act
   NTAG 424 DNA   └──────────────────────────┘         │
                                                 ┌─────┴───────────────┐
   Pantalla (OLED o LCD) ──────── I2C ───────────┤                     │
-  Teclado 4x4 ─────────────── 8 pines ──────────┤   ESP32-S3          │── Wi-Fi ──► Servidor Paizap ──► Stellar
+  Teclado 4x4 ─────────────── 8 pines ──────────┤   ESP32-S3          │── Wi-Fi ──► Stellar
   Buzzer ─────────────────────── GPIO ──────────┤   o ESP32 clásico   │
   LED verde / LED rojo ──────── GPIO ───────────┤                     │
   Relé 1 canal ──────────────── GPIO ───────────┤                     │
@@ -127,10 +127,12 @@ el LED con su resistencia a GND lo deja así. No conectes ahí nada que lo lleve
 
 ## Cómo lee la tarjeta
 
-El terminal no guarda claves ni verifica la tarjeta: lee la URL que la NTAG 424 DNA genera en cada
-toque (SUN: un contador y una firma CMAC distintos cada vez) y se la manda al servidor junto con el
-monto. El servidor tiene las claves, comprueba la firma y que el contador haya subido, y cobra en
-Stellar con el permiso de gasto. Así, una copia de una lectura anterior no sirve.
+El terminal no guarda las claves de las tarjetas ni las verifica: lee la URL que la NTAG 424 DNA
+genera en cada toque (SUN: un contador y una firma CMAC distintos cada vez) y se la manda al
+servidor de la demo junto con el monto. El servidor tiene las claves de las tarjetas, comprueba la
+firma y que el contador haya subido, y dice de qué cuenta es la tarjeta. El cobro en Stellar lo
+arma, lo firma y lo envía el terminal, con el permiso de gasto. Así, una copia de una lectura
+anterior no sirve.
 
 Las NTAG 424 DNA vienen de fábrica sin la URL configurada. Se configuran una sola vez con un
 celular con NFC (por ejemplo con NXP TagWriter) o desde el propio terminal.
@@ -142,8 +144,8 @@ la verificación SUN.
 
 ## Firmware
 
-`firmware/` tiene el programa del terminal. Lee la tarjeta, le pide el cobro al
-[servidor](../servidor/README.md) por Wi-Fi y, si se aprueba, muestra el pago, pita, enciende el
+`firmware/` tiene el programa del terminal. Lee la tarjeta, arma el cobro, lo firma y lo envía a
+Stellar por Wi-Fi con Stellar MCU SDK y, si la red lo aprueba, muestra el pago, pita, enciende el
 LED verde, activa el relé un segundo y deja en pantalla un **QR de recibo** que abre la
 transacción en el explorador de Stellar. Si no se aprueba, muestra el motivo. El mismo cobro
 también se puede **pagar con QR** desde el celular, sin la tarjeta.

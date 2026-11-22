@@ -6,10 +6,12 @@ usando el **permiso de gasto** (`approve` / `transfer_from`) del contrato del to
 pasar del tope que autorizó el dueño de la cuenta.
 
 ```
-Terminal ──POST /cobros {uid, monto}──► Servidor ──transfer_from(paizap, cliente, comercio, monto)──► Stellar
-                                           ▲
-Web y app del celular ──/api/…─────────────┤   billetera del dueño y panel del comercio
-Celular que escanea el QR ──/p/<id>────────┘   paga el mismo cobro sin la tarjeta
+Terminal ──transfer_from(paizap, cliente, comercio, monto), firmado por el terminal──► Stellar
+   │
+   └──/cobros/preparar y /cobros/registrar──► Servidor   dice de qué cuenta es la tarjeta y anota el cobro
+                                                 ▲
+Web y app del celular ──/api/…───────────────────┤   billetera del dueño y panel del comercio
+Celular que escanea el QR ──/p/<id>──────────────┘   paga el mismo cobro sin la tarjeta
 ```
 
 La misma dirección atiende al terminal, a la web y a la app de Android. La web es la compilación
@@ -17,19 +19,8 @@ de [`app/`](../app/README.md), que va dentro de la imagen del servidor.
 
 ## Lo que usa el terminal
 
-- `POST /cobros` con la cabecera `X-Terminal-Token`: busca la cuenta de la tarjeta, revisa el
-  bloqueo y el límite diario y cobra. Responde `{ok, hash, recibo, permisoRestante, saldoCliente,
-  hoyRestante}` o `{ok:false, motivo}`.
-- `GET /cobros/<id>` con la misma cabecera: consulta un cobro sin cobrar. Lo usa el terminal
-  cuando se cayó la conexión y no le llegó la respuesta, y para enterarse de un pago con QR.
-- `POST /pedidos {id, monto, concepto}` y `POST /pedidos/<id>/cancelar`: deja un cobro listo para
-  pagar con el QR de la pantalla, o lo retira. Ver «Pago con QR».
-- `GET /r/<recibo>`: el enlace corto que el terminal muestra en el QR. Lleva al recibo de Paizap
-  (monto, producto, fecha y enlace a la transacción en el explorador de Stellar).
-- `GET /salud`: red, token y comercio.
-
-Un terminal que firma el cobro con su propia llave (ver «Cobro firmado por el terminal» en
-[`hardware/`](../hardware/README.md)) usa dos pasos en vez de `POST /cobros`:
+El terminal firma el cobro con su propia llave (ver «Cobro firmado por el terminal» en
+[`hardware/`](../hardware/README.md)) y usa dos pasos del servidor:
 
 - `POST /cobros/preparar {id, uid, monto, sun, concepto}`: revisa la tarjeta, el bloqueo y el
   límite diario y responde `{ok, cuenta, comercio, gastador, token}`. No cobra.
@@ -37,6 +28,19 @@ Un terminal que firma el cobro con su propia llave (ver «Cobro firmado por el t
   comprueba en la red que esa transacción terminó bien y que es exactamente ese cobro, y lo anota
   como los demás (historial, límite diario y recibo). Con `motivo` en vez de `hash` anota un
   rechazo de la red.
+
+Además:
+
+- `GET /cobros/<id>` con la cabecera `X-Terminal-Token`: consulta un cobro sin cobrar. Lo usa el terminal
+  cuando se cayó la conexión y no le llegó la respuesta, y para enterarse de un pago con QR.
+- `POST /pedidos {id, monto, concepto}` y `POST /pedidos/<id>/cancelar`: deja un cobro listo para
+  pagar con el QR de la pantalla, o lo retira. Ver «Pago con QR».
+- `GET /r/<recibo>`: el enlace corto que el terminal muestra en el QR. Lleva al recibo de Paizap
+  (monto, producto, fecha y enlace a la transacción en el explorador de Stellar).
+- `GET /salud`: red, token y comercio.
+- `POST /cobros`: para un terminal compilado con `PAIZAP_FIRMA_TERMINAL=0`. Busca la cuenta de
+  la tarjeta, revisa el bloqueo y el límite diario y cobra. Responde `{ok, hash, recibo,
+  permisoRestante, saldoCliente, hoyRestante}` o `{ok:false, motivo}`.
 
 Para que la red acepte los cobros de un terminal, su llave se autoriza una vez:
 

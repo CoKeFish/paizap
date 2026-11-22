@@ -64,6 +64,12 @@ servidores; falta el que corre dentro del dispositivo.
   | [Alerta médica](https://github.com/arantxaamr/alerta-medica-esp32-stellar) (2026) | Botón de alerta con microcontrolador | El firmware quedó en pausa; funciona con el teléfono y un servidor |
   | [SatoshiPay](https://github.com/satoshipay/stellar-candy-dispenser) | Máquina de dulces | Node.js en una Raspberry Pi, que es un computador |
   | [soroban-pumpit](https://github.com/tupui/soroban-pumpit) (2024) | Bomba con sensores | Python en una Raspberry Pi |
+  | [Kalesp](https://github.com/olivmath/kalesp) (2025) | Minero con microcontrolador | El microcontrolador calcula; el envío a Stellar lo hace un programa en Python en un computador |
+  | [Sozu Offline](https://github.com/Sozu-Capital/sozu-offline) (2026) | Testigo de pagos sin conexión con microcontrolador | El microcontrolador anuncia por Bluetooth; un script en Node.js en un portátil envía la liquidación |
+  | [Phonendo](https://github.com/ParriCode/phonedo) (2026) | Sensores con microcontrolador | Varios servidores firman y envían; la firma en el dispositivo está en su hoja de ruta |
+
+  **Con Stellar MCU SDK, ese paso lo hace el propio microcontrolador:** arma, firma y envía la
+  transacción él mismo, sin computador ni servidor en el medio.
 
 - **Las librerías en C que existen son para billeteras físicas:**
   [libstellar](https://github.com/overcat/libstellar), cuyo README avisa que lleva tiempo sin
@@ -77,6 +83,18 @@ servidores; falta el que corre dentro del dispositivo.
 Stellar MCU SDK existe para llenar ese hueco: darle a Stellar la librería para microcontroladores
 que otras redes ya tienen. Es de código abierto y de libre uso, bajo la
 [licencia Apache 2.0](https://github.com/CoKeFish/stellar-mcu-sdk/blob/main/LICENSE).
+
+**Lo que aporta:**
+
+- **Sin computador ni servidor en el medio.** El microcontrolador arma, firma y envía la
+  transacción y habla directo con un nodo de Stellar.
+- **Firma el dispositivo.** Su llave vive en él y nadie firma en su nombre.
+- **Chico y rápido.** El núcleo ocupa 3,4 KB y la firma 18 KB; armar y firmar un pago tarda
+  7 milisegundos.
+- **Comprobado contra el SDK oficial.** 16 de sus 23 comprobaciones comparan byte a byte lo que
+  arma con el SDK de JavaScript.
+- **Para microcontroladores, no para un chip.** El núcleo es C portable; cada microcontrolador
+  aporta solo la conexión y la criptografía.
 
 | Pieza | Qué hace el dispositivo |
 |---|---|
