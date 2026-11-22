@@ -53,6 +53,12 @@ El nodo se elige al compilar. Sin nada, es el de testnet:
 build_flags = -DSTELLAR_RPC_HOST=\"mi-nodo.example.com\"
 ```
 
+Si la dirección del proveedor lleva una ruta, se pasa con `STELLAR_RPC_PATH`. Sin nada, es `/`:
+
+```ini
+build_flags = -DSTELLAR_RPC_HOST=\"mi-nodo.example.com\" -DSTELLAR_RPC_PATH=\"/mi-clave\"
+```
+
 El cliente comprueba el certificado del nodo contra la raíz guardada en `root_ca.h`. La que viene
 es «USERTrust RSA Certification Authority», la del nodo de testnet de la Stellar Development
 Foundation. Otro proveedor puede necesitar otra raíz.

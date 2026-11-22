@@ -31,10 +31,13 @@ Del 23 de noviembre al 22 de diciembre de 2026:
 
 | Semana | Qué | Meta |
 |---|---|---|
-| 1 (23 al 29 nov) | Guía de inicio de la librería y sus dos ejemplos. | Guía publicada: con ella sola se compila un ejemplo y se paga en testnet. |
+| 1 (23 al 29 nov) | Publicar la librería en los registros de Arduino y PlatformIO, con su primera versión numerada. | Versión 0.1 instalable desde los dos registros. |
 | 2 (30 nov al 6 dic) | Llevar el mismo núcleo a un segundo microcontrolador, el RP2040 con su chip de Wi-Fi. Empezar la postulación a Stellar Instawards, por medio del capítulo local de embajadores. | El mismo ejemplo de pago corre en 2 microcontroladores. |
-| 3 (7 al 13 dic) | Un ejemplo nuevo: el cobro con número de pedido. La librería ya lee ese número en el pago; el ejemplo espera el pago de otra persona y lo reconoce por él. | Ejemplo publicado y probado en testnet. |
+| 3 (7 al 13 dic) | Un ejemplo nuevo: el dispositivo paga en USDC de testnet con una llamada al contrato del token. El núcleo ya arma esa llamada; el ejemplo la corre en el dispositivo, sin servidor. | Ejemplo publicado y probado en testnet, con su transacción enlazada. |
 | 4 (14 al 22 dic) | Enviar la postulación a Stellar Instawards. | Postulación enviada. |
+
+Dos cosas que estaban en este plan ya están publicadas: la [guía de inicio](../inicio-rapido/) y el
+[ejemplo que cobra con número de pedido](https://github.com/CoKeFish/stellar-mcu-sdk/tree/main/examples/esp32_standalone_device).
 
 - **Costo del mes:** el tiempo de los dos y el hardware para probar el segundo microcontrolador:
   una placa con RP2040 y Wi-Fi cuesta [USD 6](https://www.raspberrypi.com/news/raspberry-pi-pico-w-your-6-iot-platform/).
@@ -56,7 +59,7 @@ Del 23 de noviembre al 22 de diciembre de 2026:
 - **Errores con su causa:** mostrar «sin saldo» o «vencida» en vez de «falló».
 - **Estado que sobrevive a un corte de luz,** para saber qué pasó con un pago que quedó a medias.
 - **QR como módulo opcional,** para mostrar el pedido sin buscar otra librería.
-- **La llave en un chip seguro,** para que no se pueda leer de la memoria del microcontrolador.
+- **Soporte para un chip seguro,** que guarde la llave del aparato.
 - **Llamadas a cualquier contrato,** con argumentos simples.
 - **Comisión pagada por otra cuenta,** para que el aparato no necesite XLM.
 
