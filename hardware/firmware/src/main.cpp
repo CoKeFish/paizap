@@ -6,6 +6,10 @@
 // Sin servidor configurado queda en modo prueba: recorre el mismo flujo sin cobrar, para probar
 // cada pieza (pantalla, teclado, buzzer, LEDs, relé y lector).
 //
+// Con FIRMA_TERMINAL (variable TOKI_FIRMA_TERMINAL al compilar) el cobro no lo firma el servidor:
+// el terminal guarda una llave y arma, firma y envía él mismo el cobro a Stellar con el SDK
+// (firma.h y sdk/). Para quien usa el terminal todo se ve igual.
+//
 // Las piezas se eligen en config.h; la red y el servidor, al compilar (red_desde_entorno.py).
 
 #include <Arduino.h>
@@ -19,6 +23,11 @@
 #include "config.h"
 #include "lector.h"
 #include "pantalla.h"
+#if FIRMA_TERMINAL
+#include "firma.h"
+// La conexión segura con el nodo de Stellar usa más pila que la que trae el bucle principal.
+SET_LOOP_TASK_STACK_SIZE(16 * 1024);
+#endif
 
 #if TECLADO_4X3
 constexpr byte COLUMNAS = 3;
@@ -308,6 +317,10 @@ void vigilarWifi() {
 struct {
   bool activo = false;
   String id, monto, concepto;
+  // Solo cuando el cobro lo firmó el terminal (FIRMA_TERMINAL):
+  String uid, hash;         // la tarjeta y la transacción firmada
+  uint64_t vence = 0;       // hasta cuándo esa transacción puede entrar a la red
+  bool soloAnotar = false;  // la red ya la confirmó; falta que el servidor la anote
 } pendiente;
 
 // Retira del servidor el cobro que estaba ofrecido por QR, para que nadie lo pague cuando el
@@ -322,6 +335,7 @@ void soltarPedido() {
     pendiente.id = cobroId;
     pendiente.monto = monto;
     pendiente.concepto = concepto;
+    pendiente.hash = "";  // este lo cobra el servidor: se le pregunta a él
     Serial.println("Ese cobro ya se estaba pagando con QR: se confirma en un momento");
   }
 }
@@ -355,6 +369,114 @@ void prepararCobro() {
   }
 }
 
+#if FIRMA_TERMINAL
+// ---- Cobro firmado por el terminal (SDK) ----
+// El servidor ya no firma el cobro: dice de qué cuenta es la tarjeta (/cobros/preparar) y anota el
+// cobro que el terminal hizo en la red (/cobros/registrar). El `transfer_from` del permiso de
+// gasto lo arma, lo firma y lo envía el terminal, directo a Stellar (firma.h).
+
+void pagoAprobado(const Resultado &r);
+
+// Le avisa al servidor que el cobro ya está en la red, para que lo anote y devuelva el recibo.
+// Si el servidor no contesta, el pago vale igual: queda por anotar y se reintenta después.
+Resultado anotarCobro(const String &id, const String &uid, const String &montoCobro, const String &conceptoCobro,
+                      const String &hash, int intentos) {
+  String cuerpo = "{\"id\":\"" + id + "\",\"uid\":\"" + uid + "\",\"monto\":\"" + montoCobro + "\",\"concepto\":\"" +
+                  conceptoCobro + "\",\"hash\":\"" + hash + "\"}";
+  String respuesta;
+  int codigo = 0;
+  for (int intento = 1; intento <= intentos && codigo <= 0; intento++) {
+    if (intento > 1) {
+      esperarWifi(5000);
+      delay(500);
+    }
+    codigo = pedirHttp("/cobros/registrar", cuerpo, respuesta, 15000);
+  }
+  Serial.printf("Servidor (registrar): %d %s\n", codigo, respuesta.c_str());
+  if (codigo <= 0) {
+    pendiente.id = id;
+    pendiente.uid = uid;
+    pendiente.monto = montoCobro;
+    pendiente.concepto = conceptoCobro;
+    pendiente.hash = hash;
+    pendiente.soloAnotar = true;
+  }
+  pendiente.activo = codigo <= 0;
+  return {true, hash, codigo == 200 ? campoJson(respuesta, "recibo") : ""};
+}
+
+Resultado cobrarFirmando(const Tarjeta &t) {
+  String id = cobroId;  // el mismo id del pedido ofrecido por QR: tarjeta o QR, se cobra una vez
+  String datos = "\"id\":\"" + id + "\",\"uid\":\"" + t.uid + "\",\"monto\":\"" + monto + "\",\"concepto\":\"" +
+                 concepto + "\"";
+  String respuesta;
+  int codigo = 0;
+  for (int intento = 1; intento <= 3 && codigo <= 0; intento++) {
+    if (intento > 1) {
+      esperarWifi(5000);
+      delay(500);
+    }
+    codigo = pedirHttp("/cobros/preparar", "{" + datos + ",\"sun\":\"" + t.url + "\"}", respuesta, 8000);
+  }
+  Serial.printf("Servidor (preparar): %d %s\n", codigo, respuesta.c_str());
+  if (codigo <= 0) return {false, "sin conexion"};  // todavía no se firmó nada: no se cobra
+  if (respuesta.indexOf("\"ok\":true") < 0) {
+    if (codigo == 404 && !campoJson(respuesta, "uid").isEmpty()) {
+      Serial.printf("Tarjeta no registrada. Registrar con: node src/registrar-tarjeta.mjs %s\n", t.uid.c_str());
+      return {false, "No registrada " + t.uid};
+    }
+    String motivo = campoJson(respuesta, "motivo");
+    return {false, motivo.isEmpty() ? "error " + String(codigo) : motivo};
+  }
+  // Si ese cobro ya lo pagaron con el QR, el servidor devuelve el pago hecho y no se cobra otra vez.
+  if (!campoJson(respuesta, "hash").isEmpty()) {
+    return {true, campoJson(respuesta, "hash"), campoJson(respuesta, "recibo")};
+  }
+
+  pantalla::mostrar("Paizap: Cobro " + monto, "...", "Firmando en Stellar");
+  firma::Cobro c = firma::cobrar(campoJson(respuesta, "cuenta"), campoJson(respuesta, "comercio"),
+                                 campoJson(respuesta, "gastador"), campoJson(respuesta, "token"), monto);
+  if (c.estado == firma::Estado::Aprobado) return anotarCobro(id, t.uid, monto, concepto, c.hash, 3);
+  if (c.estado == firma::Estado::SinConfirmar) {
+    // La transacción salió firmada pero la red no alcanzó a confirmarla: se sigue preguntando.
+    pendiente.activo = true;
+    pendiente.id = id;
+    pendiente.uid = t.uid;
+    pendiente.monto = monto;
+    pendiente.concepto = concepto;
+    pendiente.hash = c.hash;
+    pendiente.vence = c.vence;
+    pendiente.soloAnotar = false;
+    return {false, "Sin confirmar"};
+  }
+  // La red no dejó pasar el cobro: se le avisa al servidor para que quede en el historial.
+  pedirHttp("/cobros/registrar", "{" + datos + ",\"motivo\":\"" + c.motivo + "\"}", respuesta, 5000);
+  return {false, c.motivo};
+}
+
+// Vuelve a preguntarle a la red por el cobro que el terminal firmó y no pudo confirmar. Si entró,
+// termina el pago; si su vigencia pasó sin entrar, ya no puede entrar: no hay nada que entregar.
+void resolverPendienteFirmado() {
+  if (pendiente.soloAnotar) {
+    anotarCobro(pendiente.id, pendiente.uid, pendiente.monto, pendiente.concepto, pendiente.hash, 1);
+    return;
+  }
+  firma::Estado resultado = firma::consultar(pendiente.hash, pendiente.vence);
+  if (resultado == firma::Estado::SinConfirmar) return;
+  pendiente.activo = false;
+  Serial.printf("Cobro pendiente %s (tx %s): %s\n", pendiente.id.c_str(), pendiente.hash.c_str(),
+                resultado == firma::Estado::Aprobado ? "la red lo confirmo" : "no entro a la red");
+  if (resultado == firma::Estado::Aprobado) {
+    monto = pendiente.monto;
+    concepto = pendiente.concepto;
+    pagoAprobado(anotarCobro(pendiente.id, pendiente.uid, monto, concepto, pendiente.hash, 3));
+  } else {
+    Serial.println("El cobro pendiente no se hizo: no hay nada que entregar");
+    volverAlInicio();
+  }
+}
+#endif
+
 // Pide el cobro al servidor de Paizap, que cobra en Stellar con el permiso de gasto.
 // Cada cobro lleva un id fijo. Si la respuesta se pierde, el terminal no sabe si se cobró:
 // reintenta con el mismo id, esperando a que vuelva el Wi-Fi, y el servidor devuelve el mismo
@@ -362,6 +484,9 @@ void prepararCobro() {
 Resultado pedirCobro(const Tarjeta &t) {
   if (strlen(SERVIDOR_URL) == 0) return {true, "(sin servidor: modo prueba)"};
   if (!esperarWifi(5000)) return {false, "sin Wi-Fi"};  // todavía no se mandó nada: no se cobra
+#if FIRMA_TERMINAL
+  return cobrarFirmando(t);  // con el SDK: el terminal firma y envía el cobro
+#endif
 
   String id = cobroId;  // el mismo id del pedido ofrecido por QR: tarjeta o QR, se cobra una vez
   String cuerpo = "{\"id\":\"" + id + "\",\"uid\":\"" + t.uid + "\",\"monto\":\"" + monto + "\",\"sun\":\"" + t.url +
@@ -456,6 +581,12 @@ void resolverPendiente() {
   if (!pendiente.activo || millis() - ultimoIntento < 5000) return;
   ultimoIntento = millis();
   if (!esperarWifi(0)) return;
+#if FIRMA_TERMINAL
+  if (!pendiente.hash.isEmpty()) {  // lo firmó el terminal: la respuesta está en la red
+    resolverPendienteFirmado();
+    return;
+  }
+#endif
 
   String respuesta;
   int codigo = pedirHttp("/cobros/" + pendiente.id, "", respuesta, 10000);
@@ -546,6 +677,13 @@ void setup() {
 
   conectarWifi();
   comprobarServidor();
+#if FIRMA_TERMINAL
+  if (firma::iniciar()) {
+    Serial.printf("El terminal firma los cobros (SDK). Su cuenta: %s\n", firma::cuenta());
+  } else {
+    Serial.println("ERROR: el terminal no pudo preparar su llave: no va a poder cobrar");
+  }
+#endif
   memoria.begin("toki", false);
   modo = memoria.getUChar("modo", 0) == 1 ? Modo::Productos : Modo::Caja;
   if (AUTOSERVICIO) {
@@ -659,6 +797,10 @@ void loop() {
     } else if (linea.equalsIgnoreCase("s")) {
       if (WiFi.status() != WL_CONNECTED) Serial.println("Sin Wi-Fi: no puedo probar el servidor");
       comprobarServidor();
+#if FIRMA_TERMINAL
+    } else if (linea.equalsIgnoreCase("c")) {
+      Serial.printf("Cuenta del terminal: %s\n", firma::cuenta());
+#endif
     } else if (linea.equalsIgnoreCase("l")) {
       // Vuelve a buscar el lector: sirve después de corregir un cable, sin reiniciar la placa.
       lectorOk = lector::iniciar();
